@@ -1,0 +1,1 @@
+default_app_config = 'only_message.apps.Only_messageConfig'
