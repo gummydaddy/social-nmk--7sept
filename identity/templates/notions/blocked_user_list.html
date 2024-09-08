@@ -1,0 +1,19 @@
+{% extends 'landing_page.html' %}
+
+{% block main_content %}
+<div class="blocked-users">
+  <h2>Blocked Users</h2>
+  <ul>
+      {% for blocked_user in blocked_users %}
+      <li>
+          {{ blocked_user.blocked.username }}
+          <form method="post" action="{% url 'user_profile:unblock_user' blocked_user.blocked.id %}" style="display: inline;">
+              {% csrf_token %}
+              <button type="submit">Unblock</button>
+          </form>
+          
+      </li>
+      {% endfor %}
+  </ul>
+</div>
+{% endblock %}

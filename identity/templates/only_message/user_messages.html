@@ -1,0 +1,184 @@
+{% extends 'landing_page.html' %}
+
+{% block main_content %}
+<style>
+    .message-container {
+        width: 100%;
+        height: 60vh;  /* Set the height to 60% of the viewport height */
+        border: 1px solid #ccc;
+        background-color: #fff0ff;
+        overflow-y: scroll;  /* Enable vertical scrolling */
+        padding: 10px;
+        margin-bottom: 20px;
+        color: #123;
+    }
+
+    .message-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .message-container ul li {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 60%;
+        font-size: 12px; /* Set the text size for all messages */
+    }
+
+    .sender-message {
+        background-color: #e1ffc7;
+        text-align: right;
+        margin-left: auto;
+        font-size: 12px; /* Optional: Customize text size specifically for sender messages */
+    }
+
+    .recipient-message {
+        background-color: #f1f1f1;
+        text-align: left;
+        margin-right: auto;
+        font-size: 12px; /* Optional: Customize text size specifically for recipient messages */
+    }
+
+    form {
+        width: auto;
+        margin-top: 5px;
+        background-color: #fffff;
+        margin-bottom: 5px;
+    }
+</style>
+
+<h2>{{ recipient.username }}</h2>
+<div class="message-container">
+    <ul id="message-list">
+        <!-- Move the messages loop to the bottom -->
+        {% for message in messages %}
+        <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
+            {{ message.content }}<br>
+            <em>{{ message.timestamp }}</em>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<form id="send-message-form" method="post" style="position: relative;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" style="position: absolute; top: 0; right: 0;">
+        Send➣➤
+    </button>
+</form>
+{% endblock %}
+
+{% block Message_script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Scroll to the bottom of the message-container on page load
+        var messageContainer = document.querySelector('.message-container');
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+
+        // WebSocket connection
+        var ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        var chatSocket = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/chat/'); 
+
+        chatSocket.onmessage = function(e) {
+            var data = JSON.parse(e.data);
+            var message = data['message'];
+            var sender = data['sender'];
+            var recipient = "{{ recipient.username }}";
+
+            // Display the message
+            var messageElement = document.createElement('li');
+            messageElement.className = sender === recipient ? 'recipient-message' : 'sender-message';
+            messageElement.innerHTML = `${message} <em>${new Date().toLocaleTimeString()}</em>`;
+            document.querySelector('.message-container ul').appendChild(messageElement);
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        };
+
+        // Handle message sending
+        document.getElementById('send-message-form').onsubmit = function(e) {
+            e.preventDefault();
+            var content = document.getElementById('id_content').value;
+
+            chatSocket.send(JSON.stringify({
+                'action': 'send_message',
+                'recipient': "{{ recipient.username }}",
+                'content': content,
+            }));
+
+            fetch("{% url 'only_message:user_messages_view' recipient.username %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ 'content': content })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('id_content').value = '';
+                } else {
+                    console.error('Error sending message:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        };
+
+        // Infinite scroll to load more messages when scrolling up
+        var page = 1;  // Pagination variable
+        messageContainer.addEventListener('scroll', function() {
+            if (messageContainer.scrollTop === 0) {
+                page += 1;
+                fetch("{% url 'only_message:user_messages_view' recipient.username %}?page=" + page, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    var messageList = document.getElementById('message-list');
+                    data.messages.forEach(function(msg) {
+                        var messageElement = document.createElement('li');
+                        messageElement.className = msg.sender === "{{ recipient.username }}" ? 'recipient-message' : 'sender-message';
+                        messageElement.innerHTML = `${msg.content} <em>${new Date(msg.timestamp).toLocaleTimeString()}</em>`;
+                        messageList.insertBefore(messageElement, messageList.firstChild);
+                    });
+                    messageContainer.scrollTop = 10;  // Slightly adjust scroll to prevent continuous loading
+                });
+            }
+        });
+
+        // Periodically fetch new messages
+        setInterval(function() {
+            fetch("{% url 'only_message:user_messages_view' recipient.username %}", {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                var messageList = document.getElementById('message-list');
+                data.messages.forEach(function(msg) {
+                    var messageElement = document.createElement('li');
+                    messageElement.className = msg.sender === "{{ recipient.username }}" ? 'recipient-message' : 'sender-message';
+                    messageElement.innerHTML = `${msg.content} <em>${new Date(msg.timestamp).toLocaleTimeString()}</em>`;
+                    messageList.appendChild(messageElement);
+                });
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            });
+        }, 5000);  // Fetch new messages every 5 seconds
+    });
+</script>
+{% endblock %}
+
+
+
+
+{% comment %} <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}"> {% endcomment %}

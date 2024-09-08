@@ -1,0 +1,91 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block main_content %}
+<div class="upload-item">
+    {% comment %} 
+    <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+        {% if upload.file.url|is_video %}
+        <!-- Video -->
+        <video controls class="img-fluid">
+            <source src="{{ upload.file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        {% else %}
+        <!-- Image -->
+        <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
+        {% endif %}
+    </a> 
+    {% endcomment %}
+    <!-- Actions -->
+    <div class="actions">
+        {% comment %} 
+        <a href="{% url 'user_profile:like_media' upload.id %}">Like</a> {{ upload.likes.count }} likes 
+        {% endcomment %}
+        <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment{{comment_count}}</a>
+    </div>
+    
+    <!-- Description with clickable links -->
+    <div class="description">
+        <p>{{ upload.description|safe }}</p>
+    </div>
+    
+    <!-- Comments -->
+    <div class="comments">
+        {% for comment in upload.comments.all %}
+        <div class="comment">
+            <p><strong>{{ comment.user.username }}</strong> {{ comment.content }}</p>
+        </div>
+        {% endfor %}
+        <!-- Comment form -->
+        <form method="post" class="comment-form" data-url="{% url 'user_profile:comment_media' upload.id %}">
+            {% csrf_token %}
+            <input type="text" name="content" placeholder="Add a comment" required>
+            <button type="submit">Post</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.comment-form').forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const url = this.getAttribute('data-url');
+                const csrfToken = this.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const content = this.querySelector('input[name="content"]').value;
+
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                formData.append('content', content);
+
+                fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const commentsDiv = this.parentElement;
+                        const newComment = document.createElement('div');
+                        newComment.classList.add('comment');
+                        newComment.innerHTML = `<p><strong>${data.username}</strong> ${data.comment_content}</p>`;
+                        commentsDiv.insertBefore(newComment, this);
+
+                        this.querySelector('input[name="content"]').value = '';
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

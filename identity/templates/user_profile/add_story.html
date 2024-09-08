@@ -1,0 +1,75 @@
+{% extends 'landing_page.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+{% block main_content %}
+<div class="story-add-container">
+    <form id="storyForm" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="description">Story Description:</label>
+            <textarea name="description" id="description" class="form-control"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="file">Upload Image or Video:</label>
+            <input type="file" name="file" id="file" accept="image/*,video/*" class="form-control" required onchange="previewFile(event)">
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Add Story</button>
+    </form>
+</div>
+
+<script>
+
+    function previewFile(event) {
+        const input = event.target;
+        const previewContainer = document.getElementById('filePreview');
+        
+        // Clear the previous preview
+        previewContainer.innerHTML = '';
+
+        const file = input.files[0];
+        if (file) {
+            const fileType = file.type;
+            const previewElement = document.createElement(fileType.startsWith('image/') ? 'img' : 'video');
+            
+            previewElement.src = URL.createObjectURL(file);
+            previewElement.style.maxWidth = '100%';
+            previewElement.style.maxHeight = '400px';
+            
+            if (fileType.startsWith('video/')) {
+                previewElement.controls = true;
+                document.getElementById('videoOptions').style.display = 'block';
+            } else {
+                document.getElementById('videoOptions').style.display = 'none';
+            }
+
+            previewContainer.appendChild(previewElement);
+        }
+    }
+
+    function convertLinks(event) {
+        const input = event.target;
+        const previewContainer = document.getElementById('descriptionPreview');
+        
+        // Clear the previous preview
+        previewContainer.innerHTML = '';
+
+        const text = input.value;
+        const linkifiedText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+
+        previewContainer.innerHTML = linkifiedText;
+    }
+    document.getElementById('storyForm').addEventListener('submit', function(event) {
+        const fileInput = document.getElementById('file');
+        
+        // Check if the file input is empty
+        if (fileInput.files.length === 0) {
+            event.preventDefault();  // Prevent form submission
+            alert('Please select a file before adding a story.');  // Show an alert to the user
+        }
+    });
+</script>
+{% endblock %}

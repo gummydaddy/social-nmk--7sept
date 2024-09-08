@@ -1,0 +1,32 @@
+{% extends 'landing_page.html' %}
+
+{% block main_content %}
+<h2>Notifications</h2>
+<ul>
+  {% for notification in notifications %}
+    <li>
+      {% if notification.comment %}
+        {% if notification.comment.media %}
+          <a href="{% url 'user_profile:media_detail_view' notification.comment.media.id %}#{{ notification.comment.id }}">
+            {{ notification.content|safe }} - {{ notification.comment.content|safe }} - {{ notification.created_at }}
+          </a>
+        {% elif notification.comment.notion %}
+          <a href="{% url 'notion:notion_detail' notification.comment.notion.id %}#{{ notification.comment.id }}">
+            {{ notification.content|safe }} - {{ notification.comment.content|safe }} - {{ notification.created_at }}
+          </a>
+        {% endif %}
+      {% elif notification.media %}
+        <a href="{% url 'user_profile:media_detail_view' notification.media.id %}">
+          {{ notification.content|safe }} - {{ notification.media.description|safe }} - {{ notification.created_at }}
+        </a>
+      {% elif notification.liked_by %}
+        <a href="{% url 'notion:notion_detail' notification.liked_by.notion.id %}">
+          {{ notification.content|safe }} - {{ notification.liked_by.content|safe }} - {{ notification.created_at }}
+        </a>
+      {% else %}
+        {{ notification.content|safe }} - {{ notification.created_at }}
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

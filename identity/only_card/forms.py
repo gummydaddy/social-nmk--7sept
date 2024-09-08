@@ -27,6 +27,15 @@ class CustomSignupForm(SignupForm):
         return user
 
 
+# class PasswordResetForm(forms.Form):
+#     email = forms.EmailField(max_length=200, help_text='Required', label="Email")
+
+
+class PasswordResetForm(forms.Form):
+    username_or_email = forms.CharField(max_length=200, help_text='Required', label="Username or Email")
+
+
+
 class UserUploadForm(forms.ModelForm):
     country = CountryField().formfield(label='Country of Origin')
     document_type = forms.ChoiceField(choices=[

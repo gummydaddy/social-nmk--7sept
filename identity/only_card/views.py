@@ -1,4 +1,6 @@
 import pyrebase
+from django import forms
+from django.forms import CharField, EmailField
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User  # Import the User model at the top
@@ -10,7 +12,7 @@ from django.core.mail import send_mail, EmailMessage, get_connection
 from django.core.cache import cache
 from django.conf import settings
 from .models import KYC, File, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin
-from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm
+from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm, PasswordResetForm
 from twilio.rest import Client
 from cryptography.fernet import Fernet
 import os
@@ -131,69 +133,6 @@ def signup(request):
 #         return render(request, 'login_view.html')
 
 
-# def login_view(request):
-#     if request.method == 'POST':
-#         username_or_email = request.POST['username']
-#         password = request.POST['pass1']
-
-#         try:
-#             # Validate email format if username_or_email is intended to be an email
-#             if '@' not in username_or_email or '.' not in username_or_email:
-#                 raise ValueError("Invalid email format")
-
-#             # Firebase authentication
-#             firebase_user = auth.sign_in_with_email_and_password(username_or_email, password)
-#             user = authenticate(request, username=username_or_email, password=password)
-            
-#             if user is not None:
-#                 # Log in the user in Django
-#                 login(request, user)
-#                 response = HttpResponse("You're logged in.")
-#                 response.set_cookie('username', username_or_email)
-#                 cache.set(f'user_{user.id}', user.username)
-                
-#                 if CustomGroupAdmin.objects.filter(user=user).exists():
-#                     return redirect('/subgroup_landing_page')
-#                 elif user.is_staff:
-#                     return redirect('/super_user_landing_page')
-#                 else:
-#                     return redirect('/landing_page')
-
-#             else:
-#                 messages.error(request, 'Invalid username or password')
-
-#         except ValueError as ve:
-#             messages.error(request, str(ve))
-
-#         except Exception as e:
-#             # Handle Firebase authentication errors more gracefully
-#             error_message = str(e)
-#             if "INVALID_EMAIL" in error_message:
-#                 messages.error(request, "The email address is invalid. Please check and try again.")
-#             elif "INVALID_PASSWORD" in error_message:
-#                 messages.error(request, "The password is incorrect. Please try again.")
-#             else:
-#                 messages.error(request, f"Failed to log in: {error_message}")
-
-#         # Check if username is a group name for alternative authentication
-#         try:
-#             group = CustomGroup.objects.get(name=username_or_email)
-#             user = group.users.first()
-#             if user:
-#                 login(request, user)
-#                 request.session['association_name'] = username_or_email
-#                 request.session['user_id'] = user.id
-#                 cache.set(f'user_{user.id}', username_or_email)
-#                 return redirect('/landing_page')
-#         except CustomGroup.DoesNotExist:
-#             pass
-
-#         return render(request, 'login_view.html')
-
-#     else:
-#         return render(request, 'login_view.html')
-
-
 def login_view(request):
     if request.method == 'POST':
         username_or_email = request.POST['username']
@@ -290,6 +229,43 @@ def logout_view(request):
     logout(request)
     request.session.flush()
     return redirect('/')
+
+
+def password_reset(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            username_or_email = form.cleaned_data['username_or_email']
+            try:
+                # Check if username_or_email is a username or email
+                if '@' in username_or_email:
+                    # It's an email
+                    user = User.objects.get(email=username_or_email)
+                else:
+                    # It's a username
+                    user = User.objects.get(username=username_or_email)
+                # Send Firebase password reset email
+                auth.send_password_reset_email(user.email)
+                messages.success(request, 'A password reset link has been sent to your email.')
+                return redirect('/login/')  # Redirect to login after successful password reset request
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this username or email address.")
+            except Exception as e:
+                # Handle errors
+                error_message = str(e)
+                messages.error(request, f"Error: {error_message}")
+        else:
+            messages.error(request, 'Please provide a valid username or email.')
+    else:
+        form = PasswordResetForm()
+        if request.user.is_authenticated:
+            # Get the email address from the authenticated user
+            email = request.user.email
+            form.fields['username_or_email'].initial = email
+            form.fields['username_or_email'].widget = forms.HiddenInput()  # Hide the email field
+
+    return render(request, 'password_reset.html', {'form': form})
+
 
 
 # Landing

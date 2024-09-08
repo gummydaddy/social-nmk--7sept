@@ -1,0 +1,172 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block profile_header_content %}
+{% endblock %}
+
+{% block main_content %}
+<style>
+    .notion-detail-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        color: #123;
+    }
+    .notion-detail {
+        margin-bottom: 20px;
+    }
+    .notion-detail .actions {
+        margin-top: 10px;
+    }
+    .notion-detail .comments {
+        margin-top: 10px;
+    }
+    .notion-detail .comment {
+        margin-bottom: 10px;
+    }
+    .notion-detail .comment form {
+        display: inline;
+    }
+    .related-notions-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        color: #666;
+    }
+    .related-notion-item {
+        background-color: white;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+</style>
+
+<div class="notion-detail-container">
+    <div class="notion-detail">
+        <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
+        <p>{{ notion.content|safe }}</p>
+        <p>{{ notion.created_at }}</p>
+        <div class="actions">
+            <a href="{% url 'notion:like_notion' notion.id %}" 
+               class="like-link" 
+               data-url="{% url 'notion:like_notion' notion.id %}" 
+               data-csrf-token="{{ csrf_token }}">
+                {% if request.user in notion.likes.all %}
+                    ❤️
+                {% else %}
+                    ♡
+                {% endif %}
+            </a> <span class="like-count">{{ notion.likes.count }}</span> likes
+        </div>
+        
+        <div class="comments">
+            {% for comment in notion.comments.all %}
+            <div class="comment" id="{{ comment.id }}">
+                <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> {{ comment.content|safe }}
+                <div class="dropdown">
+                    <span>⋮</span>
+                    <div class="dropdown-content">
+                        {% if comment.user == request.user or notion.user == request.user %}
+                        <form method="post" action="{% url 'notion:delete_comment' comment.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+                <br> {{ comment.created_at }}   
+            </div>
+            {% endfor %}
+            <!-- Comment form -->
+            <form method="post" action="{% url 'notion:post_comment' notion.id %}" id="comment-form">
+                {% csrf_token %}
+                <input type="text" name="content" placeholder="Add a comment" required>
+                <button type="submit">Post</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Related notions -->
+<div class="related-notions-wrapper">
+    {% for related_notion in related_notions %}
+    <div class="related-notion-item">
+        <p>{{ related_notion.content }}</p>
+        <p>{{ related_notion.created_at }}</p>
+        <a href="{% url 'notion:notion_detail' related_notion.id %}">View</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block notionHome_script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // AJAX for like link
+        document.querySelectorAll('.like-link').forEach(function(link) {
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                const url = this.getAttribute('data-url');
+                const csrfToken = this.getAttribute('data-csrf-token');
+    
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const likeCount = this.nextElementSibling; // Assuming next sibling is like-count span
+                    likeCount.textContent = data.like_count;
+                    if (data.liked) {
+                        this.classList.add('liked');
+                        this.textContent = '❤️';
+                    } else {
+                        this.classList.remove('liked');
+                        this.textContent = '♡';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });    
+</script>
+{% endblock %}

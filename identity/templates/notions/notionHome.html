@@ -1,0 +1,213 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block main_content %}
+<style>
+  .notions-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0rem;
+    border: 2px solid lightgray;
+    border-radius: 9px;
+    color: #123;
+
+  }
+
+  .content-area {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: flex-start;
+    margin: 20px 0;
+    padding: 20px;
+    border: 4px solid lightgray;
+    border-radius: 4px;
+    background-color: white;
+  }
+
+  .notion-item {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+
+  .profile-picture-scroll {
+    display: flex;
+    overflow-x: auto;
+    padding: 10px 0;
+    gap: 15px; /* Adds space between the profile pictures */
+  }
+
+  .profile-picture-container {
+    flex-shrink: 0;
+  }
+
+  .profile-picture {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff; /* Optional: Add a border to make the profile picture stand out */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow for better visual separation */
+  }
+
+  .profile-picture-scroll::-webkit-scrollbar {
+    height: 12px;
+  }
+
+  .profile-picture-scroll::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 10px;
+  }
+
+  .profile-picture-scroll::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+  }
+</style>
+<div class="profile-picture-scroll">
+  {% for story in active_stories_users %}
+    <div class="profile-picture-container">
+      <a href="{% url 'user_profile:view_story' story_id=story.id %}">
+        {% if story.user.profile.profile_picture %}
+          <img src="{{ story.user.profile.profile_picture.url }}" alt="{{ story.user.username }}'s Profile Picture" class="profile-picture">
+        {% else %}
+          <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
+        {% endif %}
+      </a>
+    </div>
+  {% endfor %}
+</div>
+{% comment %} <h2>{{ user.username }}</h2> {% endcomment %}
+<div>
+  <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+    <i class="fas fa-bell"></i>
+  </button>
+</div>
+
+
+
+<p>
+  <div class="uploads-section">
+      <div class="row row-cols-3 g-4">
+          <!-- In your home page template (notionHome.html) -->
+          <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button> 
+          <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id%}'">Notion</button>
+          <button type="button" class="btn btn-primary" >Dream<br>comming soon </button>
+      </div>
+  </div>  
+</p>
+
+<form method="GET" action="{% url 'notion:notion_explorer' %}">
+  <input type="text" name="q" placeholder="Search notions, hashtags, users">
+  <button type="submit">Search</button>
+</form>
+
+<div class="notions-container">
+  {% for notion in notions %}
+  <div class="notion-item">
+    <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
+    <p>{{ notion.content|safe }}</p>
+    {% if notion.custom_group %}
+    <p>Group: {{ notion.custom_group.name }}</p>
+    {% endif %}
+    <p>{{ notion.created_at }}</p>
+    <div class="like-section">
+      <a href="{% url 'notion:like_notion' notion.id %}" 
+         class="like-link {% if request.user in notion.likes.all %}liked{% endif %}" 
+         data-url="{% url 'notion:like_notion' notion.id %}" 
+         data-csrf-token="{{ csrf_token }}"
+         data-liked="{% if request.user in notion.likes.all %}true{% else %}false{% endif %}">
+        {% if request.user in notion.likes.all %}
+            ❤️
+        {% else %}
+            ♡
+        {% endif %}
+      </a> 
+      <span class="like-count">{{ notion.likes.count }}</span> likes
+    </div>    
+    <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">Comment</button>
+
+    <div class="comments">
+      <form method="post" action="{% url 'notion:post_comment' notion.id %}">
+        {% csrf_token %}
+        <textarea name="content" placeholder="Add a comment"></textarea>
+        <button type="submit">Post Comment</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block footer %}
+<footer class="bg-primary text-white py-3">
+  <div class="bottom-strip d-flex justify-content-around">
+    <div class="home">
+      <a href="{% url 'only_card:landing_page' %}">
+        <i class="fas fa-home"></i>
+      </a>
+    </div>
+    <div class="my-notion">
+      {% block new_notion %}
+      <form action="{% url 'notion:post_notion' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <textarea name="content" required></textarea>
+        <button type="submit">Notify</button>
+      </form>
+      {% endblock %}
+    </div>
+    <div class="profile">
+      <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
+        <i class="fas fa-user-circle"></i>
+        {% comment %} alt="Profile Image" {% endcomment %}
+      </a>
+    </div>
+  </div>
+</footer>
+{% endblock %}
+
+{% block notionHome_script %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.like-link').forEach(function(link) {
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
+            const url = this.getAttribute('data-url');
+            const csrfToken = this.getAttribute('data-csrf-token');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const likeSection = this.parentNode;
+                const likeLink = likeSection.querySelector('.like-link');
+                const likeCount = likeSection.querySelector('.like-count');
+
+                likeCount.textContent = `${data.like_count} likes`;
+                if (data.liked) {
+                    likeLink.classList.add('liked');
+                    likeLink.textContent = '❤️';
+                    likeLink.setAttribute('data-liked', 'true');
+                } else {
+                    likeLink.classList.remove('liked');
+                    likeLink.textContent = '♡';
+                    likeLink.setAttribute('data-liked', 'false');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

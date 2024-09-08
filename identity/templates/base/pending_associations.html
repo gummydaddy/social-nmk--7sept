@@ -1,0 +1,19 @@
+<!-- pending_associations.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending User Associations</title>
+</head>
+<body>
+    <h1>Pending User Associations</h1>
+    <ul>
+        {% for user in pending_users %}
+        <li>{{ user.user.username }} - {{ user.subgroup.name }} - {{ user.association_name }} - {{ user.association_email }}
+            <a href="{% url 'approve_association' user.id %}">Approve</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
