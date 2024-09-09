@@ -17,6 +17,8 @@ from twilio.rest import Client
 from cryptography.fernet import Fernet
 import os
 import logging
+from django.contrib.auth import update_session_auth_hash
+
 
 firebaseConfig={
     'apiKey': "AIzaSyCN7s6q2iX84wAa-bcADtojDbRKRsK5UTk",
@@ -131,6 +133,7 @@ def signup(request):
 #         return render(request, 'login_view.html')
 #     else:
 #         return render(request, 'login_view.html')
+    
 
 
 def login_view(request):
@@ -139,51 +142,65 @@ def login_view(request):
         password = request.POST['pass1']
 
         try:
-            # Check if username_or_email is an email
+            # Check if the input is an email or username
             if '@' in username_or_email:
-                # Try to authenticate with email
+                # Authenticate with email
                 user = User.objects.get(email=username_or_email)
                 username = user.username
             else:
-                # Try to authenticate with username
+                # Authenticate with username
                 username = username_or_email
                 user = User.objects.get(username=username)
 
-            # Firebase authentication
-            firebase_user = auth.sign_in_with_email_and_password(user.email, password)
+            # Firebase authentication: Check if the provided credentials are correct in Firebase
+            try:
+                firebase_user = auth.sign_in_with_email_and_password(user.email, password)
 
-            # Authenticate and log in the user in Django
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                response = HttpResponse("You're logged in.")
-                response.set_cookie('username', username)
-                cache.set(f'user_{user.id}', user.username)
+                # At this point, the password matches Firebase. Update Django's password with Firebase password.
+                user.set_password(password)  # Sync the Firebase password with Django's password
+                user.save()
 
-                if CustomGroupAdmin.objects.filter(user=user).exists():
-                    return redirect('/subgroup_landing_page')
-                elif user.is_staff:
-                    return redirect('/super_user_landing_page')
+                # Authenticate the user in Django with the updated password
+                user = authenticate(request, username=username, password=password)
+
+                if user is not None:
+                    # Log the user in Django
+                    login(request, user)
+
+                    # Ensure the session remains intact after password update
+                    update_session_auth_hash(request, user)
+
+                    # Set session cookie and cache the username
+                    response = HttpResponse("You're logged in.")
+                    response.set_cookie('username', username)
+                    cache.set(f'user_{user.id}', user.username)
+
+                    # Redirect based on user roles
+                    if CustomGroupAdmin.objects.filter(user=user).exists():
+                        return redirect('/subgroup_landing_page')
+                    elif user.is_staff:
+                        return redirect('/super_user_landing_page')
+                    else:
+                        return redirect('/landing_page')
+
+            except Exception as firebase_error:
+                # Handle Firebase authentication errors
+                error_message = str(firebase_error)
+                if "EMAIL_NOT_FOUND" in error_message:
+                    messages.error(request, "No account found with this email.")
+                elif "INVALID_PASSWORD" in error_message:
+                    messages.error(request, "The password is incorrect. Please try again.")
                 else:
-                    return redirect('/landing_page')
-
-            else:
-                messages.error(request, 'Invalid username or password')
+                    messages.error(request, f"Firebase error: {error_message}")
 
         except User.DoesNotExist:
             messages.error(request, 'Invalid username or email')
 
         except Exception as e:
-            # Handle Firebase authentication errors more gracefully
-            error_message = str(e)
-            if "INVALID_EMAIL" in error_message:
-                messages.error(request, "The email address is invalid. Please check and try again.")
-            elif "INVALID_PASSWORD" in error_message:
-                messages.error(request, "The password is incorrect. Please try again.")
-            else:
-                messages.error(request, f"Failed to log in: {error_message}")
+            # Handle any other errors
+            messages.error(request, f"Failed to log in: {str(e)}")
 
-        # Check if username is a group name for alternative authentication
+        # Group-based authentication (if necessary)
         try:
             group = CustomGroup.objects.get(name=username_or_email)
             user = group.users.first()
@@ -200,7 +217,8 @@ def login_view(request):
 
     else:
         return render(request, 'login_view.html')
-    
+
+
 
 @staff_member_required
 def super_user_landing_page(request):
@@ -247,11 +265,10 @@ def password_reset(request):
                 # Send Firebase password reset email
                 auth.send_password_reset_email(user.email)
                 messages.success(request, 'A password reset link has been sent to your email.')
-                return redirect('/login/')  # Redirect to login after successful password reset request
+                return redirect('/login/')
             except User.DoesNotExist:
                 messages.error(request, "No account found with this username or email address.")
             except Exception as e:
-                # Handle errors
                 error_message = str(e)
                 messages.error(request, f"Error: {error_message}")
         else:
@@ -259,10 +276,9 @@ def password_reset(request):
     else:
         form = PasswordResetForm()
         if request.user.is_authenticated:
-            # Get the email address from the authenticated user
             email = request.user.email
             form.fields['username_or_email'].initial = email
-            form.fields['username_or_email'].widget = forms.HiddenInput()  # Hide the email field
+            form.fields['username_or_email'].widget = forms.HiddenInput()
 
     return render(request, 'password_reset.html', {'form': form})
 
