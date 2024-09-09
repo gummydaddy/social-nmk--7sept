@@ -2,6 +2,19 @@
 {% load static %}
 
 {% block main_content %}
+{% comment %} <div class="profile-picture-scroll">
+  {% for story in active_stories_users %}
+    <div class="profile-picture-container">
+      <a href="{% url 'user_profile:view_story' story_id=story.id %}">
+        {% if story.user.profile.profile_picture %}
+          <img src="{{ story.user.profile.profile_picture.url }}" alt="{{ story.user.username }}'s Profile Picture" class="profile-picture">
+        {% else %}
+          <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
+        {% endif %}
+      </a>
+    </div>
+  {% endfor %}
+</div> {% endcomment %}
 <style>
   .notions-container {
     max-width: 600px;
@@ -66,19 +79,7 @@
     background-color: #f1f1f1;
   }
 </style>
-<div class="profile-picture-scroll">
-  {% for story in active_stories_users %}
-    <div class="profile-picture-container">
-      <a href="{% url 'user_profile:view_story' story_id=story.id %}">
-        {% if story.user.profile.profile_picture %}
-          <img src="{{ story.user.profile.profile_picture.url }}" alt="{{ story.user.username }}'s Profile Picture" class="profile-picture">
-        {% else %}
-          <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
-        {% endif %}
-      </a>
-    </div>
-  {% endfor %}
-</div>
+
 {% comment %} <h2>{{ user.username }}</h2> {% endcomment %}
 <div>
   <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">

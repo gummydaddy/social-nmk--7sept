@@ -1089,7 +1089,8 @@ def view_story(request, story_id):
     
     if story.is_expired():
         story.media.delete()
-        return render(request, 'story_expired.html')
+        # return render(request, 'story_expired.html')
+        return redirect('user_profile:profile', user_id=request.user.id)
 
     # Increment view count and track viewers
     story.media.view_count += 1
