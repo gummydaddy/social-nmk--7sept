@@ -341,14 +341,25 @@ def upload_document(request):
         form = UserUploadForm(request.POST, request.FILES)
         if form.is_valid():
             form.instance.user = request.user
-            form.save()
+
+            try:
+                form.save()  # This will check the storage limit
+            except ValueError as e:
+                # If storage is full, show a message and prevent upload
+                messages.error(request, "Storage full. Please buy more storage.")
+                return redirect('/buy_storage')  # Redirect to a "Buy Storage" page
+
             if CustomGroupAdmin.objects.filter(user=request.user).exists():
                 return redirect('/subgroup_landing_page')
             else:
                 return redirect('/landing_page')
     else:
         form = UserUploadForm()
+
     return render(request, 'upload_document.html', {'form': form})
+
+def buy_storage(request):
+    return render(request, 'buy_storage.html')
 
 
 # Set up logging

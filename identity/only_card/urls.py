@@ -30,7 +30,7 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path('landing_page/', views.landing_page, name='landing_page'),
     path('password_reset/', views.password_reset, name='password_reset'),
-    path('upload/', views.upload_document, name='upload_document'),
+    path('upload_documents/', views.upload_document, name='upload_document'),
     path('view_file/<int:upload_id>/', views.view_file, name='view_file'),
     path('delete_upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
     path('RegistrationForm/', views.registration_form_view, name='RegistrationForm'),
@@ -46,6 +46,8 @@ urlpatterns = [
     path('groups/create/', views.group_create, name='group_create'),
     path('subgroups/', views.subgroup_signup, name='subgroup_signup'),
     path('subgroup_landing_page/', views.subgroup_landing_page, name='subgroup_landing_page'),
+    path('buy_storage/', views.buy_storage, name='buy_storage'),
+    
 
     
 ]
