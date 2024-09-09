@@ -76,7 +76,7 @@ def post_notion(request):
         # Process the content to make usernames and links clickable
         content = make_usernames_clickable(content)
         
-        deletion_date = timezone.now() + timedelta(days=30)
+        deletion_date = timezone.now() + timedelta(days=2)
         notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
 
         # Create or get hashtags
@@ -317,10 +317,31 @@ def notion_detail_view(request, notion_id):
     })
 
 
+# @login_required
+# def notifications(request):
+#     user = request.user
+#     notifications = Notification.objects.filter(user=user).order_by('-created_at')
+
+#     # Process notification content to make usernames and links clickable
+#     for notification in notifications:
+#         notification.content = make_usernames_clickable(notification.content)
+#         if notification.comment:
+#             notification.comment.content = make_usernames_clickable(notification.comment.content)
+#         if notification.liked_by:
+#             notification.liked_by.content = make_usernames_clickable(notification.liked_by.content)
+
+#     return render(request, 'notifications.html', {'notifications': notifications})
+
+
 @login_required
 def notifications(request):
     user = request.user
-    notifications = Notification.objects.filter(user=user).order_by('-created_at')
+    # Get current time and the time 8 days ago
+    now = timezone.now()
+    eight_days_ago = now - timedelta(days=8)
+    
+    # Filter notifications for the last 8 days and order by creation date
+    notifications = Notification.objects.filter(user=user, created_at__gte=eight_days_ago).order_by('-created_at')
 
     # Process notification content to make usernames and links clickable
     for notification in notifications:
