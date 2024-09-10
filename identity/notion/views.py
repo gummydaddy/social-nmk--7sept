@@ -19,6 +19,8 @@ from django.db.models import Q, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape, mark_safe
 from django.urls import reverse
+from nmk.tasks import send_tagged_user_notifications  # Import the Celery task
+
 
 
 
@@ -66,38 +68,92 @@ def notion_home(request, notion_id=None):
     return render(request, 'notionHome.html', context)
 
 
+# @login_required
+# def post_notion(request):
+#     if request.method == 'POST':
+#         content = request.POST.get('content', '')
+
+#         # Find all hashtags (#) and tagged usernames (@) in the content
+#         hashtags = set(re.findall(r'#(\w+)', content))
+#         tagged_usernames = set(re.findall(r'@(\w+)', content))
+
+#         # Process the content to make usernames and links clickable
+#         content = make_usernames_clickable(content)  # Ensure this function is defined properly
+
+#         # Set deletion date for the notion (30 days from now)
+#         deletion_date = timezone.now() + timedelta(days=30)
+
+#         # Create the notion
+#         notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
+
+#         # Process and link hashtags to the notion
+#         for tag in hashtags:
+#             hashtag, created = Hashtag.objects.get_or_create(name=tag)
+#             notion.hashtags.add(hashtag)
+
+#         # Process and tag users
+#         for username in tagged_usernames:
+#             try:
+#                 tagged_user = AuthUser.objects.get(username=username)
+#                 notion.tagged_users.add(tagged_user)
+
+#                 # Notify the tagged user
+#                 Notification.objects.create(
+#                     user=tagged_user,
+#                     content=f'You were tagged in a notion by {request.user.username}'
+#                 )
+#             except AuthUser.DoesNotExist:
+#                 # If the user does not exist, just continue
+#                 pass
+
+#         # Redirect to the notion home page (adjust 'notion_home' URL to your app's URL config)
+#         return redirect('notion:notion_home', notion_id=notion.id)
+
+#     # If it's not a POST request, just render the notion posting page
+#     return render(request, 'post_notion.html', {'user_id': request.user.id})
+
+
 @login_required
 def post_notion(request):
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('content', '')
+
+        # Extract hashtags and tagged usernames from the content
         hashtags = set(re.findall(r'#(\w+)', content))
         tagged_usernames = set(re.findall(r'@(\w+)', content))
-        
-        # Process the content to make usernames and links clickable
+
+        # Make usernames and links clickable
         content = make_usernames_clickable(content)
-        
-        deletion_date = timezone.now() + timedelta(days=2)
+
+        # Set deletion date for the notion (30 days from now)
+        deletion_date = timezone.now() + timedelta(days=1)
+
+        # Create the notion
         notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
 
-        # Create or get hashtags
+        # Process hashtags
         for tag in hashtags:
             hashtag, created = Hashtag.objects.get_or_create(name=tag)
             notion.hashtags.add(hashtag)
-        
-        # Tag users
-        for username in tagged_usernames:
-            try:
-                tagged_user = AuthUser.objects.get(username=username)
-                notion.tagged_users.add(tagged_user)
-                # Notify tagged user
-                Notification.objects.create(user=tagged_user, content=f'You were tagged in a notion by {request.user.username}')
-            except AuthUser.DoesNotExist:
-                pass
-        
-        return redirect('notion:notion_home', notion_id=notion.id)
-    
-    return render(request, 'post_notion.html', {'user_id': request.user.id})
 
+        # Offload notification sending to a background task using Celery
+        send_tagged_user_notifications.delay(notion.id, list(tagged_usernames), request.user.username)
+
+        # # Tag users
+        # for username in tagged_usernames:
+        #     try:
+        #         tagged_user = AuthUser.objects.get(username=username)
+        #         notion.tagged_users.add(tagged_user)
+        #         # Notify tagged user
+        #         Notification.objects.create(user=tagged_user, content=f'You were tagged in a notion by {request.user.username}')
+        #     except AuthUser.DoesNotExist:
+        #         pass
+
+        # Redirect to the notion home page
+        return redirect('notion:notion_home', notion_id=notion.id)
+
+    # If it's not a POST request, render the notion posting page
+    return render(request, 'post_notion.html', {'user_id': request.user.id})
 
 def following_list(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)

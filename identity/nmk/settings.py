@@ -210,13 +210,48 @@ MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
-# Celery settings notion deletion
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Adjust based on your Redis setup
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: only needed if you need task results
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'  # Adjust to your timezone
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'your_app.tasks': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
+
+
+# # Celery settings notion deletion
+# CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Adjust based on your Redis setup
+# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: only needed if you need task results
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'UTC'  # Adjust to your timezone
+
+
+# Celery Configuration Options
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis is the broker for task queue
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: Used to store task results
+CELERY_ACCEPT_CONTENT = ['json']  # Specifies allowed content types
+CELERY_TASK_SERIALIZER = 'json'   # Serialize task messages as JSON
+CELERY_RESULT_SERIALIZER = 'json'  # Serialize result data as JSON
+CELERY_TIMEZONE = 'UTC'  # Set timezone, adjust according to your project requirements
+
+# Retry broker connection during startup (to retain behavior in Celery 6.x+)
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+# Celery task time limits (Optional - can add to avoid long-running tasks)
+# CELERY_TASK_TIME_LIMIT = 300  # Task timeout in seconds
+# CELERY_TASK_SOFT_TIME_LIMIT = 150  # Warning before task timeout
+
+# Other optional Celery settings can be added here
 
 
 # Database
