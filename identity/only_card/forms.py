@@ -27,6 +27,8 @@ class CustomSignupForm(SignupForm):
         return user
 
 
+
+
 # class PasswordResetForm(forms.Form):
 #     email = forms.EmailField(max_length=200, help_text='Required', label="Email")
 

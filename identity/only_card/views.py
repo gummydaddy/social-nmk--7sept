@@ -18,6 +18,9 @@ from cryptography.fernet import Fernet
 import os
 import logging
 from django.contrib.auth import update_session_auth_hash
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+
+
 
 
 firebaseConfig={
@@ -101,39 +104,6 @@ def signup(request):
         form = CustomSignupForm()
     return render(request, 'signup.html', {'form': form})
 
-# Login
-# def login_view(request):
-#     if request.method == 'POST':
-#         username_or_association = request.POST['username']
-#         password = request.POST['pass1']
-#         user = authenticate(request, username=username_or_association, password=password)
-#         if user is not None:
-#             login(request, user)
-#             response = HttpResponse("You're logged in.")
-#             response.set_cookie('username', username_or_association)
-#             cache.set(f'user_{user.id}', user.username)
-#             if CustomGroupAdmin.objects.filter(user=user).exists():
-#                 return redirect('/subgroup_landing_page')
-#             elif user.is_staff:
-#                 return redirect('/super_user_landing_page')
-#             else:
-#                 return redirect('/landing_page')
-
-#         try:
-#             group = CustomGroup.objects.get(name=username_or_association)
-#             user = group.users.first()
-#             if user:
-#                 login(request, user)
-#                 request.session['association_name'] = username_or_association
-#                 request.session['user_id'] = user.id
-#                 cache.set(f'user_{user.id}', username_or_association)
-#         except CustomGroup.DoesNotExist:
-#             pass
-#         messages.error(request, 'Invalid username or password')
-#         return render(request, 'login_view.html')
-#     else:
-#         return render(request, 'login_view.html')
-    
 
 
 def login_view(request):
