@@ -1,4 +1,6 @@
 {% extends 'landing_page.html' %}
+{% load static%}
+{% load media_filters %}
 
 {% block main_content %}
 <style>
@@ -55,7 +57,17 @@
         <!-- Move the messages loop to the bottom -->
         {% for message in messages %}
         <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
-            {{ message.content }}<br>
+            <!-- Display the media if it is included in the message -->
+            {% if message.content|is_video %}
+                <video controls class="img-fluid">
+                    <source src="{{ message.content }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% elif message.content|is_image %}
+                <img src="{{ message.content }}" alt="media" class="img-fluid">
+            {% else %}
+                {{ message.content }}<br>
+            {% endif %}
             <em>{{ message.timestamp }}</em>
         </li>
         {% endfor %}
@@ -155,25 +167,39 @@
         });
 
         // Periodically fetch new messages
-        setInterval(function() {
-            fetch("{% url 'only_message:user_messages_view' recipient.username %}", {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                var messageList = document.getElementById('message-list');
-                data.messages.forEach(function(msg) {
-                    var messageElement = document.createElement('li');
-                    messageElement.className = msg.sender === "{{ recipient.username }}" ? 'recipient-message' : 'sender-message';
-                    messageElement.innerHTML = `${msg.content} <em>${new Date(msg.timestamp).toLocaleTimeString()}</em>`;
-                    messageList.appendChild(messageElement);
-                });
-                messageContainer.scrollTop = messageContainer.scrollHeight;
-            });
-        }, 5000);  // Fetch new messages every 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            function fetchMessages() {
+                fetch(`/messages/{{ recipient.username }}/`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json' // Explicitly request JSON
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const messageList = document.getElementById('message-list');
+                    if (messageList) {
+                        // Clear only if there are new messages to avoid unnecessary flickering
+                        messageList.innerHTML = '';
+        
+                        data.messages.forEach(message => {
+                            const newMessage = document.createElement('li');
+                            newMessage.className = message.sender === '{{ recipient.username }}' ? 'recipient-message' : 'sender-message';
+                            newMessage.innerHTML = `<strong>${message.sender}</strong>: ${message.content} <br><em>${message.timestamp}</em>`;
+                            messageList.appendChild(newMessage);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching messages:', error));
+            }
+        
+            // Poll for new messages every 5 seconds
+            setInterval(fetchMessages, 5000);
+        
+            // Initial fetch on page load
+            fetchMessages();
+        });
+        
     });
 </script>
 {% endblock %}

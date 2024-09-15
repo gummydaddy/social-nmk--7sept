@@ -21,7 +21,7 @@
 
 <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-4">
     <input type="text" name="q" class="form-control me-2" placeholder="Search descriptions, hashtags..." value="{{ request.GET.q }}">
-    <input type="text" name="hashtag" class="form-control me-2" placeholder="Filter by hashtag" value="{{ request.GET.hashtag }}">
+    {% comment %} <input type="text" name="hashtag" class="form-control me-2" placeholder="Filter by hashtag" value="{{ request.GET.hashtag }}"> {% endcomment %}
     <button type="submit" class="btn btn-primary">Search</button>
 </form>
 

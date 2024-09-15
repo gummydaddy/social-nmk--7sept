@@ -189,19 +189,16 @@
             })
             .then(response => response.json())
             .then(data => {
-                const likeSection = this.parentNode;
-                const likeLink = likeSection.querySelector('.like-link');
-                const likeCount = likeSection.querySelector('.like-count');
-
+                const likeCount = this.nextElementSibling;
                 likeCount.textContent = `${data.like_count} likes`;
+
+                // Update the UI
                 if (data.liked) {
-                    likeLink.classList.add('liked');
-                    likeLink.textContent = '❤️';
-                    likeLink.setAttribute('data-liked', 'true');
+                    this.classList.add('liked');
+                    this.textContent = '❤️';
                 } else {
-                    likeLink.classList.remove('liked');
-                    likeLink.textContent = '♡';
-                    likeLink.setAttribute('data-liked', 'false');
+                    this.classList.remove('liked');
+                    this.textContent = '♡';
                 }
             })
             .catch(error => {
@@ -210,5 +207,6 @@
         });
     });
 });
+
 </script>
 {% endblock %}

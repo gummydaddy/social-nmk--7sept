@@ -159,9 +159,12 @@
                     <a href="{% url 'user_profile:report_media' media.id %}">Report</a>
                     {% endif %}
                 </div>
-                
             </div>
         </div>
+        {% comment %} <button class="btn btn-primary send-media-button" data-media-url="{{ media.file.url }}"
+            data-media-description="{{ description }}">
+            Send as Message
+        </button> {% endcomment %}
         
         <div class="comments">
             {% for comment in media.comments.all %}
@@ -238,6 +241,30 @@
             .catch(error => console.error('Error:', error));
         });
     });
+        
+    //for messaging 
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all "Send as Message" buttons
+        const sendMediaButtons = document.querySelectorAll('.send-media-button');
+        const messageInput = document.querySelector('#id_content');  // The message form's input field
+    
+        sendMediaButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const mediaUrl = button.getAttribute('data-media-url');
+                const mediaDescription = button.getAttribute('data-media-description');
+                
+                // Add media content to the message input field
+                const messageContent = `Media: ${mediaUrl} \nDescription: ${mediaDescription}`;
+                
+                if (messageInput.value) {
+                    messageInput.value += '\n' + messageContent;
+                } else {
+                    messageInput.value = messageContent;
+                }
+            });
+        });
+    });
+    
 
     
     let page = 1;

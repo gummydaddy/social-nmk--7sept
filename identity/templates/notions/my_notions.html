@@ -132,9 +132,9 @@
 {% endblock %}
 {% comment %} {% endblock %} {% endcomment %}
 
-{% block notionHome_script %}
+{% block my_notion_script %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.like-link').forEach(function(link) {
         link.addEventListener('click', function(event) {
             event.preventDefault();
@@ -152,8 +152,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                const likeCount = this.nextElementSibling; // Assuming next sibling is like-count span
-                likeCount.textContent = data.like_count;
+                const likeCount = this.nextElementSibling;
+                likeCount.textContent = `${data.like_count} likes`;
+
+                // Update the UI
                 if (data.liked) {
                     this.classList.add('liked');
                     this.textContent = '❤️';
@@ -168,5 +170,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
 </script>
 {% endblock %}

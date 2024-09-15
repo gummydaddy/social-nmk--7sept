@@ -1,5 +1,4 @@
-# celery.py
-
+# your_project/celery.py
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
@@ -10,34 +9,19 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nmk.settings')
 
 app = Celery('nmk')
 
-# Use the configuration from Django settings, using the `CELERY_` prefix for all Celery-related keys.
+# Using a string here means the worker doesn't have to serialize
+# the configuration object to child processes.
+# Namespace='CELERY' means all celery-related configuration keys
+# should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
-
-# Ensure broker connection retry on startup (this is already set in settings.py)
-# CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True is already set via settings
-
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
-# Define the beat schedule for periodic tasks
-
+# Define the beat schedule
 app.conf.beat_schedule = {
     'delete-old-notions-every-day': {
         'task': 'notion.tasks.delete_old_notions',
         'schedule': crontab(hour=0, minute=0),
     },
 }
-# app.conf.beat_schedule = {
-#     # Task to run every 5 minutes
-#     # 'every-5-minutes': {
-#     #     'task': 'nmk.tasks.update',   # Ensure that this task exists in 'nmk/tasks.py'
-#     #     'schedule': crontab(minute='*/5'),  # Runs every 5 minutes
-#     # },
-
-#     # Task to delete old notions and notifications daily at midnight
-#     'delete-old-notions-and-notifications-every-day': {
-#         'task': 'your_app.tasks.delete_old_notions_and_notifications',
-#         'schedule': crontab(hour=0, minute=0),  # Runs daily at midnight
-#     },
-# }

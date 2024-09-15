@@ -634,39 +634,6 @@ def search_users(request, user_id):
         })
 
 #to create likes
-# @login_required
-# def like_media(request, media_id):
-#     media = get_object_or_404(Media, id=media_id)
-#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
-
-#     if request.user in media.likes.all():
-#         media.likes.remove(request.user)
-#         liked = False
-#     else:
-#         media.likes.add(request.user)
-#         liked = True
-
-#         # Update the liked hashtags list
-#         hashtags_in_description = re.findall(r'#(\w+)', media.description)
-#         for hashtag in hashtags_in_description:
-#             user_hashtag_pref.liked_hashtags = add_to_fifo_list(user_hashtag_pref.liked_hashtags, hashtag)
-        
-#         user_hashtag_pref.save()
-
-#         Notification.objects.create(
-#             user=media.user,
-#             content=f'{request.user.username} liked your media.',
-#             type='like',
-#             related_user=request.user,
-#             related_media=media
-#         )
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         return JsonResponse({'liked': liked, 'like_count': media.likes.count()})
-
-#     return redirect(request.META.get('HTTP_REFERER', 'user_profile:media_detail_view'), media_id=media.id)
-
-
 @login_required
 def like_media(request, media_id):
     media = get_object_or_404(Media, id=media_id)
