@@ -46,12 +46,25 @@
 #         raise
 
 # your_app/tasks.py
+# from celery import shared_task
+# from django.utils import timezone
+# from notion.models import Notion
+
+# @shared_task
+# def delete_old_notions():
+#     now = timezone.now()
+#     Notion.objects.filter(deletion_date__lt=now).delete()
+
+
+# tasks.py
 from celery import shared_task
-from django.utils import timezone
-from notion.models import Notion
+from django.utils.timezone import now
+from .models import Notion
 
 @shared_task
 def delete_old_notions():
-    now = timezone.now()
-    Notion.objects.filter(deletion_date__lt=now).delete()
+    current_time = now()
+    # Filter notions based on the deletion_date and delete them
+    old_notions = Notion.objects.filter(deletion_date__lt=current_time)
+    old_notions.delete()  # This should no longer raise errors if migrations are properly handled
 
