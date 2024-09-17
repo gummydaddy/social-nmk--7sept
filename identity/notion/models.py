@@ -59,14 +59,6 @@ class Follow(models.Model):
         #     models.UniqueConstraint(fields=['follower', 'following'], name='unique_followers')
         # ]
 
-# class Like(models.Model):
-#     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
-#     notion = models.ForeignKey(Notion, on_delete=models.CASCADE, related_name='likes')
-#     created_at = models.DateTimeField(auto_now_add=True)
-
-#     class Meta:
-#         unique_together = ('user', 'notion')
-
 class Comment(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='comments')
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='comments', null=True)

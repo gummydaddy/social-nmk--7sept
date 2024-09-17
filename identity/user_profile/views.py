@@ -37,7 +37,10 @@ def upload_media(request):
             media.user = request.user
 
             # Process description to make usernames clickable
-            media.description = make_usernames_clickable(escape(media.description))
+            # media.description = make_usernames_clickable(escape(media.description))
+            media.description = escape(media.description)
+            # media.description = make_usernames_clickable(media.description)
+            # media.description = linkify(media.description)
 
             # Handle image uploads
             if media.file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
@@ -888,6 +891,30 @@ def profile_notifications(request):
 
     return render(request, 'profile_notifications.html', {'page_obj': page_obj})
 
+# @login_required
+# def edit_profile(request, user_id):
+#     profile_user = get_object_or_404(AuthUser, id=user_id)
+
+#     # Ensure the profile exists, create if not
+#     profile, created = Profile.objects.get_or_create(user=profile_user)
+
+#     if request.method == 'POST':
+#         form = ProfileForm(request.POST, request.FILES, instance=profile)
+#         if form.is_valid():
+#             profile = form.save(commit=False)
+#             profile.bio = linkify(profile.bio) #make link clickable 
+#             profile.bio = make_usernames_clickable(escape(profile.bio)) #make username clickable 
+#             profile.save()            
+#             messages.success(request, 'Profile updated successfully!')
+#             return redirect('user_profile:profile', user_id=user_id)
+#         else:
+#             messages.error(request, 'Error updating your profile')
+#     else:
+#         form = ProfileForm(instance=profile)
+
+#     return render(request, 'edit_profile.html', {'form': form, 'profile_user': profile_user})
+
+
 @login_required
 def edit_profile(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
@@ -898,10 +925,7 @@ def edit_profile(request, user_id):
     if request.method == 'POST':
         form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            profile = form.save(commit=False)
-            profile.bio = linkify(profile.bio) #make link clickable 
-            profile.bio = make_usernames_clickable(escape(profile.bio)) #make username clickable 
-            profile.save()            
+            form.save()            
             messages.success(request, 'Profile updated successfully!')
             return redirect('user_profile:profile', user_id=user_id)
         else:

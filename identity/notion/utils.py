@@ -4,22 +4,13 @@ from django.urls import reverse
 import re
 from collections import deque
 from django.utils.html import escape, mark_safe
-import bleach
 
-
-
-# def linkify(text):
-#     url_pattern = re.compile(r'(https?://[^\s]+)')
-#     return url_pattern.sub(r'<a href="\1" target="_blank">\1</a>', text)
 
 
 def linkify(text):
-    """
-    Convert URLs to clickable links.
-    """
     url_pattern = re.compile(r'(https?://[^\s]+)')
-    text = url_pattern.sub(lambda x: f'<a href="{x.group(0)}" target="_blank">{x.group(0)}</a>', text)
-    return bleach.clean(text)
+    return url_pattern.sub(r'<a href="\1" target="_blank">\1</a>', text)
+
 
 class HashtagQueue:
     def __init__(self, max_size=50):

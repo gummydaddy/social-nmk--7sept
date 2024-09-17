@@ -1,6 +1,8 @@
 from django import forms
 from django_select2.forms import Select2MultipleWidget
 from django.contrib.auth.models import User as AuthUser
+
+from .utils import linkify, make_usernames_clickable
 from .models import Media, Profile
 from notion.models import Comment
 from PIL import Image
@@ -49,19 +51,31 @@ class CommentForm(forms.ModelForm):
 
 
 class ProfileForm(forms.ModelForm):
-    class Meta:
-        model = Profile
-        fields = ['profile_picture', 'cover_photo', 'bio']
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['bio'].validators.append(MaxLengthValidator(150, 'Bio cannot exceed 150 words.'))
 
+    # def clean_bio(self):
+    #     bio = self.cleaned_data.get('bio', '')
+    #     # Linkify the bio
+    #     bio = bleach.linkify(bio)
+    #     return bio
+
     def clean_bio(self):
         bio = self.cleaned_data.get('bio', '')
-        # Linkify the bio
-        bio = bleach.linkify(bio)
+
+        # # Linkify URLs first
+        # bio = linkify(bio)
+    
+        # Then, make usernames clickable
+        bio = make_usernames_clickable(bio)
+    
+        # Return the final processed bio
         return bio
+    class Meta:
+        model = Profile
+        fields = ['profile_picture', 'cover_photo', 'bio']
+
 
 
     def save(self, commit=True):
