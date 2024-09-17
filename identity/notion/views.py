@@ -231,14 +231,14 @@ def delete_comment(request, comment_id):
         return redirect('notion:notion_detail', notion_id=notion.id)
     return redirect('notion:notion_detail', notion_id=notion.id)
 
-
+#works for the search bar at the top of the page 
 @login_required
 def search_users(request):
     query = request.GET.get('q', '')
     
     if query:
         users = (AuthUser.objects.filter(username__icontains=query) | 
-                 AuthUser.objects.filter(profile__bio__icontains=query) | 
+                #  AuthUser.objects.filter(profile__bio__icontains=query) | 
                  AuthUser.objects.filter(media__description__icontains=query)).distinct()
     else:
         users = AuthUser.objects.none()
@@ -429,7 +429,7 @@ def notion_explorer(request):
     if query:
         search_notions = Notion.objects.filter(
             Q(content__icontains=query) |
-            Q(user__username__icontains(query)) |
+            Q(user__username__icontains=query) |  # Added parentheses
             Q(hashtags__name__icontains=query)
         ).distinct()
         final_notions_list = list(search_notions)
