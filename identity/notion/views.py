@@ -72,7 +72,6 @@ def notion_home(request, notion_id=None):
 
 # views.py
 import logging
-
 @login_required
 def post_notion(request):
     if request.method == 'POST':
@@ -111,13 +110,19 @@ def post_notion(request):
             try:
                 tagged_user = AuthUser.objects.get(username=username)
                 notion.tagged_users.add(tagged_user)
-                Notification.objects.create(user=tagged_user, content=f'You were tagged in a notion by {request.user.username}')
+                # Create a clickable notification to the notion
+                Notification.objects.create(
+                    user=tagged_user,
+                    content=f'You were tagged in a notion by {request.user.username}. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
+                    related_notion=notion  # Store the notion in the notification
+                )
             except AuthUser.DoesNotExist:
                 pass
 
         return redirect('notion:notion_home', notion_id=notion.id)
 
     return render(request, 'post_notion.html', {'user_id': request.user.id})
+
 
 
 def following_list(request, user_id):
@@ -148,10 +153,10 @@ def like_notion(request, notion_id):
         notion.likes.add(user)
         Notification.objects.create(
             user=notion.user,
-            content=f'{user.username} liked your notion.',
+            content=f'{user.username} liked your notion. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
             type='like',
             related_user=user,
-            related_notion=notion
+            related_notion=notion  # Store the notion in the notification
         )
         liked = True
 
@@ -169,13 +174,11 @@ def post_comment(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
 
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('content', '')
         hashtags = set(re.findall(r'#(\w+)', content))
         tagged_usernames = set(re.findall(r'@(\w+)', content))
 
-        notion = Notion.objects.get(id=notion_id)
-
-        # Transform content to include clickable usernames
+        # Ensure content is not empty and sanitize it
         content = make_usernames_clickable(escape(content))
 
         # Create the comment associated with the notion
@@ -186,14 +189,16 @@ def post_comment(request, notion_id):
             hashtag, created = Hashtag.objects.get_or_create(name=tag)
             comment.hashtags.add(hashtag)
 
-        # Process tagged usernames and create notifications
+        # Process tagged usernames and send notifications to tagged users
         for username in tagged_usernames:
             try:
                 tagged_user = AuthUser.objects.get(username=username)
                 comment.tagged_users.add(tagged_user)
+
+                # Create a clickable notification for the tagged user
                 Notification.objects.create(
                     user=tagged_user,
-                    content=f'{request.user.username} tagged you in a comment: {comment.content}',
+                    content=f'{request.user.username} tagged you in a comment: <a href="{reverse("notion:notion_detail", args=[notion.id])}#{comment.id}">View Comment</a>',
                     comment=comment,
                     related_user=request.user,
                     related_notion=notion,
@@ -202,22 +207,22 @@ def post_comment(request, notion_id):
             except AuthUser.DoesNotExist:
                 pass
 
-        # Create notification for the notion owner
-        Notification.objects.create(
-            user=notion.user,
-            content=f'{request.user.username} commented on your notion.',
-            comment=comment,
-            type='comment',
-            related_user=request.user,
-            related_notion=notion
-        )
+        # Create a notification for the notion owner
+        if request.user != notion.user:  # Avoid self-notifications
+            Notification.objects.create(
+                user=notion.user,
+                content=f'{request.user.username} commented on your notion: <a href="{reverse("notion:notion_detail", args=[notion.id])}#{comment.id}">View Comment</a>',
+                comment=comment,
+                type='comment',
+                related_user=request.user,
+                related_notion=notion
+            )
 
-        # Redirect to the notion detail page with a fragment identifier to the new comment
-        return redirect(f"{request.build_absolute_uri()}#{comment.id}")
+        # Redirect to the notion detail page with a fragment identifier for the new comment
+        return redirect(f"{reverse('notion:notion_detail', args=[notion.id])}#{comment.id}")
 
-    # If not POST, fallback to redirection to the notion detail page
+    # If not a POST request, fallback to redirecting to the notion detail page
     return redirect('notion:notion_detail', notion_id=notion.id)
-
 
 
 
@@ -340,22 +345,6 @@ def notion_detail_view(request, notion_id):
         'notion': notion,
         'related_notions': related_notions
     })
-
-
-# @login_required
-# def notifications(request):
-#     user = request.user
-#     notifications = Notification.objects.filter(user=user).order_by('-created_at')
-
-#     # Process notification content to make usernames and links clickable
-#     for notification in notifications:
-#         notification.content = make_usernames_clickable(notification.content)
-#         if notification.comment:
-#             notification.comment.content = make_usernames_clickable(notification.comment.content)
-#         if notification.liked_by:
-#             notification.liked_by.content = make_usernames_clickable(notification.liked_by.content)
-
-#     return render(request, 'notifications.html', {'notifications': notifications})
 
 
 @login_required

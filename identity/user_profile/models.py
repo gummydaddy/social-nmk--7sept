@@ -120,4 +120,12 @@ class Engagement(models.Model):
         return f'{self.user.username} {self.engagement_type} {self.media}'
 
 
+class Buddy(models.Model):
+    user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='buddy_list')
+    buddy = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='buddies')
+    
+    class Meta:
+        unique_together = ('user', 'buddy')
 
+    def __str__(self):
+        return f"{self.user.username}'s buddy: {self.buddy.username}"

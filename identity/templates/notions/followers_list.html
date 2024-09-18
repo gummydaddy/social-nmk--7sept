@@ -53,9 +53,24 @@
                   </a>
               </div>
           </div>
+          {% if not is_buddy %}
+              <form method="post" action="{% url 'user_profile:add_to_buddy' follow.follower.id %}">
+                  {% csrf_token %}
+                  <button type="submit" style="width: 100%; text-align: left;">Add to Buddy</button>
+              </form>
+          {% else %}
+              <form method="post" action="{% url 'user_profile:remove_from_buddy_list' follow.follower.id %}">
+                  {% csrf_token %}
+                  <button type="submit" style="width: 100%; text-align: left;">Remove from Buddy</button>
+              </form>
+          {% endif %}
           {% endif %}
       </li>
       {% endfor %}
   </ul>
 </div>
 {% endblock %}
+
+{%block buddy_script%}
+
+{%endblock%}

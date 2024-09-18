@@ -473,27 +473,28 @@
                 </div>
             </a> {% endcomment %}
             <a href="{% url 'only_card:upload_document' %}">Upload Documents</a>
+            <a>
+                {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
+                <button type="button" class="btn btn-primary" >ASSOCIATION SIGN UP<br>comming soon </button>
+                {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
+                <button type="button" class="btn btn-primary" >Register as Service Provider<br>comming soon </button>
 
-            {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
-            <button type="button" class="btn btn-primary" >ASSOCIATION SIGN UP<br>comming soon </button>
+                {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
+                {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
+                <button type="button" class="btn btn-primary" >Send File<br>comming soon </button>
+            </a>
 
-            {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
-            <button type="button" class="btn btn-primary" >Register as Service Provider<br>comming soon </button>
-
-            {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
-            {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
-            <button type="button" class="btn btn-primary" >Send File<br>comming soon </button>
-
-
+            
             <a href="{% url 'only_card:create_card' %}">Create Card</a>
-            <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
-            <div>
-                <a href="{% url 'user_profile:blocked_user_list' %}">
-                  <button type="button">View Blocked Users</button>
-                  {% comment %} <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:blocked_user_list' %}'">View Blocked Users</button> {% endcomment %}
-
-                </a>
-              </div>
+            <a>
+                <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
+            </a>
+            <a href="{% url 'user_profile:blocked_user_list' %}">
+                <button type="button">View Blocked Users</button>
+            </a>
+            <a href="{% url 'user_profile:buddy_list' %}">
+              <button type="button">View Buddies</button>
+            </a>
             <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
         </div>
 
@@ -712,6 +713,9 @@
 {% endblock %}
 
 {% block my_notion_script%}
+{% endblock %}
+
+{%block buddy_script%}
 {% endblock %}
 
 {% block extra_js %}

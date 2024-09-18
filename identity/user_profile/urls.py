@@ -55,10 +55,14 @@ urlpatterns = [
 
     path('add_story/', views.add_story, name='add_story'),
     path('story/<int:story_id>/', views.view_story, name='view_story'),
-
+    
     path('block-user/<int:user_id>/', notion_views.block_user, name='block_user'),
     path('unblock-user/<int:user_id>/', notion_views.unblock_user, name='unblock_user'),
     path('blocked-users/', notion_views.blocked_user_list, name='blocked_user_list'),
+
+    path('buddy_list/', views.buddy_list, name='buddy_list'),
+    path('add_to_buddy/<int:user_id>/', views.add_to_buddy, name='add_to_buddy'),
+    path('remove_from_buddy_list/<int:user_id>/', views.remove_from_buddy_list, name='remove_from_buddy_list'),
 
     path('accounts/login/', only_card_views.login_view, name='login'),  # Use the login view from only_card
     path('accounts/logout/', only_card_views.logout_view, name='logout'),  # Use the logout view from only_card
