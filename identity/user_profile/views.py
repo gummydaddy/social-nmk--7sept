@@ -287,9 +287,24 @@ def explore(request):
 
     # Get users who have blocked the current user
     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
 
     # Fetch media and exclude media from users who have blocked the current user
-    media_objects = Media.objects.order_by('-created_at').exclude(user__in=users_blocked_me)
+    media_objects = Media.objects.order_by('-created_at').exclude(
+        user__in=users_blocked_me
+    ).exclude(
+        user__in=users_i_blocked
+    )
+
+    # Exclude private media if the media owner has not added the current user as a buddy
+    media_objects = media_objects.exclude(
+        Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
+    )
+
+    # Exclude all media from users with private profiles if the current user is not a buddy or follower
+    media_objects = media_objects.exclude(
+        Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
+    )
 
     if hashtag_filter:
         media_objects = media_objects.filter(hashtags__name__icontains=hashtag_filter)
@@ -347,7 +362,6 @@ def explore(request):
         'page_obj': page_obj,
         'hashtag_filter': hashtag_filter
     })
-
 
 
 # description hashtag search 
@@ -461,10 +475,7 @@ def explore_detail(request, media_id):
 
     # Check if the media is private, and the current user is not allowed to view it
     # The current user can view it only if they are in the buddy list or they are the media owner
-    if media.is_private and not is_buddy and request.user != user:
-        return render(request, 'private_upload.html')  # Show an "upload is private" message
-    elif (media.is_private or user.profile.is_private) and not is_buddy and not is_following and request.user != user:
-        # The media is private, and the current user is not in the buddy list or the owner or a follower
+    if (media.is_private or user.profile.is_private) and not is_buddy and not is_following and request.user != user:
         return render(request, 'private_upload.html')  # Show an "upload is private" message
 
     # User hashtag preference (tracking viewed media and hashtags)
@@ -487,7 +498,18 @@ def explore_detail(request, media_id):
 
     # Exclude related media from users who have blocked the current user
     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-    related_media = related_media.exclude(user__in=users_blocked_me)
+    users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    related_media = related_media.exclude(user__in=users_blocked_me).exclude(user__in=users_i_blocked)
+
+    # Exclude private media from users who are not in the current user's buddy list or followers
+    related_media = related_media.exclude(
+        Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
+    )
+
+    # Exclude all media from users with private profiles if the current user is not a buddy or follower
+    related_media = related_media.exclude(
+        Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
+    )
 
     if liked_hashtags:
         related_media = related_media.annotate(
@@ -537,8 +559,8 @@ def explore_detail(request, media_id):
             'description': description,
             'is_buddy': is_buddy,
             'is_following': is_following,
-            'has_blocked_media_owner': has_blocked_media_owner,  # Added for JSON response
-            'is_blocked_by_media_owner': is_blocked_by_media_owner  # Added for JSON response
+            'has_blocked_media_owner': has_blocked_media_owner,
+            'is_blocked_by_media_owner': is_blocked_by_media_owner
         }
         related_media_list = [
             {
@@ -561,7 +583,6 @@ def explore_detail(request, media_id):
     })
 
 
-
 @login_required
 def following_media(request):
     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
@@ -570,16 +591,32 @@ def following_media(request):
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
 
     # Get users that the current user is following
-    followed_users = AuthUser.objects.filter(follower_set__follower=request.user)
+    followed_users = AuthUser.objects.filter(
+        follower_set__follower=request.user
+    ).exclude(
+        id__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        id__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    )
     
     # Get media from followed users
-    media_from_followed_users = Media.objects.filter(user__in=followed_users).exclude(
+    media_from_followed_users = Media.objects.filter(
+        user__in=followed_users
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    ).exclude(
         engagement__user=request.user, engagement__engagement_type='view'
     ).order_by('-created_at')
 
     if not media_from_followed_users.exists():
         # If no more media from followed users, use the explore logic
-        media = Media.objects.all()
+        media = Media.objects.exclude(
+            user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+        ).exclude(
+            user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+        )
 
         # Apply hashtag preferences and scoring
         media_list = list(media)
@@ -627,7 +664,6 @@ def following_media(request):
         return JsonResponse({'media': media_list})
 
     return render(request, 'following_media.html', {'page_obj': page_obj})
-
 
 
 @login_required
@@ -968,6 +1004,7 @@ def media_detail_view(request, media_id):
             for m in related_media
             if not BlockedUser.objects.filter(blocker=m.user, blocked=request.user).exists()  # exclude media from users who blocked the current user
             if not BlockedUser.objects.filter(blocker=request.user, blocked=m.user).exists()  # exclude media from users who the current user has blocked
+            if not m.is_private or m.user == request.user or m.user in request.user.buddy_list.all() or request.user in m.user.follower_set.all()
         ]
         return JsonResponse({'media': media_data, 'related_media': related_media_list})
 
