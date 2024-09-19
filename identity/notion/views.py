@@ -24,11 +24,12 @@ from django.urls import reverse
 
 
 
-
 AuthUser = get_user_model()
 
 # from user_profile.views import profile 
 # from user_profile.models import Story
+
+
 @login_required
 def notion_home(request, notion_id=None):
     user = request.user
@@ -39,13 +40,33 @@ def notion_home(request, notion_id=None):
 
 
     # Get the notions created by users the current user is following
-    following_notions = Notion.objects.filter(user__in=following_users)
+    following_notions = Notion.objects.filter(
+        user__in=following_users
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    )
+
     # Get the notions created by the current user
     my_notions = Notion.objects.filter(user=user)
-    
-    
-    custom_group_admin_ids = CustomGroupAdmin.objects.filter(user__in=following_users).values_list('user_id', flat=True)
-    admin_notions = Notion.objects.filter(user_id__in=custom_group_admin_ids)
+
+    # Get custom group admin notions
+    custom_group_admin_ids = CustomGroupAdmin.objects.filter(
+        user__in=following_users
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    ).values_list('user_id', flat=True)
+
+    admin_notions = Notion.objects.filter(
+        user_id__in=custom_group_admin_ids
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    )
 
     # Combine both querysets
     notions = following_notions | admin_notions | my_notions
@@ -68,7 +89,6 @@ def notion_home(request, notion_id=None):
         context['notion_id'] = notion_id
 
     return render(request, 'notionHome.html', context)
-
 
 # views.py
 import logging
@@ -373,8 +393,9 @@ def notion_explorer(request):
     user = request.user
 
     # Fetch user's liked notions directly from the Notion model
-    liked_notions = Notion.objects.filter(likes=user)  # Fetching notions the user has liked
+    liked_notions = Notion.objects.filter(likes=user)
 
+    # Fetching notions the user has liked
     # Retrieve recent hashtags from cache or initialize a new deque
     recent_tags = cache.get(f'{user.id}_recent_tags', deque(maxlen=50))
     if not recent_tags:
@@ -390,10 +411,20 @@ def notion_explorer(request):
     cache.set(f'{user.id}_recent_tags', list(recent_tags), None)
 
     # Fetch notions based on recent_tags
-    tagged_notions = Notion.objects.filter(hashtags__name__in=recent_tags).distinct()
+    tagged_notions = Notion.objects.filter(
+        hashtags__name__in=recent_tags
+    ).distinct().filter(
+        ~Q(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)),
+        ~Q(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
+    )
 
     # Fetch newest and most liked notions
-    newest_most_liked_notions = Notion.objects.annotate(like_count=Count('likes')).order_by('-created_at', '-like_count')[:50]
+    newest_most_liked_notions = Notion.objects.annotate(
+        like_count=Count('likes')
+    ).filter(
+        ~Q(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)),
+        ~Q(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
+    ).order_by('-created_at', '-like_count')[:50]
 
     # Convert querysets to lists
     tagged_notions_list = list(tagged_notions)
@@ -417,17 +448,19 @@ def notion_explorer(request):
     query = request.GET.get('q')
     if query:
         search_notions = Notion.objects.filter(
-            Q(content__icontains=query) |
-            Q(user__username__icontains=query) |  # Added parentheses
-            Q(hashtags__name__icontains=query)
-        ).distinct()
+        Q(content__icontains=query) |
+        Q(user__username__icontains=query) |
+        Q(hashtags__name__icontains=query)
+    ).filter(
+        ~Q(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)),
+        ~Q(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
+    ).distinct()
         final_notions_list = list(search_notions)
         random.shuffle(final_notions_list)
 
     context = {
         'notions': final_notions_list[:50],  # Display up to 50 notions
     }
-
     return render(request, 'notion_explorer.html', context)
 
 
