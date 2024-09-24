@@ -9,6 +9,13 @@
         display: inline-block;
     }
 
+    .g-4, .gy-4 {
+        --bs-gutter-y: 1.rem;
+    }
+    {% comment %} .g-4, .gx-4 {
+        --bs-gutter-x: 1.rem;
+    } {% endcomment %}
+
     .dropdown-content {
         display: none;
         position: relative;
@@ -96,11 +103,11 @@
 <div id="related-media-container" class="row row-cols-2 g-4 mt-4">
     {% for related in related_media %}
     <div class="col related-media-item">
-        <p>
+        {% comment %} <p>
             <a href="{% url 'user_profile:profile' user_id=related.user.id %}">
                 {{ related.user.username }}
             </a>
-        </p>
+        </p> {% endcomment %}
         <a href="{% url 'user_profile:explore_detail' related.id %}">
             {% if related.file.url|is_video %}
             <video controls class="img-fluid">

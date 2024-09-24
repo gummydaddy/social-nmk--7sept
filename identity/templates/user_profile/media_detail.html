@@ -11,7 +11,7 @@
         max-width: none;
         width: 100%;
         margin: 0 auto;
-        padding: 20px;  
+        padding: 2px;  
         background-color: white;
         border: 1px solid #ddd;
         border-radius: 8px;
@@ -56,7 +56,7 @@
     .upload-item {
         background-color: white;
         border: 1px solid #ddd;
-        padding: 20px;
+        padding: 2px;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         cursor: pointer;
@@ -201,16 +201,72 @@
     </div>
 </div>
 
-<!-- Infinite Scroll for related uploads -->
-<div id="other-uploads" class="media-wrapper"> 
-    
-    <!-- The uploads will be appended here by JavaScript -->
+{% if media.user == request.user %}
+    <!-- Show the buttons for the media owner -->
+    <div class="uploads-section">
+        <div class="row row-cols-3 g-4">
+            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>
+            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:following_media' %}'">Following Media</button>
+            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'">Edit Profile</button>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Display User's Other Uploads -->
+<h2>{{ media.user.username }}'s Other Uploads</h2>
+<div class="row row-cols-1 g-4">
+    {% for upload in page_obj %}
+        <div class="col">
+            <div id="media-container-{{ upload.id }}" class="upload-item">
+                <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+                    {% if upload.file.url|is_video %}
+                        <!-- Video -->
+                        <video controls class="img-fluid">
+                            <source src="{{ upload.file.url }}" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    {% else %}
+                        <!-- Image -->
+                        <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
+                    {% endif %}
+                </a>
+
+                <!-- View Count -->
+                <div class="view-count">
+                    <p>Views: {{ upload.view_count }}</p>
+                </div>
+
+                <!-- Description with clickable links -->
+                <div class="description">
+                    <p>{{ upload.description|safe }}</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
 </div>
 
-<!-- Loading Spinner -->
-<div id="loading-spinner" style="display: none;">
-    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
+<!-- Pagination Controls -->
+<div class="pagination">
+    {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}">Next</a>
+    {% endif %}
 </div>
+
+
+<!-- Infinite Scroll for related uploads -->
+{% comment %} <div id="other-uploads" class="media-wrapper">  {% endcomment %}
+    
+    <!-- The uploads will be appended here by JavaScript -->
+{% comment %} </div> {% endcomment %}
+
+<!-- Loading Spinner -->
+{% comment %} <div id="loading-spinner" style="display: none;">
+    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
+</div> {% endcomment %}
 {% endblock %}
 
 {% block media_detail_script %}
@@ -267,79 +323,7 @@
     
 
     
-    let page = 1;
-    const mediaDetailUrl = "{% url 'user_profile:media_detail_view' media.id %}";
-    const otherUploadsContainer = document.getElementById('other-uploads');
-    const loadingSpinner = document.getElementById('loading-spinner');
-
-    function fetchMoreUploads() {
-        page += 1;
-        loadingSpinner.style.display = 'block';
-
-        fetch(`${mediaDetailUrl}?page=${page}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            loadingSpinner.style.display = 'none';
-
-            if (data.related_media.length > 0) {
-                data.related_media.forEach(upload => {
-                    const uploadItem = document.createElement('div');
-                    uploadItem.classList.add('upload-item');
-                    uploadItem.onclick = function() {
-                        // Correctly generate the URL using the media ID from the response
-                        const url = "{% url 'user_profile:media_detail_view' '0' %}".replace('0', upload.id);
-                        window.location.href = url;
-                    };
-
-                    if (upload.is_video) {
-                        const video = document.createElement('video');
-                        video.controls = true;
-                        video.style.maxWidth = '100%';
-                        video.style.height = 'auto';
-
-                        const source = document.createElement('source');
-                        source.src = upload.file_url;
-                        source.type = 'video/mp4';
-
-                        video.appendChild(source);
-                        uploadItem.appendChild(video);
-                    } else {
-                        const img = document.createElement('img');
-                        img.src = upload.file_url;
-                        img.alt = 'Image';
-                        img.style.maxWidth = '100%';
-                        img.style.height = 'auto';
-
-                        uploadItem.appendChild(img);
-                    }
-
-                    otherUploadsContainer.appendChild(uploadItem);
-                });
-            } else {
-                window.removeEventListener('scroll', handleScroll);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching more uploads:', error);
-            loadingSpinner.style.display = 'none';
-        });
-    }
-
-    function handleScroll() {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-
-        if (scrollTop + clientHeight >= scrollHeight - 5) {
-            fetchMoreUploads();
-        }
-    }
-
-    window.addEventListener('scroll', handleScroll);
-
-    fetchMoreUploads();
+    
 
     document.addEventListener('DOMContentLoaded', function() {
         function handleLikeButtonClick(event) {
@@ -418,3 +402,78 @@
     });
 </script>
 {% endblock %}
+
+
+{% comment %} let page = 1;
+    const mediaDetailUrl = "{% url 'user_profile:media_detail_view' media.id %}";
+    const otherUploadsContainer = document.getElementById('other-uploads');
+    const loadingSpinner = document.getElementById('loading-spinner');
+
+    function fetchMoreUploads() {
+        page += 1;
+        loadingSpinner.style.display = 'block';
+
+        fetch(`${mediaDetailUrl}?page=${page}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingSpinner.style.display = 'none';
+
+            if (data.related_media.length > 0) {
+                data.related_media.forEach(upload => {
+                    const uploadItem = document.createElement('div');
+                    uploadItem.classList.add('upload-item');
+                    uploadItem.onclick = function() {
+                        // Correctly generate the URL using the media ID from the response
+                        const url = "{% url 'user_profile:media_detail_view' '0' %}".replace('0', upload.id);
+                        window.location.href = url;
+                    };
+
+                    if (upload.is_video) {
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.style.maxWidth = '100%';
+                        video.style.height = 'auto';
+
+                        const source = document.createElement('source');
+                        source.src = upload.file_url;
+                        source.type = 'video/mp4';
+
+                        video.appendChild(source);
+                        uploadItem.appendChild(video);
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = upload.file_url;
+                        img.alt = 'Image';
+                        img.style.maxWidth = '100%';
+                        img.style.height = 'auto';
+
+                        uploadItem.appendChild(img);
+                    }
+
+                    otherUploadsContainer.appendChild(uploadItem);
+                });
+            } else {
+                window.removeEventListener('scroll', handleScroll);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching more uploads:', error);
+            loadingSpinner.style.display = 'none';
+        });
+    }
+
+    function handleScroll() {
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+
+        if (scrollTop + clientHeight >= scrollHeight - 5) {
+            fetchMoreUploads();
+        }
+    }
+
+    window.addEventListener('scroll', handleScroll);
+
+    fetchMoreUploads(); {% endcomment %}
