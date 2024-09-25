@@ -1,0 +1,32 @@
+{% extends 'landing_page.html' %}
+
+{% block title %}
+    {{ file_name }} - Preview
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Preview of {{ file_name }}</h1>
+
+        {# Handle PowerPoint (.pptx) file preview #}
+        {% if pptx_content %}
+            <div class="pptx-content">
+                {{ pptx_content|safe }}
+            </div>
+
+        {# Handle Word Document (.docx) file preview #}
+        {% elif docx_content %}
+            <div class="docx-content">
+                {{ docx_content|safe }}
+            </div>
+
+        {# Handle XML file preview #}
+        {% elif xml_content %}
+            <pre>{{ xml_content|safe }}</pre>
+
+        {# Fallback for unsupported or unhandled content #}
+        {% else %}
+            <p>Unsupported file type for preview.</p>
+        {% endif %}
+    </div>
+{% endblock %}

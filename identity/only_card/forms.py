@@ -5,6 +5,8 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from .models import Group, UserUpload, RegistrationForm, Card, KYC, CustomGroup, CustomGroupAdmin
 from cryptography.fernet import Fernet
+from django.core.exceptions import ValidationError
+import mimetypes
 
 
 
@@ -38,6 +40,22 @@ class PasswordResetForm(forms.Form):
 
 
 
+# class UserUploadForm(forms.ModelForm):
+#     country = CountryField().formfield(label='Country of Origin')
+#     document_type = forms.ChoiceField(choices=[
+#         ('aadhar_card', 'Aadhar Card'),
+#         ('pan_card', 'PAN Card'),
+#         ('driving_license', 'Driving License'),
+#         ('voter_id', 'Voter ID'),
+#         ('passport', 'Passport'),
+#         ('others', 'Others')
+#     ])
+
+#     class Meta:
+#         model = UserUpload
+#         fields = ['file_name', 'file', 'document_type', 'country']
+
+
 class UserUploadForm(forms.ModelForm):
     country = CountryField().formfield(label='Country of Origin')
     document_type = forms.ChoiceField(choices=[
@@ -52,7 +70,28 @@ class UserUploadForm(forms.ModelForm):
     class Meta:
         model = UserUpload
         fields = ['file_name', 'file', 'document_type', 'country']
-
+    
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        # Add the supported MIME types here
+        valid_mime_types = [
+            'image/jpeg', 
+            'image/png', 
+            'video/mp4', 
+            'application/pdf', 
+            'text/plain',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # docx
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',        # xlsx
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation', # pptx
+            'text/x-python'  # Support for Python files
+        ]
+        mime_type, encoding = mimetypes.guess_type(file.name)
+        
+        if mime_type not in valid_mime_types:
+            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, pdf, txt, docx, xlsx, pptx, py.")
+        
+        return file
+    
 
 #document existance 
 def check_object_existence(upload_id):

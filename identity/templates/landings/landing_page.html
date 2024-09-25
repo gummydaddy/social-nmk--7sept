@@ -1,3 +1,5 @@
+{% load media_filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -353,7 +355,7 @@
             transition: margin-left .5s;
             padding: 2px;
         }
-        
+
         .openbtn {
             font-size: 15px;
             cursor: pointer;
@@ -455,6 +457,11 @@
     </style>
     {% load static %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+    {% comment %} You can integrate Prism.js to add syntax highlighting for code files: {% endcomment %}
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+
     <!-- Include Vue.js from a CDN -->
     {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}
 </head>
@@ -584,13 +591,75 @@
                                     <!-- Display the uploaded file -->
                                     {% if ".jpg" in upload.file.name or ".jpeg" in upload.file.name or ".png" in upload.file.name %}
                                         <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
-                                    {% elif ".mp4" in upload.file.name %}
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                    {% elif ".mp4" in upload.file.name or ".mov" in upload.file.name %}
                                         <video controls class="img-fluid">
                                             <source src="{% url 'only_card:view_file' upload.id %}" type="video/mp4">
                                             Your browser does not support the video tag.
                                         </video>
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
+                                    
+                                    {% comment %} {% if ".mp4" in upload.file.name or ".mov" in upload.file.name %}
+                                        <div class="media-detail">
+                                            {% if upload.file.url|is_video %}
+                                                <!-- Button to view the video on a separate page -->
+                                                <a href="{% url 'only_card:view_video' upload.id %}" class="btn btn-primary">View Video</a>
+
+                                                <!-- Optional inline video preview (if needed) -->
+                                                <video controls class="img-fluid">
+                                                    <source src="{{ upload.file.url }}" type="video/mp4">
+                                                    Your browser does not support the video tag.
+                                                </video>
+
+                                            {% else %}
+                                                <img src="{{ upload.file.url }}" alt="{{ upload.file_name }}" class="img-fluid">
+                                            {% endif %}
+        
+                                            <!-- Download link -->
+                                        <a href="{{ upload.file.url }}" download>{{ upload.file_name }}</a>
+
+                                            <!-- Description, if present -->
+                                            <div class="description">
+                                                <p>{{ upload.description|safe }}</p>  <!-- Assuming there is a description field -->
+                                            </div>
+                                        </div>
+                                    {% endif %} {% endcomment %}
+
+                                    
                                     {% elif ".pdf" in upload.file.name %}
                                         <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                    {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
+                                        <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
+
+                                    {% elif ".xlsx" in upload.file.name %}
+                                        <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview excel Document</a>
+                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download Excel Sheet</a>
+
+                                    {% elif ".pptx" in upload.file.name %}
+                                        <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
+                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a>
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
+
+                                    {% elif ".txt" in upload.file.name or ".py" in upload.file.name or ".js" in upload.file.name %}
+                                        <!-- Use <pre> and <code> tags to render text/code files properly -->
+                                        <pre><code>{{ upload.file.read|safe }}</code></pre>
+                                    
+
+                                    {% comment %} {% elif ".py" in upload.file.name %}
+                                        <!-- Display Python file content or provide a download option -->
+                                        <pre><code>{{ upload.file.read|safe }}</code></pre>
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download Python Script</a> {% endcomment %}
+
+                                    {% elif ".py" in upload.file.name %}
+                                        <pre><code class="language-python">{{ upload.file.read|safe }}</code></pre>
+                                    {% elif ".js" in upload.file.name %}
+                                        <pre><code class="language-javascript">{{ upload.file.read|safe }}</code></pre>
+                                    {% elif ".txt" in upload.file.name %}
+                                        <pre><code class="language-text">{{ upload.file.read|safe }}</code></pre>
+                                    
                                     {% else %}
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
                                     {% endif %}

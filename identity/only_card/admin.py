@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserUpload, RegistrationForm, File, Card, KYC, CustomGroup, CustomGroupAdmin, UserAssociation, UserStorage
+from .models import UserUpload, RegistrationForm, File, Card, KYC, CustomGroup, CustomGroupAdmin, UserAssociation, UserStorage#, TemporarilyLock
 from .forms import GroupCreationForm
 from django.contrib import messages
 from django.urls import reverse
@@ -15,6 +15,7 @@ admin.site.register(Card)  # Register Group model with the custom admin site
 admin.site.register(KYC)  # Register Group model with the custom admin site
 admin.site.register(CustomGroupAdmin)  # Register Group model with the custom admin site
 admin.site.register(UserStorage)  # Register Group model with the custom admin site
+# admin.site.register(TemporarilyLock)  # Register Group model with the custom admin site
 
 
 #29april
@@ -50,6 +51,22 @@ class CustomGroupAdmin(admin.ModelAdmin):
 
     get_associated_users.short_description = 'Associated Users'
 
+
+
+# @admin.register(TemporarilyLock)
+# class UserAdmin(admin.ModelAdmin):
+#     # ...
+#     actions = ['lock_user', 'unlock_user']
+
+#     def lock_user(self, request, queryset):
+#         for user in queryset:
+#             lock_user(request, user.id)
+#     lock_user.short_description = "Lock selected users"
+
+#     def unlock_user(self, request, queryset):
+#         for user in queryset:
+#             unlock_user(request, user.id)
+#     unlock_user.short_description = "Unlock selected users"
 
 
 

@@ -14,9 +14,11 @@ import string
 from django.core.mail import send_mail
 from cryptography.fernet import Fernet
 from django.conf import settings
+from .user_fields import LockedField
+import logging
 
 
-
+logger = logging.getLogger(__name__)
 
 
 def default_file_name():
@@ -77,17 +79,27 @@ class UserUpload(models.Model):
         if self.file:
             try:
                 file_path = self.file.path
+                file_size = self.file.size
                 if os.path.exists(file_path):
                     os.remove(file_path)
 
                 # Update user's storage after file deletion
-                file_size = self.file.size
                 user_storage = UserStorage.objects.get(user=self.user)
                 user_storage.total_storage_used -= file_size
                 user_storage.save()
+            except UserStorage.DoesNotExist:
+                logger.error("User storage not found.")
             except Exception as e:
-                print(f"Error deleting file: {e}")
+                logger.error(f"Error deleting file: {e}")
 
+# class TemporarilyLock(models.Model):
+#     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
+#     locked_by = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='locked_users')
+#     locked_at = models.DateTimeField(auto_now_add=True)
+#     expires_at = models.DateTimeField(null=True, blank=True)
+
+#     def is_expired(self):
+#         return self.expires_at and self.expires_at < timezone.now()
 
 
 #Criteria for Service Provider Registration:Model18april
