@@ -461,6 +461,7 @@
     {% comment %} You can integrate Prism.js to add syntax highlighting for code files: {% endcomment %}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+        
 
     <!-- Include Vue.js from a CDN -->
     {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}
@@ -634,9 +635,15 @@
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
 
                                     {% elif ".xlsx" in upload.file.name %}
-                                        <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview excel Document</a>
+                                        <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
+                                        <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
+                                    
+                                        <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
                                         <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download Excel Sheet</a>
+                                    
+                                        <!-- Button to download the Excel file -->
+                                        <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a>
+                                
 
                                     {% elif ".pptx" in upload.file.name %}
                                         <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
@@ -644,21 +651,22 @@
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
 
                                     {% elif ".txt" in upload.file.name or ".py" in upload.file.name or ".js" in upload.file.name %}
-                                        <!-- Use <pre> and <code> tags to render text/code files properly -->
-                                        <pre><code>{{ upload.file.read|safe }}</code></pre>
-                                    
-
-                                    {% comment %} {% elif ".py" in upload.file.name %}
-                                        <!-- Display Python file content or provide a download option -->
-                                        <pre><code>{{ upload.file.read|safe }}</code></pre>
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download Python Script</a> {% endcomment %}
-
-                                    {% elif ".py" in upload.file.name %}
-                                        <pre><code class="language-python">{{ upload.file.read|safe }}</code></pre>
-                                    {% elif ".js" in upload.file.name %}
-                                        <pre><code class="language-javascript">{{ upload.file.read|safe }}</code></pre>
-                                    {% elif ".txt" in upload.file.name %}
-                                        <pre><code class="language-text">{{ upload.file.read|safe }}</code></pre>
+                                        <!-- Handle .py, .js, and .txt files -->
+                                        <pre class="
+                                        {% if '.py' in upload.file.name %}
+                                                    language-python
+                                                {% elif '.js' in upload.file.name %}
+                                                    language-javascript
+                                                {% elif '.txt' in upload.file.name %}
+                                                    language-text
+                                                {% endif %}
+                                            ">
+                                                {{ upload.file.read|safe }}
+                                                
+                                        </pre>
+                                        <!-- Download option for these files -->
+                                        <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{ upload.file_name }}</a>
+                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                     
                                     {% else %}
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>

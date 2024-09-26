@@ -24,6 +24,27 @@
         {% elif xml_content %}
             <pre>{{ xml_content|safe }}</pre>
 
+        {# Handle Excel (.xlsx) file preview #}
+        {% elif excel_data %}
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        {% for header in excel_data.0 %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in excel_data|slice:"1:" %}
+                        <tr>
+                            {% for cell in row %}
+                                <td>{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table> 
+
         {# Fallback for unsupported or unhandled content #}
         {% else %}
             <p>Unsupported file type for preview.</p>

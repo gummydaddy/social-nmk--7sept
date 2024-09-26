@@ -37,6 +37,8 @@ urlpatterns = [
     path('view_docx_file/<int:upload_id>/', views.view_docx_file, name='view_docx_file'),
     path('view_xml_file/<int:upload_id>/', views.view_xml_file, name='view_xml_file'),
     path('view_pptx_file/<int:upload_id>/', views.view_pptx_file, name='view_pptx_file'),
+    path('view_text_file/<int:upload_id>/', views.view_text_file, name='view_text_file'),
+    # path('handle_xml_or_xlsx_file/<int:upload_id>/', views.handle_xml_or_xlsx_file, name='handle_xml_or_xlsx_file'),
     # path('view_video/<int:upload_id>/', views.view_video, name='view_video'),
 
     path('delete_upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
