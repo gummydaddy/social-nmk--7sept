@@ -25,6 +25,10 @@ from docx import Document
 from pptx import Presentation
 import xml.etree.ElementTree as ET
 import openpyxl  # To handle .xlsx files
+import xlrd  # To handle .xls files
+# import base64
+
+
 
 
 
@@ -344,48 +348,6 @@ def buy_storage(request):
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# @login_required
-# def view_file(request, upload_id):
-#     try:
-#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-#         if not upload.encryption_key:
-#             logger.error(f"Encryption key not found for file with ID {upload_id}")
-#             return HttpResponseServerError("Encryption key not found for this file.")
-
-#         try:
-#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
-#         except Exception as e:
-#             logger.error(f"Error initializing Fernet cipher: {e}")
-#             return HttpResponseServerError("Failed to initialize decryption.")
-
-#         file_path = upload.file.path
-#         if not os.path.exists(file_path):
-#             logger.error(f"File not found: {file_path}")
-#             return HttpResponseNotFound("File not found")
-
-#         try:
-#             with open(file_path, 'rb') as encrypted_file:
-#                 encrypted_file_data = encrypted_file.read()
-
-#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
-
-#             response = StreamingHttpResponse(
-#                 iter([decrypted_file_data]), 
-#                 content_type='application/octet-stream'
-#             )
-#             response['Content-Disposition'] = f'attachment; filename="{upload.file_name}"'
-#             return response
-
-#         except Exception as e:
-#             logger.error(f"Error during file decryption: {e}")
-#             return HttpResponseServerError("Error decrypting file.")
-
-#     except Exception as e:
-#         logger.error(f"Unhandled exception in view_file: {e}")
-#         return HttpResponseServerError("An error occurred while processing your request.")
-    
-
 @login_required
 def view_file(request, upload_id):
     try:
@@ -506,6 +468,57 @@ def view_docx_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
+# @login_required
+# def view_pdf_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Check if the file is a .pdf file
+#         if not file_path.endswith('.pdf'):
+#             logger.error(f"Unsupported file type: {file_path}")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#         # Read and decrypt the entire .pdf file
+#         try:
+#             with open(file_path, 'rb') as encrypted_file:
+#                 encrypted_file_data = encrypted_file.read()
+
+#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+#             # Encode the decrypted data as base64
+#             pdf_content_base64 = base64.b64encode(decrypted_file_data).decode('utf-8')
+
+#             # Render the content in an HTML template
+#             return render(request, 'view_docx.html', {'pdf_content_base64': pdf_content_base64, 'file_name': upload.file_name})
+
+#         except Exception as e:
+#             logger.error(f"Error reading .pdf file: {e}")
+#             return HttpResponseServerError("Error reading .pdf file.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_pdf_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
+
 @login_required
 def view_pptx_file(request, upload_id):
     try:
@@ -573,6 +586,19 @@ def view_pptx_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
+def is_valid_excel_file(file_path):
+    # Supported MIME types for Excel files
+    excel_mime_types = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
+        'application/vnd.ms-excel.sheet.macroEnabled.12',  # .xlsm
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.template',  # .xltx
+        'application/vnd.ms-excel.template.macroEnabled.12'  # .xltm
+    ]
+    
+    mime_type, _ = mimetypes.guess_type(file_path)
+    return mime_type in excel_mime_types
+
+
 # @login_required
 # def view_xml_file(request, upload_id):
 #     try:
@@ -597,50 +623,97 @@ def view_pptx_file(request, upload_id):
 #             logger.error(f"File not found: {file_path}")
 #             return HttpResponseNotFound("File not found")
 
-#         # Check if the file is a .xml file
-#         if not file_path.endswith('.xml'):
+#         # Get the file extension and handle accordingly
+#         file_extension = os.path.splitext(file_path)[1].lower()
+
+#         # Decrypt and handle the file based on its extension
+#         if file_extension == '.xml':
+#             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xml')
+#         elif file_extension == '.xlsx':
+#             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xlsx')
+#         else:
 #             logger.error(f"Unsupported file type: {file_path}")
 #             return HttpResponseServerError("Unsupported file type.")
-
-#         # Read and decrypt the entire .xml file
-#         try:
-#             with open(file_path, 'rb') as encrypted_file:
-#                 encrypted_file_data = encrypted_file.read()
-
-#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
-
-#             # Parse the XML content
-#             root = ET.fromstring(decrypted_file_data)
-
-#             # Convert XML content to a string for display
-#             xml_content = ET.tostring(root, encoding='unicode', method='xml')
-
-#             # Render the content in an HTML template
-#             return render(request, 'view_file.html', {'xml_content': xml_content, 'file_name': upload.file_name})
-
-#         except Exception as e:
-#             logger.error(f"Error reading .xml file: {e}")
-#             return HttpResponseServerError("Error reading .xml file.")
 
 #     except Exception as e:
 #         logger.error(f"Unhandled exception in view_xml_file: {e}")
 #         return HttpResponseServerError("An error occurred while processing your request.")
 
-
-def is_valid_excel_file(file_path):
-    # Supported MIME types for Excel files
-    excel_mime_types = [
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
-        'application/vnd.ms-excel.sheet.macroEnabled.12',  # .xlsm
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.template',  # .xltx
-        'application/vnd.ms-excel.template.macroEnabled.12'  # .xltm
-    ]
     
-    mime_type, _ = mimetypes.guess_type(file_path)
-    return mime_type in excel_mime_types
+# def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
+#     """Handles both XML and XLSX file decryption and rendering."""
+#     try:
+#         # Read and decrypt the entire file
+#         with open(file_path, 'rb') as encrypted_file:
+#             encrypted_file_data = encrypted_file.read()
+
+#         # Write the decrypted content to a temporary file for processing
+#         decrypted_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+#         with open(decrypted_file_path, 'wb') as decrypted_file:
+#             decrypted_file.write(fernet.decrypt(encrypted_file_data))
+
+#         # Validate file type if it's an Excel file
+#         if file_type == 'xlsx' and not is_valid_excel_file(decrypted_file_path):
+#             logger.error(f"Unsupported Excel file format: {decrypted_file_path}")
+#             return HttpResponseServerError("Unsupported Excel file format. Please upload a valid .xlsx or .xlsm file.")
+
+#         # Process based on file type
+#         if file_type == 'xml':
+#             # Handle XML file
+#             try:
+#                 # Parse the XML content
+#                 with open(decrypted_file_path, 'r', encoding='utf-8') as decrypted_file:
+#                     xml_data = decrypted_file.read()
+
+#                 root = ET.fromstring(xml_data)
+
+#                 # Convert XML content to a string for display
+#                 xml_content = ET.tostring(root, encoding='unicode', method='xml')
+
+#                 # Render the content in an HTML template
+#                 return render(request, 'view_docx.html', {
+#                     'xml_content': xml_content,
+#                     'file_name': upload.file_name
+#                 })
+
+#             except ET.ParseError as e:
+#                 logger.error(f"Error parsing XML file: {e}")
+#                 return HttpResponseServerError("Error parsing the XML file.")
+
+#         elif file_type == 'xlsx':
+#             # Handle XLSX file
+#             try:
+#                 # Open the decrypted Excel file using openpyxl
+#                 workbook = openpyxl.load_workbook(decrypted_file_path)
+#                 sheet = workbook.active
+
+#                 # Collect data from the first sheet
+#                 excel_data = []
+#                 for row in sheet.iter_rows(values_only=True):
+#                     excel_data.append(row)
+
+#                 # Render the content in an HTML template
+#                 return render(request, 'view_docx.html', {
+#                     'excel_data': excel_data,
+#                     'file_name': upload.file_name
+#                 })
+
+#             except Exception as e:
+#                 logger.error(f"Error reading Excel file: {e}")
+#                 return HttpResponseServerError("Error reading Excel file.")
+#         else:
+#             logger.error("Unsupported file type provided.")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#     except Exception as e:
+#         logger.error(f"Error decrypting {file_type} file: {e}")
+#         return HttpResponseServerError(f"Error decrypting {file_type} file.")
+#     finally:
+#         # Clean up the temporary decrypted file if it exists
+#         if os.path.exists(decrypted_file_path):
+#             os.remove(decrypted_file_path)
 
 
-@login_required
 def view_xml_file(request, upload_id):
     try:
         # Fetch the uploaded file record for the authenticated user
@@ -670,8 +743,8 @@ def view_xml_file(request, upload_id):
         # Decrypt and handle the file based on its extension
         if file_extension == '.xml':
             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xml')
-        elif file_extension == '.xlsx':
-            return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xlsx')
+        elif file_extension == '.xlsx' or file_extension == '.xls':
+            return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type=file_extension)
         else:
             logger.error(f"Unsupported file type: {file_path}")
             return HttpResponseServerError("Unsupported file type.")
@@ -680,9 +753,9 @@ def view_xml_file(request, upload_id):
         logger.error(f"Unhandled exception in view_xml_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
 
-    
+
 def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
-    """Handles both XML and XLSX file decryption and rendering."""
+    """Handles XML, XLS, and XLSX file decryption and rendering."""
     try:
         # Read and decrypt the entire file
         with open(file_path, 'rb') as encrypted_file:
@@ -693,55 +766,19 @@ def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
         with open(decrypted_file_path, 'wb') as decrypted_file:
             decrypted_file.write(fernet.decrypt(encrypted_file_data))
 
-        # Validate file type if it's an Excel file
-        if file_type == 'xlsx' and not is_valid_excel_file(decrypted_file_path):
-            logger.error(f"Unsupported Excel file format: {decrypted_file_path}")
-            return HttpResponseServerError("Unsupported Excel file format. Please upload a valid .xlsx or .xlsm file.")
-
         # Process based on file type
         if file_type == 'xml':
             # Handle XML file
-            try:
-                # Parse the XML content
-                with open(decrypted_file_path, 'r', encoding='utf-8') as decrypted_file:
-                    xml_data = decrypted_file.read()
+            return handle_xml_file(decrypted_file_path, upload)
 
-                root = ET.fromstring(xml_data)
-
-                # Convert XML content to a string for display
-                xml_content = ET.tostring(root, encoding='unicode', method='xml')
-
-                # Render the content in an HTML template
-                return render(request, 'view_docx.html', {
-                    'xml_content': xml_content,
-                    'file_name': upload.file_name
-                })
-
-            except ET.ParseError as e:
-                logger.error(f"Error parsing XML file: {e}")
-                return HttpResponseServerError("Error parsing the XML file.")
-
-        elif file_type == 'xlsx':
+        elif file_type == '.xlsx':
             # Handle XLSX file
-            try:
-                # Open the decrypted Excel file using openpyxl
-                workbook = openpyxl.load_workbook(decrypted_file_path)
-                sheet = workbook.active
+            return handle_xlsx_file(decrypted_file_path, upload)
 
-                # Collect data from the first sheet
-                excel_data = []
-                for row in sheet.iter_rows(values_only=True):
-                    excel_data.append(row)
+        elif file_type == '.xls':
+            # Handle XLS file using xlrd
+            return handle_xls_file(decrypted_file_path, upload)
 
-                # Render the content in an HTML template
-                return render(request, 'view_docx.html', {
-                    'excel_data': excel_data,
-                    'file_name': upload.file_name
-                })
-
-            except Exception as e:
-                logger.error(f"Error reading Excel file: {e}")
-                return HttpResponseServerError("Error reading Excel file.")
         else:
             logger.error("Unsupported file type provided.")
             return HttpResponseServerError("Unsupported file type.")
@@ -754,7 +791,143 @@ def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
         if os.path.exists(decrypted_file_path):
             os.remove(decrypted_file_path)
 
+
+def handle_xml_file(decrypted_file_path, upload):
+    """Handles the XML file content."""
+    try:
+        # Parse the XML content
+        with open(decrypted_file_path, 'r', encoding='utf-8') as decrypted_file:
+            xml_data = decrypted_file.read()
+
+        root = ET.fromstring(xml_data)
+
+        # Convert XML content to a string for display
+        xml_content = ET.tostring(root, encoding='unicode', method='xml')
+
+        # Render the content in an HTML template
+        return render(request, 'view_docx.html', {
+            'xml_content': xml_content,
+            'file_name': upload.file_name
+        })
+
+    except ET.ParseError as e:
+        logger.error(f"Error parsing XML file: {e}")
+        return HttpResponseServerError("Error parsing the XML file.")
+
+
+def handle_xlsx_file(decrypted_file_path, upload):
+    """Handles the XLSX file content using openpyxl."""
+    try:
+        # Log the decrypted file path to ensure decryption is happening
+        logger.info(f"Decrypted file path: {decrypted_file_path}")
+        
+        # Check the file size to make sure it's a valid Excel file size
+        file_size = os.path.getsize(decrypted_file_path)
+        logger.info(f"Decrypted file size: {file_size} bytes")
+        
+        # Open the decrypted Excel file using openpyxl
+        workbook = openpyxl.load_workbook(decrypted_file_path)
+        sheet = workbook.active
+
+        # Collect data from the first sheet
+        excel_data = []
+        for row in sheet.iter_rows(values_only=True):
+            excel_data.append(row)
+
+        # Render the content in an HTML template
+        return render(request, 'view_docx.html', {
+            'excel_data': excel_data,
+            'file_name': upload.file_name
+        })
+
+    except Exception as e:
+        logger.error(f"Error reading Excel file (.xlsx): {e}")
+        return HttpResponseServerError("Error reading Excel file (.xlsx).")
+
+
+
+def handle_xls_file(decrypted_file_path, upload):
+    """Handles the older .xls file format using xlrd."""
+    try:
+        # Open the decrypted Excel file using xlrd
+        workbook = xlrd.open_workbook(decrypted_file_path)
+        sheet = workbook.sheet_by_index(0)
+
+        # Collect data from the first sheet
+        excel_data = []
+        for row_num in range(sheet.nrows):
+            row = sheet.row_values(row_num)
+            excel_data.append(row)
+
+        # Render the content in an HTML template
+        return render(request, 'view_docx.html', {
+            'excel_data': excel_data,
+            'file_name': upload.file_name
+        })
+
+    except Exception as e:
+        logger.error(f"Error reading Excel file (.xls): {e}")
+        return HttpResponseServerError("Error reading Excel file (.xls).")
     
+
+# @login_required
+# def view_text_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Read and decrypt the entire file
+#         try:
+#             with open(file_path, 'rb') as encrypted_file:
+#                 encrypted_file_data = encrypted_file.read()
+
+#             decrypted_file_data = fernet.decrypt(encrypted_file_data).decode('utf-8')
+
+#             # Determine the file type and render the appropriate template
+#             file_extension = os.path.splitext(upload.file.name)[1]
+            
+#             if file_extension == '.py':
+#                 file_type = 'python'
+#             elif file_extension == '.js':
+#                 file_type = 'javascript'
+#             elif file_extension == '.txt':
+#                 file_type = 'text'
+#             else:
+#                 file_type = 'unknown'
+
+#             # Render the content in an HTML template
+#             return render(request, 'view_docx.html', {
+#                 'file_content': decrypted_file_data,
+#                 'file_name': upload.file_name,
+#                 'file_type': file_type
+#             })
+
+#         except Exception as e:
+#             logger.error(f"Error reading text file: {e}")
+#             return HttpResponseServerError("Error reading text file.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_text_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
 
 @login_required
 def view_text_file(request, upload_id):
@@ -763,7 +936,7 @@ def view_text_file(request, upload_id):
         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
 
         # Ensure the file has an encryption key
-        if not upload.encryption_key:
+        if not upload.encryption_key: 
             logger.error(f"Encryption key not found for file with ID {upload_id}")
             return HttpResponseServerError("Encryption key not found for this file.")
 
@@ -788,7 +961,7 @@ def view_text_file(request, upload_id):
             decrypted_file_data = fernet.decrypt(encrypted_file_data).decode('utf-8')
 
             # Determine the file type and render the appropriate template
-            file_extension = os.path.splitext(upload.file.name)[1]
+            file_extension = os.path.splitext(upload.file.name)[1].lower()
             
             if file_extension == '.py':
                 file_type = 'python'
@@ -799,11 +972,11 @@ def view_text_file(request, upload_id):
             else:
                 file_type = 'unknown'
 
-            # Render the content in an HTML template
+            # Render the content in an HTML template, pass decrypted content
             return render(request, 'view_docx.html', {
-                'file_content': decrypted_file_data,
+                'txt_content': decrypted_file_data,
                 'file_name': upload.file_name,
-                'file_type': file_type
+                'file_type': file_type  # Used for syntax highlighting
             })
 
         except Exception as e:
@@ -813,7 +986,7 @@ def view_text_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_text_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-    
+
 
 # def view_video(request, upload_id):
 #     # Get the video upload object

@@ -73,6 +73,7 @@ class UserUploadForm(forms.ModelForm):
     
     def clean_file(self):
         file = self.cleaned_data.get('file')
+
         # Add the supported MIME types here
         valid_mime_types = [
             'image/jpeg', 
@@ -82,16 +83,24 @@ class UserUploadForm(forms.ModelForm):
             'text/plain',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # docx
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',        # xlsx
+            'application/vnd.ms-excel',  # .xls (old Excel format)
             'application/vnd.openxmlformats-officedocument.presentationml.presentation', # pptx
-            'text/x-python'  # Support for Python files
+            'application/xml',  # .xml files
+            'text/xml',  # .xml alternative MIME type
+            'application/zip',  # Sometimes .xlsx and other Office files are sent as zips
+            'text/x-python',  # Python files
+            'application/json'  # For JSON files
         ]
+        
+        # Guess the MIME type of the file
         mime_type, encoding = mimetypes.guess_type(file.name)
         
+        # Validate the file type against supported MIME types
         if mime_type not in valid_mime_types:
-            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, pdf, txt, docx, xlsx, pptx, py.")
+            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, pdf, txt, docx, xlsx, xls, pptx, py, xml, json.")
         
         return file
-    
+        
 
 #document existance 
 def check_object_existence(upload_id):

@@ -568,9 +568,9 @@
                                 <div class="row">
                             {% endif %}
                         {% endfor %}
-                    {% else %}
+                    {% comment %} {% else %} {% endcomment %}
                         <div class="col-12 text-center">
-                            <p>You haven't uploaded any files yet.</p>
+                            <p>we are still working on the display of videos and excel data appologies for the inconivience </p>
                         </div>
                     {% endif %}
                 </div>
@@ -600,54 +600,25 @@
                                         </video>
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
                                     
-                                    {% comment %} {% if ".mp4" in upload.file.name or ".mov" in upload.file.name %}
-                                        <div class="media-detail">
-                                            {% if upload.file.url|is_video %}
-                                                <!-- Button to view the video on a separate page -->
-                                                <a href="{% url 'only_card:view_video' upload.id %}" class="btn btn-primary">View Video</a>
-
-                                                <!-- Optional inline video preview (if needed) -->
-                                                <video controls class="img-fluid">
-                                                    <source src="{{ upload.file.url }}" type="video/mp4">
-                                                    Your browser does not support the video tag.
-                                                </video>
-
-                                            {% else %}
-                                                <img src="{{ upload.file.url }}" alt="{{ upload.file_name }}" class="img-fluid">
-                                            {% endif %}
-        
-                                            <!-- Download link -->
-                                        <a href="{{ upload.file.url }}" download>{{ upload.file_name }}</a>
-
-                                            <!-- Description, if present -->
-                                            <div class="description">
-                                                <p>{{ upload.description|safe }}</p>  <!-- Assuming there is a description field -->
-                                            </div>
-                                        </div>
-                                    {% endif %} {% endcomment %}
-
-                                    
                                     {% elif ".pdf" in upload.file.name %}
                                         <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+
                                     {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
                                         <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
 
-                                    {% elif ".xlsx" in upload.file.name %}
+                                    {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
                                         <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
                                         <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
-                                    
                                         <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
-                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
-                                    
+                                        {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a> {% endcomment %}
                                         <!-- Button to download the Excel file -->
                                         <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a>
-                                
 
                                     {% elif ".pptx" in upload.file.name %}
                                         <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
-                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a>
+                                        {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
 
                                     {% elif ".txt" in upload.file.name or ".py" in upload.file.name or ".js" in upload.file.name %}
@@ -669,7 +640,8 @@
                                         <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                     
                                     {% else %}
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
+                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                     {% endif %}
                                 </div>
                             </div>

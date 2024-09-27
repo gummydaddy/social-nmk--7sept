@@ -4,7 +4,7 @@
     {{ file_name }} - Preview
 {% endblock %}
 
-{% block content %}
+{% block main_content %}
     <div class="container">
         <h1>Preview of {{ file_name }}</h1>
 
@@ -20,12 +20,35 @@
                 {{ docx_content|safe }}
             </div>
 
+        {% elif txt_content %}
+            <div class="txt_content">
+                <!-- Syntax highlighting for code and text files -->
+                <pre>
+                    <code class="
+                    {% if file_type == 'python' %}
+                        language-python
+                    {% elif file_type == 'javascript' %}
+                        language-javascript
+                    {% elif file_type == 'text' %}
+                        language-text
+                    {% else %}
+                        language-unknown
+                    {% endif %}
+                    ">
+                    {{ txt_content|safe }}
+                    </code>
+                </pre>
+            </div>
+
         {# Handle XML file preview #}
         {% elif xml_content %}
-            <pre>{{ xml_content|safe }}</pre>
+            <div class="xml-content">
+                <pre>{{ xml_content|safe }}</pre>
+            </div>
 
         {# Handle Excel (.xlsx) file preview #}
         {% elif excel_data %}
+        <div class="excel-content">
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -44,6 +67,7 @@
                     {% endfor %}
                 </tbody>
             </table> 
+        </div>
 
         {# Fallback for unsupported or unhandled content #}
         {% else %}
