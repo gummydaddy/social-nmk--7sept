@@ -142,29 +142,116 @@ def message_list_view(request):
     return render(request, 'message_list.html', {'users': users})
 
 
-@login_required
-def user_messages_view(request, username):
-    user = get_object_or_404(AuthUser, username=username)
-   # Return the newest message at the bottom of the message list
-    messages = Message.objects.filter(
-        (Q(sender=request.user) & Q(recipient=user)) | (Q(sender=user) & Q(recipient=request.user))
-    ).order_by('-timestamp')  # Order by timestamp in descending order
+# @login_required
+# def user_messages_view(request, username):
+#     user = get_object_or_404(AuthUser, username=username)
+#    # Return the newest message at the bottom of the message list
+#     messages = Message.objects.filter(
+#         (Q(sender=request.user) & Q(recipient=user)) | (Q(sender=user) & Q(recipient=request.user))
+#     ).order_by('-timestamp')  # Order by timestamp in descending order
 
 
     
+#     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+#         message_data = [{
+#             'id': msg.id,
+#             'content': msg.content,  # Ensure this is decrypted if necessary
+#             'sender': msg.sender.username,
+#             'timestamp': msg.timestamp.isoformat()
+#         } for msg in messages]
+#         return JsonResponse({'messages': message_data})
+
+#     if request.method == 'POST':
+#         form = MessageForm(request.POST)
+#         if form.is_valid():
+#             content = form.cleaned_data['content']
+#             try:
+#                 recipient_keys = UserEncryptionKeys.objects.get(user=user)
+#                 sender_keys = UserEncryptionKeys.objects.get(user=request.user)
+#             except UserEncryptionKeys.DoesNotExist:
+#                 logger.error('User encryption keys not found.')
+#                 return HttpResponse('User encryption keys not found.', status=404)
+
+#             if not sender_keys.signing_private_key:
+#                 logger.error(f'Sender signing private key is missing for user {request.user.username}.')
+#                 return HttpResponse('Sender signing private key is missing.', status=500)
+
+#             conversation_key = get_or_create_conversation_key(request.user, user)
+
+#             try:
+#                 encrypted_content = encrypt_message(content, conversation_key.encode())
+#                 signature = sign_message(content, sender_keys.signing_private_key)
+#             except Exception as e:
+#                 logger.error(f'Error during message encryption or signing: {e}')
+#                 return HttpResponse('Error during message encryption or signing.', status=500)
+
+#             Message.objects.create(
+#                 sender=request.user, 
+#                 recipient=user, 
+#                 content=encrypted_content,
+#                 signature=signature
+#             )
+
+#             return redirect('only_message:user_messages_view', username=user.username)
+#     else:
+#         form = MessageForm(initial={'recipient': user.username})
+
+#     try:
+#         user_keys = UserEncryptionKeys.objects.get(user=request.user)
+#     except UserEncryptionKeys.DoesNotExist:
+#         logger.error('Your encryption keys not found.')
+#         return HttpResponse('Your encryption keys not found.', status=404)
+
+#     decrypted_messages = []
+#     for msg in messages:
+#         conversation_key = get_or_create_conversation_key(request.user, msg.sender if msg.sender != request.user else msg.recipient)
+#         decrypted_content = decrypt_message(
+#             msg.content,
+#             conversation_key.encode()
+#         )
+#         if decrypted_content is None:
+#             logger.warning(f'Failed to decrypt message {msg.id}.')
+#             continue
+
+#         signature_valid = verify_message(
+#             decrypted_content,
+#             msg.signature,
+#             msg.sender.encryption_keys.signing_public_key
+#         )
+#         decrypted_messages.append({
+#             'sender': msg.sender,
+#             'content': decrypted_content,
+#             'timestamp': msg.timestamp,
+#             'signature_valid': signature_valid,
+#         })
+
+#     return render(request, 'user_messages.html', {'messages': decrypted_messages, 'form': form, 'recipient': user})
+
+
+@login_required
+def user_messages_view(request, username):
+    user = get_object_or_404(AuthUser, username=username)
+    messages = Message.objects.filter(
+        (Q(sender=request.user) & Q(recipient=user)) | 
+        (Q(sender=user) & Q(recipient=request.user))
+    ).order_by('-timestamp')
+
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         message_data = [{
             'id': msg.id,
-            'content': msg.content,  # Ensure this is decrypted if necessary
+            'content': msg.content,
             'sender': msg.sender.username,
-            'timestamp': msg.timestamp.isoformat()
+            'timestamp': msg.timestamp.isoformat(),
+            'file_url': msg.file.url if msg.file else None  # Include file URL if file exists
         } for msg in messages]
         return JsonResponse({'messages': message_data})
 
     if request.method == 'POST':
-        form = MessageForm(request.POST)
+        form = MessageForm(request.POST, request.FILES)  # Handle file uploads
         if form.is_valid():
             content = form.cleaned_data['content']
+            uploaded_file = request.FILES.get('file', None)  # Get uploaded file if present
+            
             try:
                 recipient_keys = UserEncryptionKeys.objects.get(user=user)
                 sender_keys = UserEncryptionKeys.objects.get(user=request.user)
@@ -181,6 +268,10 @@ def user_messages_view(request, username):
             try:
                 encrypted_content = encrypt_message(content, conversation_key.encode())
                 signature = sign_message(content, sender_keys.signing_private_key)
+                encrypted_file = None
+                if uploaded_file:
+                    # Optional: Encrypt the file content here
+                    encrypted_file = uploaded_file  # Save file as-is or encrypt it
             except Exception as e:
                 logger.error(f'Error during message encryption or signing: {e}')
                 return HttpResponse('Error during message encryption or signing.', status=500)
@@ -189,7 +280,8 @@ def user_messages_view(request, username):
                 sender=request.user, 
                 recipient=user, 
                 content=encrypted_content,
-                signature=signature
+                signature=signature,
+                file=encrypted_file  # Save the uploaded file
             )
 
             return redirect('only_message:user_messages_view', username=user.username)
@@ -205,10 +297,7 @@ def user_messages_view(request, username):
     decrypted_messages = []
     for msg in messages:
         conversation_key = get_or_create_conversation_key(request.user, msg.sender if msg.sender != request.user else msg.recipient)
-        decrypted_content = decrypt_message(
-            msg.content,
-            conversation_key.encode()
-        )
+        decrypted_content = decrypt_message(msg.content, conversation_key.encode())
         if decrypted_content is None:
             logger.warning(f'Failed to decrypt message {msg.id}.')
             continue
@@ -223,9 +312,11 @@ def user_messages_view(request, username):
             'content': decrypted_content,
             'timestamp': msg.timestamp,
             'signature_valid': signature_valid,
+            'file_url': msg.file.url if msg.file else None  # Include file URL for decrypted messages
         })
 
     return render(request, 'user_messages.html', {'messages': decrypted_messages, 'form': form, 'recipient': user})
+
 
 def search_user_message(request):
     query = request.GET.get('q')

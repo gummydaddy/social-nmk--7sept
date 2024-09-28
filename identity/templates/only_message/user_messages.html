@@ -51,7 +51,7 @@
     }
 </style>
 
-<h2>{{ recipient.username }}</h2>
+{% comment %} <h2>{{ recipient.username }}</h2>
 <div class="message-container">
     <ul id="message-list">
         <!-- Move the messages loop to the bottom -->
@@ -72,15 +72,59 @@
         </li>
         {% endfor %}
     </ul>
+</div> {% endcomment %}
+<h2>{{ recipient.username }}</h2>
+
+<div class="message-container">
+    <ul id="message-list">
+        <!-- Messages are rendered starting from the bottom -->
+        {% for message in messages %}
+        <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
+            
+            <!-- Check if the message has an attached file -->
+            {% if message.file_url %}
+                {% if message.file_url|is_video %}
+                    <video controls class="img-fluid">
+                        <source src="{{ message.file_url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% elif message.file_url|is_image %}
+                    <img src="{{ message.file_url }}" alt="media" class="img-fluid">
+                {% else %}
+                    <a href="{{ message.file_url }}" download>Download attached file</a><br>
+                {% endif %}
+            {% else %}
+                <!-- Display message content if no file is attached -->
+                {{ message.content }}<br>
+            {% endif %}
+
+            <em>{{ message.timestamp }}</em>
+        </li>
+        {% endfor %}
+    </ul>
 </div>
 
-<form id="send-message-form" method="post" style="position: relative;">
+
+
+{% comment %} <form id="send-message-form" method="post" style="position: relative;">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit" style="position: absolute; top: 0; right: 0;">
         Send➣➤
     </button>
+</form> {% endcomment %}
+<form id="send-message-form" method="post" enctype="multipart/form-data" style="position: relative;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    {% comment %} <label for="file-upload" style="margin-right: 10px;">Attach a file:</label> {% endcomment %}
+    {% comment %} <input type="file" name="file" id="file-upload"> {% endcomment %}
+    <button type="submit" style="position: absolute; top: 0; right: 0;">
+        Send➣➤
+    </button>
 </form>
+<h5>file sharing comming soon </h5>
+
+
 {% endblock %}
 
 {% block Message_script %}

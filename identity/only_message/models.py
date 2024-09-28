@@ -6,6 +6,7 @@ from .encryption_utils import serialize_key, generate_key_pair
 
 from cryptography.fernet import Fernet
 from django.utils.timezone import now
+from django.core.files.storage import FileSystemStorage
 
 
 class LoggedInUser(models.Model):
@@ -56,13 +57,27 @@ def create_user_encryption_keys(sender, instance, created, **kwargs):
             signing_private_key=serialize_key(signing_private, is_private=True)
         )
 
+# class Message(models.Model):
+#     sender = models.ForeignKey(AuthUser, related_name='sent_messages', on_delete=models.CASCADE)
+#     recipient = models.ForeignKey(AuthUser, related_name='received_messages', on_delete=models.CASCADE)
+#     content = models.TextField()  # Encrypted content
+#     signature = models.TextField(null=True)  # Store the message signature
+#     timestamp = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return f"{self.sender} -> {self.recipient}: {self.content[:20]}"
+
+
+fs = FileSystemStorage(location='/path/to/save/uploads')
+
 class Message(models.Model):
     sender = models.ForeignKey(AuthUser, related_name='sent_messages', on_delete=models.CASCADE)
     recipient = models.ForeignKey(AuthUser, related_name='received_messages', on_delete=models.CASCADE)
     content = models.TextField()  # Encrypted content
     signature = models.TextField(null=True)  # Store the message signature
     timestamp = models.DateTimeField(auto_now_add=True)
-
+    file = models.FileField(upload_to='messages/files/', storage=fs, null=True, blank=True)  # New file field
+    
     def __str__(self):
         return f"{self.sender} -> {self.recipient}: {self.content[:20]}"
 

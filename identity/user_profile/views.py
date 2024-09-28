@@ -275,6 +275,95 @@ def tag_user_search(request):
     return JsonResponse({'results': []}, safe=False)
 
 
+# @login_required
+# def explore(request):
+#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
+#     liked_hashtags = user_hashtag_pref.liked_hashtags
+#     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
+#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
+#     viewed_media = user_hashtag_pref.viewed_media
+
+#     hashtag_filter = request.GET.get('hashtag', '')
+
+#     # Get users who have blocked the current user
+#     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+#     users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+
+#     # Fetch media and exclude media from users who have blocked the current user
+#     media_objects = Media.objects.order_by('-created_at').exclude(
+#         user__in=users_blocked_me
+#     ).exclude(
+#         user__in=users_i_blocked
+#     )
+
+#     # Exclude private media if the media owner has not added the current user as a buddy
+#     media_objects = media_objects.exclude(
+#         Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
+#     )
+
+#     # Exclude all media from users with private profiles if the current user is not a buddy or follower
+#     media_objects = media_objects.exclude(
+#         Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
+#     )
+
+#     if hashtag_filter:
+#         media_objects = media_objects.filter(hashtags__name__icontains=hashtag_filter)
+
+#     media_list = list(media_objects)
+#     random.shuffle(media_list)
+
+#     new_media = [media for media in media_list if media.id not in viewed_media]
+#     old_media = [media for media in media_list if media.id in viewed_media]
+
+#     media_scores = []
+#     for media in new_media + old_media:
+#         score = 0
+#         media_hashtags = [h.name for h in media.hashtags.all()]
+#         description_hashtags = re.findall(r'#(\w+)', media.description)
+
+#         for hashtag in media_hashtags + description_hashtags:
+#             if hashtag in liked_hashtags:
+#                 score += 1.5
+#             if hashtag in viewed_hashtags:
+#                 score += 0.9
+#             if hashtag in not_interested_hashtags:
+#                 score -= 8
+
+#         media_scores.append((media, score))
+
+#     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
+#     sorted_media = [m[0] for m in sorted_media]
+
+#     paginator = Paginator(sorted_media, 100)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     # Update viewed media
+#     for media in page_obj:
+#         if media.id not in viewed_media:
+#             viewed_media.append(media.id)
+#     user_hashtag_pref.viewed_media = viewed_media
+#     user_hashtag_pref.save()
+
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#         media_list = [
+#             {
+#                 'id': m.id,
+#                 'file_url': m.file.url,
+#                 'is_video': m.file.url.endswith('.mp4'),
+#                 'user_username': m.user.username,
+#                 'description': m.description
+#             }
+#             for m in page_obj
+#         ]
+#         return JsonResponse({'media': media_list})
+
+#     return render(request, 'explore.html', {
+#         'page_obj': page_obj,
+#         'hashtag_filter': hashtag_filter
+#     })
+
+
 @login_required
 def explore(request):
     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
@@ -282,6 +371,7 @@ def explore(request):
     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
     viewed_media = user_hashtag_pref.viewed_media
+    not_interested_media = user_hashtag_pref.not_interested_media  # Media IDs the user marked as not interested
 
     hashtag_filter = request.GET.get('hashtag', '')
 
@@ -301,14 +391,19 @@ def explore(request):
         Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
     )
 
-    # Exclude all media from users with private profiles if the current user is not a buddy or follower
+    # Exclude media from private profiles if the current user is not a buddy or follower
     media_objects = media_objects.exclude(
         Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
     )
 
+    # Filter by hashtag if a hashtag filter is provided
     if hashtag_filter:
         media_objects = media_objects.filter(hashtags__name__icontains=hashtag_filter)
 
+    # Exclude media that the user marked as not interested
+    media_objects = media_objects.exclude(id__in=not_interested_media)
+
+    # Shuffle and score media based on user preferences
     media_list = list(media_objects)
     random.shuffle(media_list)
 
@@ -321,30 +416,34 @@ def explore(request):
         media_hashtags = [h.name for h in media.hashtags.all()]
         description_hashtags = re.findall(r'#(\w+)', media.description)
 
+        # Increase/decrease score based on user's hashtag preferences
         for hashtag in media_hashtags + description_hashtags:
             if hashtag in liked_hashtags:
                 score += 1.5
             if hashtag in viewed_hashtags:
                 score += 0.9
             if hashtag in not_interested_hashtags:
-                score -= 8
+                score -= 8  # Penalize media containing "not interested" hashtags
 
         media_scores.append((media, score))
 
+    # Sort media by score (highest first)
     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
     sorted_media = [m[0] for m in sorted_media]
 
+    # Paginate media results
     paginator = Paginator(sorted_media, 100)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    # Update viewed media
+    # Update the user's viewed media list
     for media in page_obj:
         if media.id not in viewed_media:
             viewed_media.append(media.id)
     user_hashtag_pref.viewed_media = viewed_media
     user_hashtag_pref.save()
 
+    # Return JSON response for AJAX requests
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         media_list = [
             {
@@ -358,10 +457,12 @@ def explore(request):
         ]
         return JsonResponse({'media': media_list})
 
+    # Render the explore page for normal requests
     return render(request, 'explore.html', {
         'page_obj': page_obj,
         'hashtag_filter': hashtag_filter
     })
+
 
 
 # description hashtag search 
@@ -452,6 +553,137 @@ def search_uploads(request):
     })
 
 
+# @login_required
+# def explore_detail(request, media_id):
+#     media = get_object_or_404(Media, id=media_id)
+#     user = media.user  # The owner of the media
+
+#     # Check if the current user is blocked by the media owner
+#     is_blocked_by_media_owner = BlockedUser.objects.filter(blocker=user, blocked=request.user).exists()
+
+#     # Check if the current user has blocked the media owner
+#     has_blocked_media_owner = BlockedUser.objects.filter(blocker=request.user, blocked=user).exists()
+
+#     # If the current user is blocked by the media owner, return a 'user_not_found' or restricted view page
+#     if is_blocked_by_media_owner:
+#         return render(request, 'user_not_found.html')  # Show an "upload not found" message
+
+#     # Check if the current user is following the media owner
+#     is_following = Follow.objects.filter(follower=request.user, following=user).exists()
+
+#     # Check if the current user is in the media owner's buddy list
+#     is_buddy = Buddy.objects.filter(user=user, buddy=request.user).exists()
+
+#     # Check if the media is private, and the current user is not allowed to view it
+#     # The current user can view it only if they are in the buddy list or they are the media owner
+#     if (media.is_private or user.profile.is_private) and not is_buddy and not is_following and request.user != user:
+#         return render(request, 'private_upload.html')  # Show an "upload is private" message
+
+#     # User hashtag preference (tracking viewed media and hashtags)
+#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
+#     liked_hashtags = user_hashtag_pref.liked_hashtags
+#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
+#     viewed_media = user_hashtag_pref.viewed_media
+
+#     # Update viewed media and hashtags
+#     if media.id not in viewed_media:
+#         viewed_media.append(media.id)
+#         user_hashtag_pref.viewed_media = viewed_media
+#         user_hashtag_pref.save()
+
+#     description_hashtags = re.findall(r'#(\w+)', media.description)
+#     user_hashtag_pref.add_viewed_hashtag(description_hashtags)
+
+#     # Related media logic
+#     related_media = Media.objects.exclude(id=media_id)
+
+#     # Exclude related media from users who have blocked the current user
+#     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+#     users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+#     related_media = related_media.exclude(user__in=users_blocked_me).exclude(user__in=users_i_blocked)
+
+#     # Exclude private media from users who are not in the current user's buddy list or followers
+#     related_media = related_media.exclude(
+#         Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
+#     )
+
+#     # Exclude all media from users with private profiles if the current user is not a buddy or follower
+#     related_media = related_media.exclude(
+#         Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
+#     )
+
+#     if liked_hashtags:
+#         related_media = related_media.annotate(
+#             num_liked_hashtags=Count(
+#                 'hashtags',
+#                 filter=Q(hashtags__name__in=liked_hashtags)
+#             )
+#         ).order_by('-num_liked_hashtags', '?')
+#     else:
+#         related_media = related_media.order_by('?')
+
+#     # Scoring system
+#     media_scores = []
+#     for related in related_media:
+#         score = 0
+#         media_hashtags = [h.name for h in related.hashtags.all()]
+#         description_hashtags = re.findall(r'#(\w+)', related.description)
+
+#         for hashtag in media_hashtags + description_hashtags:
+#             if hashtag in liked_hashtags:
+#                 score += 1.5
+#             if hashtag in viewed_hashtags:
+#                 score += 0.9
+#             if hashtag in user_hashtag_pref.not_interested_hashtags:
+#                 score -= 8
+
+#         media_scores.append((related, score))
+
+#     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
+#     related_media = [m[0] for m in sorted_media][:100]
+
+#     # Engagement tracking
+#     if not Engagement.objects.filter(user=request.user, media=media, engagement_type='view').exists():
+#         media.view_count = F('view_count') + 1
+#         media.save(update_fields=['view_count'])
+#         Engagement.objects.create(media=media, user=request.user, engagement_type='view')
+
+#     # Making usernames clickable in the description
+#     description = make_usernames_clickable(media.description)
+
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#         media_data = {
+#             'id': media.id,
+#             'file_url': media.file.url,
+#             'is_video': media.file.url.endswith('.mp4'),
+#             'user_username': media.user.username,
+#             'description': description,
+#             'is_buddy': is_buddy,
+#             'is_following': is_following,
+#             'has_blocked_media_owner': has_blocked_media_owner,
+#             'is_blocked_by_media_owner': is_blocked_by_media_owner
+#         }
+#         related_media_list = [
+#             {
+#                 'id': m.id,
+#                 'file_url': m.file.url,
+#                 'is_video': m.file.url.endswith('.mp4'),
+#                 'user_username': m.user.username
+#             } for m in related_media
+#         ]
+#         return JsonResponse({'media': media_data, 'related_media': related_media_list})
+
+#     return render(request, 'explore_detail.html', {
+#         'media': media,
+#         'related_media': related_media,
+#         'description': description,
+#         'is_buddy': is_buddy,
+#         'is_following': is_following,
+#         'has_blocked_media_owner': has_blocked_media_owner,
+#         'is_blocked_by_media_owner': is_blocked_by_media_owner
+#     })
+
+
 @login_required
 def explore_detail(request, media_id):
     media = get_object_or_404(Media, id=media_id)
@@ -483,6 +715,7 @@ def explore_detail(request, media_id):
     liked_hashtags = user_hashtag_pref.liked_hashtags
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
     viewed_media = user_hashtag_pref.viewed_media
+    not_interested_media = user_hashtag_pref.not_interested_media  # Add this line
 
     # Update viewed media and hashtags
     if media.id not in viewed_media:
@@ -495,6 +728,9 @@ def explore_detail(request, media_id):
 
     # Related media logic
     related_media = Media.objects.exclude(id=media_id)
+
+    # Exclude media marked as not interested by the current user (new constraint)
+    related_media = related_media.exclude(id__in=not_interested_media)
 
     # Exclude related media from users who have blocked the current user
     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
@@ -511,6 +747,7 @@ def explore_detail(request, media_id):
         Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
     )
 
+    # Filter related media by liked hashtags
     if liked_hashtags:
         related_media = related_media.annotate(
             num_liked_hashtags=Count(
@@ -528,16 +765,18 @@ def explore_detail(request, media_id):
         media_hashtags = [h.name for h in related.hashtags.all()]
         description_hashtags = re.findall(r'#(\w+)', related.description)
 
+        # Increase/decrease score based on user's hashtag preferences
         for hashtag in media_hashtags + description_hashtags:
             if hashtag in liked_hashtags:
                 score += 1.5
             if hashtag in viewed_hashtags:
                 score += 0.9
             if hashtag in user_hashtag_pref.not_interested_hashtags:
-                score -= 8
+                score -= 8  # Penalize media containing "not interested" hashtags
 
         media_scores.append((related, score))
 
+    # Sort related media by score
     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
     related_media = [m[0] for m in sorted_media][:100]
 
@@ -1148,10 +1387,44 @@ def delete_media(request, media_id):
     return render(request, 'user_profile/delete_media.html', context)
 
 
+# @login_required
+# def not_interested(request, media_id: int):
+#     """
+#     Adds hashtags from media description to user's not interested list.
+
+#     Args:
+#     - request (HttpRequest)
+#     - media_id (int)
+
+#     Returns:
+#     - JsonResponse or HttpResponseRedirect
+#     """
+#     try:
+#         media = get_object_or_404(Media, id=media_id)
+#         user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
+
+#         hashtags = re.findall(r'#(\w+)', media.description)
+#         for hashtag in hashtags:
+#             user_hashtag_pref.not_interested_hashtags = add_to_fifo_list(user_hashtag_pref.not_interested_hashtags, hashtag)
+
+#         user_hashtag_pref.save()
+
+#         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#             return JsonResponse({'status': 'success', 'message': 'Hashtags added to not interested list'})
+
+#         # Add this return statement
+#         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
+
+#     except Exception as e:
+#         # Log the error or return an error response
+#         return HttpResponse('Error occurred', status=500)
+
+
 @login_required
 def not_interested(request, media_id: int):
     """
-    Adds hashtags from media description to user's not interested list.
+    Adds media to user's not interested list and hashtags from media description 
+    to the user's not interested hashtags list.
 
     Args:
     - request (HttpRequest)
@@ -1164,21 +1437,30 @@ def not_interested(request, media_id: int):
         media = get_object_or_404(Media, id=media_id)
         user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
 
+        # Add the media ID to the not interested media list
+        user_hashtag_pref.add_not_interested_media(media_id)
+
+        # Extract hashtags from the media description
         hashtags = re.findall(r'#(\w+)', media.description)
+
+        # Add each hashtag to the user's not interested list
         for hashtag in hashtags:
             user_hashtag_pref.not_interested_hashtags = add_to_fifo_list(user_hashtag_pref.not_interested_hashtags, hashtag)
 
+        # Save the updated user hashtag preference
         user_hashtag_pref.save()
 
+        # Return a success response for AJAX requests
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-            return JsonResponse({'status': 'success', 'message': 'Hashtags added to not interested list'})
+            return JsonResponse({'status': 'success', 'message': 'Media and hashtags added to not interested list'})
 
-        # Add this return statement
+        # Redirect back to the referring page for regular requests
         return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/'))
 
     except Exception as e:
-        # Log the error or return an error response
+        # Log the error and return an error response
         return HttpResponse('Error occurred', status=500)
+
 
 
 @login_required
