@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <title>Group Management System</title>
+   <style>
+       /* styles.css */
+       body {
+           font-family: Arial, sans-serif;
+       }
+
+       header {
+           background-color: #f4f4f4;
+           padding: 10px 20px;
+           text-align: center;
+       }
+
+       nav ul {
+           list-style: none;
+           padding: 0;
+       }
+
+       nav ul li {
+           display: inline;
+           margin-right: 10px;
+       }
+
+       .container {
+           margin: 20px;
+       }
+
+       form {
+           margin-top: 20px;
+       }
+
+       form input, form textarea, form button {
+           display: block;
+           width: 100%;
+           margin-top: 5px;
+           padding: 10px;
+       }
+
+       form input[type="submit"], form button {
+           cursor: pointer;
+       }
+   </style>
+</head>
+<body>
+   <header>
+       <h1>Group Management System</h1>
+       <nav>
+           <ul>
+               <li><a href="{% url 'only_card:group_list' %}">Groups</a></li>
+               <li><a href="{% url 'only_card:group_create' %}">Create Group</a></li>
+               <li><a href="{% url 'only_card:subgroup_signup' %}">Create Subgroup</a></li>
+           </ul>
+       </nav>
+   </header>
+   <div class="container">
+       {% block content %}
+       {% endblock content %}
+   </div>
+</body>
+</html>

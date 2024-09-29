@@ -26,11 +26,22 @@ urlpatterns = [
     path('', views.home, name="home"),
     # path('', views.login_view, name="home"),
     path("signup/", views.signup, name="signup"),
+    # path('activate/<uidb64>/<token>/', views.activate_account, name='activate_account'),    
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
     path('landing_page/', views.landing_page, name='landing_page'),
-    path('upload/', views.upload_document, name='upload_document'),
+    path('password_reset/', views.password_reset, name='password_reset'),
+
+    path('upload_documents/', views.upload_document, name='upload_document'),
     path('view_file/<int:upload_id>/', views.view_file, name='view_file'),
+    path('view_docx_file/<int:upload_id>/', views.view_docx_file, name='view_docx_file'),
+    path('view_xml_file/<int:upload_id>/', views.view_xml_file, name='view_xml_file'),
+    path('view_pptx_file/<int:upload_id>/', views.view_pptx_file, name='view_pptx_file'),
+    path('view_text_file/<int:upload_id>/', views.view_text_file, name='view_text_file'),
+    # path('view_pdf_file/<int:upload_id>/', views.view_pdf_file, name='view_pdf_file'),
+    # path('handle_xml_or_xlsx_file/<int:upload_id>/', views.handle_xml_or_xlsx_file, name='handle_xml_or_xlsx_file'),
+    # path('view_video/<int:upload_id>/', views.view_video, name='view_video'),
+
     path('delete_upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
     path('RegistrationForm/', views.registration_form_view, name='RegistrationForm'),
     path('super_user_landing_page/', views.super_user_landing_page, name='super_user_landing_page'),
@@ -45,6 +56,12 @@ urlpatterns = [
     path('groups/create/', views.group_create, name='group_create'),
     path('subgroups/', views.subgroup_signup, name='subgroup_signup'),
     path('subgroup_landing_page/', views.subgroup_landing_page, name='subgroup_landing_page'),
+    path('buy_storage/', views.buy_storage, name='buy_storage'),
+
+    # path('lock/<int:user_id>/', views.lock_user, name='lock_user'),
+    # path('unlock/<int:user_id>/', views.unlock_user, name='unlock_user'),
+    # path('locked/', views.locked_page, name='locked_page'),
+    
 
     
 ]

@@ -1,0 +1,14 @@
+<!-- media_engagement.html -->
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block main_content %}
+<h2>Engagement Details for "{{ media.description }}"</h2>
+<img src="{{ media.file.url }}" alt="Media" class="img-fluid">
+
+<ul>
+    {% for engagement in engagement_summary %}
+        <li>{{ engagement.engagement_type|capfirst }}: {{ engagement.count }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -5,6 +5,8 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from .models import Group, UserUpload, RegistrationForm, Card, KYC, CustomGroup, CustomGroupAdmin
 from cryptography.fernet import Fernet
+from django.core.exceptions import ValidationError
+import mimetypes
 
 
 
@@ -27,6 +29,33 @@ class CustomSignupForm(SignupForm):
         return user
 
 
+
+
+# class PasswordResetForm(forms.Form):
+#     email = forms.EmailField(max_length=200, help_text='Required', label="Email")
+
+
+class PasswordResetForm(forms.Form):
+    username_or_email = forms.CharField(max_length=200, help_text='Required', label="Username or Email")
+
+
+
+# class UserUploadForm(forms.ModelForm):
+#     country = CountryField().formfield(label='Country of Origin')
+#     document_type = forms.ChoiceField(choices=[
+#         ('aadhar_card', 'Aadhar Card'),
+#         ('pan_card', 'PAN Card'),
+#         ('driving_license', 'Driving License'),
+#         ('voter_id', 'Voter ID'),
+#         ('passport', 'Passport'),
+#         ('others', 'Others')
+#     ])
+
+#     class Meta:
+#         model = UserUpload
+#         fields = ['file_name', 'file', 'document_type', 'country']
+
+
 class UserUploadForm(forms.ModelForm):
     country = CountryField().formfield(label='Country of Origin')
     document_type = forms.ChoiceField(choices=[
@@ -41,7 +70,37 @@ class UserUploadForm(forms.ModelForm):
     class Meta:
         model = UserUpload
         fields = ['file_name', 'file', 'document_type', 'country']
+    
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
 
+        # Add the supported MIME types here
+        valid_mime_types = [
+            'image/jpeg', 
+            'image/png', 
+            'video/mp4', 
+            'application/pdf', 
+            'text/plain',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # docx
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',        # xlsx
+            'application/vnd.ms-excel',  # .xls (old Excel format)
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation', # pptx
+            'application/xml',  # .xml files
+            'text/xml',  # .xml alternative MIME type
+            'application/zip',  # Sometimes .xlsx and other Office files are sent as zips
+            'text/x-python',  # Python files
+            'application/json'  # For JSON files
+        ]
+        
+        # Guess the MIME type of the file
+        mime_type, encoding = mimetypes.guess_type(file.name)
+        
+        # Validate the file type against supported MIME types
+        if mime_type not in valid_mime_types:
+            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, pdf, txt, docx, xlsx, xls, pptx, py, xml, json.")
+        
+        return file
+        
 
 #document existance 
 def check_object_existence(upload_id):

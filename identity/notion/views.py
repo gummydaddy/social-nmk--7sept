@@ -2,12 +2,13 @@
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Notion, Follow, Like, Comment, Hashtag, Notification, BlockedUser
+from .models import Notion, Follow, Comment, Hashtag, Notification, BlockedUser
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from only_card.models import CustomGroupAdmin
-from user_profile.utils import make_usernames_clickable
+from .utils import make_usernames_clickable
+from django.views.decorators.csrf import csrf_protect
 import re
 from django.utils import timezone
 from datetime import timedelta
@@ -19,30 +20,53 @@ from django.db.models import Q, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape, mark_safe
 from django.urls import reverse
+# from identity.notion.tasks import send_tagged_user_notifications  # Import the Celery task
 
 
 
 AuthUser = get_user_model()
 
-from user_profile.views import profile 
-from user_profile.models import Story
+# from user_profile.views import profile 
+# from user_profile.models import Story
+
+
 @login_required
 def notion_home(request, notion_id=None):
     user = request.user
     following_users = Follow.objects.filter(follower=user).values_list('following_id', flat=True)
 
     # Get users with active stories in the last 24 hours
-    active_stories_users = Story.objects.filter(user_id__in=following_users, created_at__gt=timezone.now() - timezone.timedelta(hours=24)).select_related('user', 'user__profile')
+    # active_stories_users = Story.objects.filter(user_id__in=following_users, created_at__gt=timezone.now() - timezone.timedelta(hours=24)).select_related('user', 'user__profile')
 
 
     # Get the notions created by users the current user is following
-    following_notions = Notion.objects.filter(user__in=following_users)
+    following_notions = Notion.objects.filter(
+        user__in=following_users
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    )
+
     # Get the notions created by the current user
     my_notions = Notion.objects.filter(user=user)
-    
-    
-    custom_group_admin_ids = CustomGroupAdmin.objects.filter(user__in=following_users).values_list('user_id', flat=True)
-    admin_notions = Notion.objects.filter(user_id__in=custom_group_admin_ids)
+
+    # Get custom group admin notions
+    custom_group_admin_ids = CustomGroupAdmin.objects.filter(
+        user__in=following_users
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    ).values_list('user_id', flat=True)
+
+    admin_notions = Notion.objects.filter(
+        user_id__in=custom_group_admin_ids
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    ).exclude(
+        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    )
 
     # Combine both querysets
     notions = following_notions | admin_notions | my_notions
@@ -57,46 +81,68 @@ def notion_home(request, notion_id=None):
         'following_count': following_count,
         'followers_count': followers_count,
         'user': user,
-        'active_stories_users': active_stories_users,
+        # 'active_stories_users': active_stories_users,
     }
 
     if notion_id:
+        # notion_id = get_object_or_404(Notion, id=notion_id)
         context['notion_id'] = notion_id
 
     return render(request, 'notionHome.html', context)
 
-
+# views.py
+import logging
 @login_required
 def post_notion(request):
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('content', '')
+        logging.info(f"Received content: {content}")
+
+        if not content:
+            logging.error("No content provided.")
+            return render(request, 'post_notion.html', {'user_id': request.user.id, 'error': 'Content is required.'})
+
+        # Find hashtags and tagged users in the content
         hashtags = set(re.findall(r'#(\w+)', content))
         tagged_usernames = set(re.findall(r'@(\w+)', content))
-        
-        # Process the content to make usernames and links clickable
-        content = make_usernames_clickable(content)
-        
-        deletion_date = timezone.now() + timedelta(days=30)
-        notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
+        logging.info(f"Found hashtags: {hashtags}")
+        logging.info(f"Found tagged users: {tagged_usernames}")
 
-        # Create or get hashtags
+        # Make usernames clickable
+        content = make_usernames_clickable(content)
+
+        # Create the notion
+        try:
+            deletion_date = timezone.now() + timedelta(days=1)
+            notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
+            logging.info(f"Notion created with ID: {notion.id}")
+        except Exception as e:
+            logging.error(f"Error creating notion: {e}")
+            return render(request, 'post_notion.html', {'user_id': request.user.id, 'error': 'Error creating notion.'})
+
+        # Process and add hashtags
         for tag in hashtags:
             hashtag, created = Hashtag.objects.get_or_create(name=tag)
             notion.hashtags.add(hashtag)
-        
-        # Tag users
+
+        # Tag users and send notifications
         for username in tagged_usernames:
             try:
                 tagged_user = AuthUser.objects.get(username=username)
                 notion.tagged_users.add(tagged_user)
-                # Notify tagged user
-                Notification.objects.create(user=tagged_user, content=f'You were tagged in a notion by {request.user.username}')
+                # Create a clickable notification to the notion
+                Notification.objects.create(
+                    user=tagged_user,
+                    content=f'You were tagged in a notion by {request.user.username}. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
+                    related_notion=notion  # Store the notion in the notification
+                )
             except AuthUser.DoesNotExist:
                 pass
-        
+
         return redirect('notion:notion_home', notion_id=notion.id)
-    
+
     return render(request, 'post_notion.html', {'user_id': request.user.id})
+
 
 
 def following_list(request, user_id):
@@ -112,28 +158,32 @@ def followers_list(request, user_id):
     return render(request, 'followers_list.html', {'profile_user': profile_user, 'followers': followers})
 
 
-@csrf_exempt
 @login_required
+@csrf_protect
 def like_notion(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
-    like, created = Like.objects.get_or_create(user=request.user, notion=notion)
-    
-    if not created:
-        like.delete()
+    user = request.user
+
+    if user in notion.likes.all():
+        # User has already liked the notion, so unlike it
+        notion.likes.remove(user)
         liked = False
     else:
+        # User is liking the notion
+        notion.likes.add(user)
         Notification.objects.create(
             user=notion.user,
-            content=f'{request.user.username} liked your notion.',
+            content=f'{user.username} liked your notion. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
             type='like',
-            related_user=request.user,
-            related_notion=notion
+            related_user=user,
+            related_notion=notion  # Store the notion in the notification
         )
         liked = True
 
+    # Return the updated like count and status
     like_count = notion.likes.count()
 
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'liked': liked, 'like_count': like_count})
 
     return redirect(request.META.get('HTTP_REFERER', 'notion:notion_home'))
@@ -144,13 +194,11 @@ def post_comment(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
 
     if request.method == 'POST':
-        content = request.POST.get('content')
+        content = request.POST.get('content', '')
         hashtags = set(re.findall(r'#(\w+)', content))
         tagged_usernames = set(re.findall(r'@(\w+)', content))
 
-        notion = Notion.objects.get(id=notion_id)
-
-        # Transform content to include clickable usernames
+        # Ensure content is not empty and sanitize it
         content = make_usernames_clickable(escape(content))
 
         # Create the comment associated with the notion
@@ -161,14 +209,16 @@ def post_comment(request, notion_id):
             hashtag, created = Hashtag.objects.get_or_create(name=tag)
             comment.hashtags.add(hashtag)
 
-        # Process tagged usernames and create notifications
+        # Process tagged usernames and send notifications to tagged users
         for username in tagged_usernames:
             try:
                 tagged_user = AuthUser.objects.get(username=username)
                 comment.tagged_users.add(tagged_user)
+
+                # Create a clickable notification for the tagged user
                 Notification.objects.create(
                     user=tagged_user,
-                    content=f'{request.user.username} tagged you in a comment: {comment.content}',
+                    content=f'{request.user.username} tagged you in a comment: <a href="{reverse("notion:notion_detail", args=[notion.id])}#{comment.id}">View Comment</a>',
                     comment=comment,
                     related_user=request.user,
                     related_notion=notion,
@@ -177,22 +227,22 @@ def post_comment(request, notion_id):
             except AuthUser.DoesNotExist:
                 pass
 
-        # Create notification for the notion owner
-        Notification.objects.create(
-            user=notion.user,
-            content=f'{request.user.username} commented on your notion.',
-            comment=comment,
-            type='comment',
-            related_user=request.user,
-            related_notion=notion
-        )
+        # Create a notification for the notion owner
+        if request.user != notion.user:  # Avoid self-notifications
+            Notification.objects.create(
+                user=notion.user,
+                content=f'{request.user.username} commented on your notion: <a href="{reverse("notion:notion_detail", args=[notion.id])}#{comment.id}">View Comment</a>',
+                comment=comment,
+                type='comment',
+                related_user=request.user,
+                related_notion=notion
+            )
 
-        # Redirect to the notion detail page with a fragment identifier to the new comment
-        return redirect(f"{request.build_absolute_uri()}#{comment.id}")
+        # Redirect to the notion detail page with a fragment identifier for the new comment
+        return redirect(f"{reverse('notion:notion_detail', args=[notion.id])}#{comment.id}")
 
-    # If not POST, fallback to redirection to the notion detail page
+    # If not a POST request, fallback to redirecting to the notion detail page
     return redirect('notion:notion_detail', notion_id=notion.id)
-
 
 
 
@@ -206,14 +256,14 @@ def delete_comment(request, comment_id):
         return redirect('notion:notion_detail', notion_id=notion.id)
     return redirect('notion:notion_detail', notion_id=notion.id)
 
-
+#works for the search bar at the top of the page 
 @login_required
 def search_users(request):
     query = request.GET.get('q', '')
     
     if query:
         users = (AuthUser.objects.filter(username__icontains=query) | 
-                 AuthUser.objects.filter(profile__bio__icontains=query) | 
+                #  AuthUser.objects.filter(profile__bio__icontains=query) | 
                  AuthUser.objects.filter(media__description__icontains=query)).distinct()
     else:
         users = AuthUser.objects.none()
@@ -320,7 +370,12 @@ def notion_detail_view(request, notion_id):
 @login_required
 def notifications(request):
     user = request.user
-    notifications = Notification.objects.filter(user=user).order_by('-created_at')
+    # Get current time and the time 8 days ago
+    now = timezone.now()
+    eight_days_ago = now - timedelta(days=8)
+    
+    # Filter notifications for the last 8 days and order by creation date
+    notifications = Notification.objects.filter(user=user, created_at__gte=eight_days_ago).order_by('-created_at')
 
     # Process notification content to make usernames and links clickable
     for notification in notifications:
@@ -337,16 +392,18 @@ def notifications(request):
 def notion_explorer(request):
     user = request.user
 
-    # Fetch user's liked notions and extract hashtags
-    liked_notions = Like.objects.filter(user=user).select_related('notion')
-    recent_tags = cache.get(f'{user.id}_recent_tags', deque(maxlen=50))
+    # Fetch user's liked notions directly from the Notion model
+    liked_notions = Notion.objects.filter(likes=user)
 
+    # Fetching notions the user has liked
+    # Retrieve recent hashtags from cache or initialize a new deque
+    recent_tags = cache.get(f'{user.id}_recent_tags', deque(maxlen=50))
     if not recent_tags:
         recent_tags = deque(maxlen=50)
 
     # Update recent_tags queue with hashtags from liked notions
     for notion in liked_notions:
-        for hashtag in notion.notion.hashtags.all():
+        for hashtag in notion.hashtags.all():
             if hashtag.name not in recent_tags:
                 recent_tags.append(hashtag.name)
 
@@ -354,10 +411,20 @@ def notion_explorer(request):
     cache.set(f'{user.id}_recent_tags', list(recent_tags), None)
 
     # Fetch notions based on recent_tags
-    tagged_notions = Notion.objects.filter(hashtags__name__in=recent_tags).distinct()
+    tagged_notions = Notion.objects.filter(
+        hashtags__name__in=recent_tags
+    ).distinct().filter(
+        ~Q(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)),
+        ~Q(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
+    )
 
     # Fetch newest and most liked notions
-    newest_most_liked_notions = Notion.objects.annotate(like_count=Count('likes')).order_by('-created_at', '-like_count')[:50]
+    newest_most_liked_notions = Notion.objects.annotate(
+        like_count=Count('likes')
+    ).filter(
+        ~Q(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)),
+        ~Q(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
+    ).order_by('-created_at', '-like_count')[:50]
 
     # Convert querysets to lists
     tagged_notions_list = list(tagged_notions)
@@ -381,18 +448,21 @@ def notion_explorer(request):
     query = request.GET.get('q')
     if query:
         search_notions = Notion.objects.filter(
-            Q(content__icontains=query) |
-            Q(user__username__icontains=query) |
-            Q(hashtags__name__icontains=query)
-        ).distinct()
+        Q(content__icontains=query) |
+        Q(user__username__icontains=query) |
+        Q(hashtags__name__icontains=query)
+    ).filter(
+        ~Q(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)),
+        ~Q(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
+    ).distinct()
         final_notions_list = list(search_notions)
         random.shuffle(final_notions_list)
 
     context = {
-        'notions': final_notions_list[:],  # Display up to 50 notions
+        'notions': final_notions_list[:50],  # Display up to 50 notions
     }
-
     return render(request, 'notion_explorer.html', context)
+
 
 #block
 @login_required

@@ -4,6 +4,7 @@ from django.db import models
 from django.contrib.auth.models import User as AuthUser
 from .fields import CompressedTextField
 from user_profile.models import Media
+from django.utils.timezone import now #new
 from django.utils import timezone
 from datetime import timedelta
 
@@ -14,6 +15,11 @@ class Hashtag(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+def get_deletion_date():
+    return now() + timedelta(days=1)
+
 
 class Notion(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='notions')
@@ -21,8 +27,9 @@ class Notion(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     hashtags = models.ManyToManyField(Hashtag, related_name='notions', blank=True)
     tagged_users = models.ManyToManyField(AuthUser, related_name='tagged_notions', blank=True)
-    # likes = models.ManyToManyField(AuthUser, through='Like', related_name='liked_notions')
-    deletion_date = models.DateTimeField(default=timezone.now() + timedelta(days=30))  # Default deletion date
+    likes = models.ManyToManyField(AuthUser, related_name='liked_notions', blank=True)  # Now directly a ManyToManyField for likes
+    deletion_date = models.DateTimeField(default=get_deletion_date, db_index=True)  # Use the function instead of lambda
+    # deletion_date = models.DateTimeField(default=lambda: now() + timedelta(days=1), db_index=True) #new with line 7 import 
 
     def __str__(self):
         return self.content
@@ -51,14 +58,6 @@ class Follow(models.Model):
         # constraints = [
         #     models.UniqueConstraint(fields=['follower', 'following'], name='unique_followers')
         # ]
-
-class Like(models.Model):
-    user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
-    notion = models.ForeignKey(Notion, on_delete=models.CASCADE, related_name='likes')
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'notion')
 
 class Comment(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='comments')

@@ -13,8 +13,12 @@ import random
 import string
 from django.core.mail import send_mail
 from cryptography.fernet import Fernet
+from django.conf import settings
+from .user_fields import LockedField
+import logging
 
 
+logger = logging.getLogger(__name__)
 
 
 def default_file_name():
@@ -26,9 +30,16 @@ def default_file_name():
 #document upload & delete15april
 
 
+class UserStorage(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    total_storage_used = models.BigIntegerField(default=0)  # Store in bytes
+
+    def __str__(self):
+        return f"{self.user.username} - {self.total_storage_used / (1024 * 1024)} MB"
+
 
 class UserUpload(models.Model):
-    user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     document_type = models.CharField(max_length=50)
     file_name = models.CharField(max_length=255)
     upload_date = models.DateTimeField(auto_now_add=True)
@@ -37,33 +48,58 @@ class UserUpload(models.Model):
     encryption_key = models.CharField(max_length=44, blank=True, null=True)
 
     def save(self, *args, **kwargs):
+        file_size = self.file.size  # Get the size of the uploaded file
+
+        # Check the user's storage usage
+        user_storage, created = UserStorage.objects.get_or_create(user=self.user)
+        if user_storage.total_storage_used + file_size > 512 * 1024 * 1024:  # 512 MB limit
+            raise ValueError("Storage limit exceeded")
+
         if not self.encryption_key:
             self.encryption_key = Fernet.generate_key().decode('utf-8')
 
-        # Save the file first
         super().save(*args, **kwargs)
 
-        # Encrypt the entire file after saving it
+        # Encrypt the file after saving
         fernet = Fernet(self.encryption_key.encode('utf-8'))
         file_path = self.file.path
-
         with open(file_path, 'rb') as file:
             original_file_data = file.read()
-
         encrypted_file_data = fernet.encrypt(original_file_data)
 
         # Save the encrypted file
         with open(file_path, 'wb') as encrypted_file:
             encrypted_file.write(encrypted_file_data)
 
+        # Update user's total storage
+        user_storage.total_storage_used += file_size
+        user_storage.save()
+
     def delete_file(self):
         if self.file:
             try:
                 file_path = self.file.path
+                file_size = self.file.size
                 if os.path.exists(file_path):
                     os.remove(file_path)
+
+                # Update user's storage after file deletion
+                user_storage = UserStorage.objects.get(user=self.user)
+                user_storage.total_storage_used -= file_size
+                user_storage.save()
+            except UserStorage.DoesNotExist:
+                logger.error("User storage not found.")
             except Exception as e:
-                print(f"Error deleting file: {e}")
+                logger.error(f"Error deleting file: {e}")
+
+# class TemporarilyLock(models.Model):
+#     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
+#     locked_by = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='locked_users')
+#     locked_at = models.DateTimeField(auto_now_add=True)
+#     expires_at = models.DateTimeField(null=True, blank=True)
+
+#     def is_expired(self):
+#         return self.expires_at and self.expires_at < timezone.now()
 
 
 #Criteria for Service Provider Registration:Model18april

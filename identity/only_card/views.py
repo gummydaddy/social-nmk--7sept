@@ -1,4 +1,7 @@
+from urllib import request
 import pyrebase
+from django import forms
+from django.forms import CharField, EmailField
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User  # Import the User model at the top
@@ -9,12 +12,29 @@ from django.contrib import messages
 from django.core.mail import send_mail, EmailMessage, get_connection
 from django.core.cache import cache
 from django.conf import settings
-from .models import KYC, File, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin
-from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm
+from .models import KYC, File, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin#, TemporarilyLock
+from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm, PasswordResetForm
 from twilio.rest import Client
 from cryptography.fernet import Fernet
 import os
 import logging
+from django.contrib.auth import update_session_auth_hash
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+import mimetypes
+from docx import Document
+from pptx import Presentation
+import xml.etree.ElementTree as ET
+import openpyxl  # To handle .xlsx files
+import xlrd  # To handle .xls files
+# import base64
+
+
+
+
+
+
+
+
 
 firebaseConfig={
     'apiKey': "AIzaSyCN7s6q2iX84wAa-bcADtojDbRKRsK5UTk",
@@ -97,101 +117,6 @@ def signup(request):
         form = CustomSignupForm()
     return render(request, 'signup.html', {'form': form})
 
-# Login
-# def login_view(request):
-#     if request.method == 'POST':
-#         username_or_association = request.POST['username']
-#         password = request.POST['pass1']
-#         user = authenticate(request, username=username_or_association, password=password)
-#         if user is not None:
-#             login(request, user)
-#             response = HttpResponse("You're logged in.")
-#             response.set_cookie('username', username_or_association)
-#             cache.set(f'user_{user.id}', user.username)
-#             if CustomGroupAdmin.objects.filter(user=user).exists():
-#                 return redirect('/subgroup_landing_page')
-#             elif user.is_staff:
-#                 return redirect('/super_user_landing_page')
-#             else:
-#                 return redirect('/landing_page')
-
-#         try:
-#             group = CustomGroup.objects.get(name=username_or_association)
-#             user = group.users.first()
-#             if user:
-#                 login(request, user)
-#                 request.session['association_name'] = username_or_association
-#                 request.session['user_id'] = user.id
-#                 cache.set(f'user_{user.id}', username_or_association)
-#         except CustomGroup.DoesNotExist:
-#             pass
-#         messages.error(request, 'Invalid username or password')
-#         return render(request, 'login_view.html')
-#     else:
-#         return render(request, 'login_view.html')
-
-
-# def login_view(request):
-#     if request.method == 'POST':
-#         username_or_email = request.POST['username']
-#         password = request.POST['pass1']
-
-#         try:
-#             # Validate email format if username_or_email is intended to be an email
-#             if '@' not in username_or_email or '.' not in username_or_email:
-#                 raise ValueError("Invalid email format")
-
-#             # Firebase authentication
-#             firebase_user = auth.sign_in_with_email_and_password(username_or_email, password)
-#             user = authenticate(request, username=username_or_email, password=password)
-            
-#             if user is not None:
-#                 # Log in the user in Django
-#                 login(request, user)
-#                 response = HttpResponse("You're logged in.")
-#                 response.set_cookie('username', username_or_email)
-#                 cache.set(f'user_{user.id}', user.username)
-                
-#                 if CustomGroupAdmin.objects.filter(user=user).exists():
-#                     return redirect('/subgroup_landing_page')
-#                 elif user.is_staff:
-#                     return redirect('/super_user_landing_page')
-#                 else:
-#                     return redirect('/landing_page')
-
-#             else:
-#                 messages.error(request, 'Invalid username or password')
-
-#         except ValueError as ve:
-#             messages.error(request, str(ve))
-
-#         except Exception as e:
-#             # Handle Firebase authentication errors more gracefully
-#             error_message = str(e)
-#             if "INVALID_EMAIL" in error_message:
-#                 messages.error(request, "The email address is invalid. Please check and try again.")
-#             elif "INVALID_PASSWORD" in error_message:
-#                 messages.error(request, "The password is incorrect. Please try again.")
-#             else:
-#                 messages.error(request, f"Failed to log in: {error_message}")
-
-#         # Check if username is a group name for alternative authentication
-#         try:
-#             group = CustomGroup.objects.get(name=username_or_email)
-#             user = group.users.first()
-#             if user:
-#                 login(request, user)
-#                 request.session['association_name'] = username_or_email
-#                 request.session['user_id'] = user.id
-#                 cache.set(f'user_{user.id}', username_or_email)
-#                 return redirect('/landing_page')
-#         except CustomGroup.DoesNotExist:
-#             pass
-
-#         return render(request, 'login_view.html')
-
-#     else:
-#         return render(request, 'login_view.html')
 
 
 def login_view(request):
@@ -200,51 +125,65 @@ def login_view(request):
         password = request.POST['pass1']
 
         try:
-            # Check if username_or_email is an email
+            # Check if the input is an email or username
             if '@' in username_or_email:
-                # Try to authenticate with email
+                # Authenticate with email
                 user = User.objects.get(email=username_or_email)
                 username = user.username
             else:
-                # Try to authenticate with username
+                # Authenticate with username
                 username = username_or_email
                 user = User.objects.get(username=username)
 
-            # Firebase authentication
-            firebase_user = auth.sign_in_with_email_and_password(user.email, password)
+            # Firebase authentication: Check if the provided credentials are correct in Firebase
+            try:
+                firebase_user = auth.sign_in_with_email_and_password(user.email, password)
 
-            # Authenticate and log in the user in Django
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                response = HttpResponse("You're logged in.")
-                response.set_cookie('username', username)
-                cache.set(f'user_{user.id}', user.username)
+                # At this point, the password matches Firebase. Update Django's password with Firebase password.
+                user.set_password(password)  # Sync the Firebase password with Django's password
+                user.save()
 
-                if CustomGroupAdmin.objects.filter(user=user).exists():
-                    return redirect('/subgroup_landing_page')
-                elif user.is_staff:
-                    return redirect('/super_user_landing_page')
+                # Authenticate the user in Django with the updated password
+                user = authenticate(request, username=username, password=password)
+
+                if user is not None:
+                    # Log the user in Django
+                    login(request, user)
+
+                    # Ensure the session remains intact after password update
+                    update_session_auth_hash(request, user)
+
+                    # Set session cookie and cache the username
+                    response = HttpResponse("You're logged in.")
+                    response.set_cookie('username', username)
+                    cache.set(f'user_{user.id}', user.username)
+
+                    # Redirect based on user roles
+                    if CustomGroupAdmin.objects.filter(user=user).exists():
+                        return redirect('/subgroup_landing_page')
+                    elif user.is_staff:
+                        return redirect('/super_user_landing_page')
+                    else:
+                        return redirect('/landing_page')
+
+            except Exception as firebase_error:
+                # Handle Firebase authentication errors
+                error_message = str(firebase_error)
+                if "EMAIL_NOT_FOUND" in error_message:
+                    messages.error(request, "No account found with this email.")
+                elif "INVALID_PASSWORD" in error_message:
+                    messages.error(request, "The password is incorrect. Please try again.")
                 else:
-                    return redirect('/landing_page')
-
-            else:
-                messages.error(request, 'Invalid username or password')
+                    messages.error(request, f"Firebase error: {error_message}")
 
         except User.DoesNotExist:
             messages.error(request, 'Invalid username or email')
 
         except Exception as e:
-            # Handle Firebase authentication errors more gracefully
-            error_message = str(e)
-            if "INVALID_EMAIL" in error_message:
-                messages.error(request, "The email address is invalid. Please check and try again.")
-            elif "INVALID_PASSWORD" in error_message:
-                messages.error(request, "The password is incorrect. Please try again.")
-            else:
-                messages.error(request, f"Failed to log in: {error_message}")
+            # Handle any other errors
+            messages.error(request, f"Failed to log in: {str(e)}")
 
-        # Check if username is a group name for alternative authentication
+        # Group-based authentication (if necessary)
         try:
             group = CustomGroup.objects.get(name=username_or_email)
             user = group.users.first()
@@ -261,7 +200,8 @@ def login_view(request):
 
     else:
         return render(request, 'login_view.html')
-    
+
+
 
 @staff_member_required
 def super_user_landing_page(request):
@@ -290,6 +230,41 @@ def logout_view(request):
     logout(request)
     request.session.flush()
     return redirect('/')
+
+
+def password_reset(request):
+    if request.method == 'POST':
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            username_or_email = form.cleaned_data['username_or_email']
+            try:
+                # Check if username_or_email is a username or email
+                if '@' in username_or_email:
+                    # It's an email
+                    user = User.objects.get(email=username_or_email)
+                else:
+                    # It's a username
+                    user = User.objects.get(username=username_or_email)
+                # Send Firebase password reset email
+                auth.send_password_reset_email(user.email)
+                messages.success(request, 'A password reset link has been sent to your email.')
+                return redirect('/login/')
+            except User.DoesNotExist:
+                messages.error(request, "No account found with this username or email address.")
+            except Exception as e:
+                error_message = str(e)
+                messages.error(request, f"Error: {error_message}")
+        else:
+            messages.error(request, 'Please provide a valid username or email.')
+    else:
+        form = PasswordResetForm()
+        if request.user.is_authenticated:
+            email = request.user.email
+            form.fields['username_or_email'].initial = email
+            form.fields['username_or_email'].widget = forms.HiddenInput()
+
+    return render(request, 'password_reset.html', {'form': form})
+
 
 
 # Landing
@@ -349,14 +324,25 @@ def upload_document(request):
         form = UserUploadForm(request.POST, request.FILES)
         if form.is_valid():
             form.instance.user = request.user
-            form.save()
+
+            try:
+                form.save()  # This will check the storage limit
+            except ValueError as e:
+                # If storage is full, show a message and prevent upload
+                messages.error(request, "Storage full. Please buy more storage.")
+                return redirect('/buy_storage')  # Redirect to a "Buy Storage" page
+
             if CustomGroupAdmin.objects.filter(user=request.user).exists():
                 return redirect('/subgroup_landing_page')
             else:
                 return redirect('/landing_page')
     else:
         form = UserUploadForm()
+
     return render(request, 'upload_document.html', {'form': form})
+
+def buy_storage(request):
+    return render(request, 'buy_storage.html')
 
 
 # Set up logging
@@ -365,32 +351,45 @@ logger = logging.getLogger(__name__)
 @login_required
 def view_file(request, upload_id):
     try:
+        # Fetch the uploaded file record for the authenticated user
         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
 
+        # Ensure the file has an encryption key
         if not upload.encryption_key:
             logger.error(f"Encryption key not found for file with ID {upload_id}")
             return HttpResponseServerError("Encryption key not found for this file.")
 
         try:
+            # Initialize the Fernet cipher for decryption using the encryption key
             fernet = Fernet(upload.encryption_key.encode('utf-8'))
         except Exception as e:
             logger.error(f"Error initializing Fernet cipher: {e}")
             return HttpResponseServerError("Failed to initialize decryption.")
 
+        # Check if the file exists on the server
         file_path = upload.file.path
         if not os.path.exists(file_path):
             logger.error(f"File not found: {file_path}")
             return HttpResponseNotFound("File not found")
+        
+
+        # Detect the correct MIME type based on the file extension
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if not mime_type:
+            mime_type = 'application/octet-stream'  # Fallback to a default type
 
         try:
+            # Read the entire encrypted file into memory
             with open(file_path, 'rb') as encrypted_file:
                 encrypted_file_data = encrypted_file.read()
 
+            # Decrypt the entire file at once
             decrypted_file_data = fernet.decrypt(encrypted_file_data)
 
+            # Return the decrypted file as a streaming HTTP response
             response = StreamingHttpResponse(
-                iter([decrypted_file_data]), 
-                content_type='application/octet-stream'
+                iter([decrypted_file_data]),  # Send the decrypted content as a single iterable
+                content_type=mime_type
             )
             response['Content-Disposition'] = f'attachment; filename="{upload.file_name}"'
             return response
@@ -398,11 +397,604 @@ def view_file(request, upload_id):
         except Exception as e:
             logger.error(f"Error during file decryption: {e}")
             return HttpResponseServerError("Error decrypting file.")
+            
 
     except Exception as e:
         logger.error(f"Unhandled exception in view_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
+
+
+@login_required
+def view_docx_file(request, upload_id):
+    try:
+        # Fetch the uploaded file record for the authenticated user
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+        # Ensure the file has an encryption key
+        if not upload.encryption_key:
+            logger.error(f"Encryption key not found for file with ID {upload_id}")
+            return HttpResponseServerError("Encryption key not found for this file.")
+
+        try:
+            # Initialize the Fernet cipher for decryption using the encryption key
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error initializing Fernet cipher: {e}")
+            return HttpResponseServerError("Failed to initialize decryption.")
+
+        # Check if the file exists on the server
+        file_path = upload.file.path
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return HttpResponseNotFound("File not found")
+
+        # Check if the file is a .docx file
+        if not file_path.endswith('.docx'):
+            logger.error(f"Unsupported file type: {file_path}")
+            return HttpResponseServerError("Unsupported file type.")
+
+        # Read and decrypt the entire .docx file
+        try:
+            with open(file_path, 'rb') as encrypted_file:
+                encrypted_file_data = encrypted_file.read()
+
+            decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+            # Save the decrypted data to a temporary file to be read by python-docx
+            temp_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+            with open(temp_file_path, 'wb') as temp_file:
+                temp_file.write(decrypted_file_data)
+
+            # Use python-docx to open and read the content of the .docx file
+            document = Document(temp_file_path)
+
+            # Extract text from the .docx file and convert it to HTML format
+            docx_content = ""
+            for paragraph in document.paragraphs:
+                docx_content += f"<p>{paragraph.text}</p>"
+
+            # Clean up: remove the temporary file after processing
+            os.remove(temp_file_path)
+
+            # Render the content in an HTML template
+            return render(request, 'view_docx.html', {'docx_content': docx_content, 'file_name': upload.file_name})
+
+        except Exception as e:
+            logger.error(f"Error reading .docx file: {e}")
+            return HttpResponseServerError("Error reading .docx file.")
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_docx_file: {e}")
+        return HttpResponseServerError("An error occurred while processing your request.")
+
+
+# @login_required
+# def view_pdf_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Check if the file is a .pdf file
+#         if not file_path.endswith('.pdf'):
+#             logger.error(f"Unsupported file type: {file_path}")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#         # Read and decrypt the entire .pdf file
+#         try:
+#             with open(file_path, 'rb') as encrypted_file:
+#                 encrypted_file_data = encrypted_file.read()
+
+#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+#             # Encode the decrypted data as base64
+#             pdf_content_base64 = base64.b64encode(decrypted_file_data).decode('utf-8')
+
+#             # Render the content in an HTML template
+#             return render(request, 'view_docx.html', {'pdf_content_base64': pdf_content_base64, 'file_name': upload.file_name})
+
+#         except Exception as e:
+#             logger.error(f"Error reading .pdf file: {e}")
+#             return HttpResponseServerError("Error reading .pdf file.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_pdf_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
+
+@login_required
+def view_pptx_file(request, upload_id):
+    try:
+        # Fetch the uploaded file record for the authenticated user
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+        # Ensure the file has an encryption key
+        if not upload.encryption_key:
+            logger.error(f"Encryption key not found for file with ID {upload_id}")
+            return HttpResponseServerError("Encryption key not found for this file.")
+
+        try:
+            # Initialize the Fernet cipher for decryption using the encryption key
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error initializing Fernet cipher: {e}")
+            return HttpResponseServerError("Failed to initialize decryption.")
+
+        # Check if the file exists on the server
+        file_path = upload.file.path
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return HttpResponseNotFound("File not found")
+
+        # Check if the file is a .pptx file
+        if not file_path.endswith('.pptx'):
+            logger.error(f"Unsupported file type: {file_path}")
+            return HttpResponseServerError("Unsupported file type.")
+
+        # Read and decrypt the entire .pptx file
+        try:
+            with open(file_path, 'rb') as encrypted_file:
+                encrypted_file_data = encrypted_file.read()
+
+            decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+            # Save the decrypted data to a temporary file to be read by python-pptx
+            temp_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+            with open(temp_file_path, 'wb') as temp_file:
+                temp_file.write(decrypted_file_data)
+
+            # Use python-pptx to open and read the content of the .pptx file
+            presentation = Presentation(temp_file_path)
+
+            # Extract slide content
+            pptx_content = ""
+            for slide_number, slide in enumerate(presentation.slides, start=1):
+                pptx_content += f"<h3>Slide {slide_number}</h3>"
+                for shape in slide.shapes:
+                    if hasattr(shape, "text"):
+                        pptx_content += f"<p>{shape.text}</p>"
+
+            # Clean up: remove the temporary file after processing
+            os.remove(temp_file_path)
+
+            # Render the content in an HTML template
+            return render(request, 'view_docx.html', {'pptx_content': pptx_content, 'file_name': upload.file_name})
+
+        except Exception as e:
+            logger.error(f"Error reading .pptx file: {e}")
+            return HttpResponseServerError("Error reading .pptx file.")
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_pptx_file: {e}")
+        return HttpResponseServerError("An error occurred while processing your request.")
+
+
+def is_valid_excel_file(file_path):
+    # Supported MIME types for Excel files
+    excel_mime_types = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',  # .xlsx
+        'application/vnd.ms-excel.sheet.macroEnabled.12',  # .xlsm
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.template',  # .xltx
+        'application/vnd.ms-excel.template.macroEnabled.12'  # .xltm
+    ]
     
+    mime_type, _ = mimetypes.guess_type(file_path)
+    return mime_type in excel_mime_types
+
+
+# @login_required
+# def view_xml_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Get the file extension and handle accordingly
+#         file_extension = os.path.splitext(file_path)[1].lower()
+
+#         # Decrypt and handle the file based on its extension
+#         if file_extension == '.xml':
+#             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xml')
+#         elif file_extension == '.xlsx':
+#             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xlsx')
+#         else:
+#             logger.error(f"Unsupported file type: {file_path}")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_xml_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
+    
+# def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
+#     """Handles both XML and XLSX file decryption and rendering."""
+#     try:
+#         # Read and decrypt the entire file
+#         with open(file_path, 'rb') as encrypted_file:
+#             encrypted_file_data = encrypted_file.read()
+
+#         # Write the decrypted content to a temporary file for processing
+#         decrypted_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+#         with open(decrypted_file_path, 'wb') as decrypted_file:
+#             decrypted_file.write(fernet.decrypt(encrypted_file_data))
+
+#         # Validate file type if it's an Excel file
+#         if file_type == 'xlsx' and not is_valid_excel_file(decrypted_file_path):
+#             logger.error(f"Unsupported Excel file format: {decrypted_file_path}")
+#             return HttpResponseServerError("Unsupported Excel file format. Please upload a valid .xlsx or .xlsm file.")
+
+#         # Process based on file type
+#         if file_type == 'xml':
+#             # Handle XML file
+#             try:
+#                 # Parse the XML content
+#                 with open(decrypted_file_path, 'r', encoding='utf-8') as decrypted_file:
+#                     xml_data = decrypted_file.read()
+
+#                 root = ET.fromstring(xml_data)
+
+#                 # Convert XML content to a string for display
+#                 xml_content = ET.tostring(root, encoding='unicode', method='xml')
+
+#                 # Render the content in an HTML template
+#                 return render(request, 'view_docx.html', {
+#                     'xml_content': xml_content,
+#                     'file_name': upload.file_name
+#                 })
+
+#             except ET.ParseError as e:
+#                 logger.error(f"Error parsing XML file: {e}")
+#                 return HttpResponseServerError("Error parsing the XML file.")
+
+#         elif file_type == 'xlsx':
+#             # Handle XLSX file
+#             try:
+#                 # Open the decrypted Excel file using openpyxl
+#                 workbook = openpyxl.load_workbook(decrypted_file_path)
+#                 sheet = workbook.active
+
+#                 # Collect data from the first sheet
+#                 excel_data = []
+#                 for row in sheet.iter_rows(values_only=True):
+#                     excel_data.append(row)
+
+#                 # Render the content in an HTML template
+#                 return render(request, 'view_docx.html', {
+#                     'excel_data': excel_data,
+#                     'file_name': upload.file_name
+#                 })
+
+#             except Exception as e:
+#                 logger.error(f"Error reading Excel file: {e}")
+#                 return HttpResponseServerError("Error reading Excel file.")
+#         else:
+#             logger.error("Unsupported file type provided.")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#     except Exception as e:
+#         logger.error(f"Error decrypting {file_type} file: {e}")
+#         return HttpResponseServerError(f"Error decrypting {file_type} file.")
+#     finally:
+#         # Clean up the temporary decrypted file if it exists
+#         if os.path.exists(decrypted_file_path):
+#             os.remove(decrypted_file_path)
+
+
+def view_xml_file(request, upload_id):
+    try:
+        # Fetch the uploaded file record for the authenticated user
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+        # Ensure the file has an encryption key
+        if not upload.encryption_key:
+            logger.error(f"Encryption key not found for file with ID {upload_id}")
+            return HttpResponseServerError("Encryption key not found for this file.")
+
+        try:
+            # Initialize the Fernet cipher for decryption using the encryption key
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error initializing Fernet cipher: {e}")
+            return HttpResponseServerError("Failed to initialize decryption.")
+
+        # Check if the file exists on the server
+        file_path = upload.file.path
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return HttpResponseNotFound("File not found")
+
+        # Get the file extension and handle accordingly
+        file_extension = os.path.splitext(file_path)[1].lower()
+
+        # Decrypt and handle the file based on its extension
+        if file_extension == '.xml':
+            return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xml')
+        elif file_extension == '.xlsx' or file_extension == '.xls':
+            return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type=file_extension)
+        else:
+            logger.error(f"Unsupported file type: {file_path}")
+            return HttpResponseServerError("Unsupported file type.")
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_xml_file: {e}")
+        return HttpResponseServerError("An error occurred while processing your request.")
+
+
+def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
+    """Handles XML, XLS, and XLSX file decryption and rendering."""
+    try:
+        # Read and decrypt the entire file
+        with open(file_path, 'rb') as encrypted_file:
+            encrypted_file_data = encrypted_file.read()
+
+        # Write the decrypted content to a temporary file for processing
+        decrypted_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+        with open(decrypted_file_path, 'wb') as decrypted_file:
+            decrypted_file.write(fernet.decrypt(encrypted_file_data))
+
+        # Process based on file type
+        if file_type == 'xml':
+            # Handle XML file
+            return handle_xml_file(decrypted_file_path, upload)
+
+        elif file_type == '.xlsx':
+            # Handle XLSX file
+            return handle_xlsx_file(decrypted_file_path, upload)
+
+        elif file_type == '.xls':
+            # Handle XLS file using xlrd
+            return handle_xls_file(decrypted_file_path, upload)
+
+        else:
+            logger.error("Unsupported file type provided.")
+            return HttpResponseServerError("Unsupported file type.")
+
+    except Exception as e:
+        logger.error(f"Error decrypting {file_type} file: {e}")
+        return HttpResponseServerError(f"Error decrypting {file_type} file.")
+    finally:
+        # Clean up the temporary decrypted file if it exists
+        if os.path.exists(decrypted_file_path):
+            os.remove(decrypted_file_path)
+
+
+def handle_xml_file(decrypted_file_path, upload):
+    """Handles the XML file content."""
+    try:
+        # Parse the XML content
+        with open(decrypted_file_path, 'r', encoding='utf-8') as decrypted_file:
+            xml_data = decrypted_file.read()
+
+        root = ET.fromstring(xml_data)
+
+        # Convert XML content to a string for display
+        xml_content = ET.tostring(root, encoding='unicode', method='xml')
+
+        # Render the content in an HTML template
+        return render(request, 'view_docx.html', {
+            'xml_content': xml_content,
+            'file_name': upload.file_name
+        })
+
+    except ET.ParseError as e:
+        logger.error(f"Error parsing XML file: {e}")
+        return HttpResponseServerError("Error parsing the XML file.")
+
+
+def handle_xlsx_file(decrypted_file_path, upload):
+    """Handles the XLSX file content using openpyxl."""
+    try:
+        # Log the decrypted file path to ensure decryption is happening
+        logger.info(f"Decrypted file path: {decrypted_file_path}")
+        
+        # Check the file size to make sure it's a valid Excel file size
+        file_size = os.path.getsize(decrypted_file_path)
+        logger.info(f"Decrypted file size: {file_size} bytes")
+        
+        # Open the decrypted Excel file using openpyxl
+        workbook = openpyxl.load_workbook(decrypted_file_path)
+        sheet = workbook.active
+
+        # Collect data from the first sheet
+        excel_data = []
+        for row in sheet.iter_rows(values_only=True):
+            excel_data.append(row)
+
+        # Render the content in an HTML template
+        return render(request, 'view_docx.html', {
+            'excel_data': excel_data,
+            'file_name': upload.file_name
+        })
+
+    except Exception as e:
+        logger.error(f"Error reading Excel file (.xlsx): {e}")
+        return HttpResponseServerError("Error reading Excel file (.xlsx).")
+
+
+
+def handle_xls_file(decrypted_file_path, upload):
+    """Handles the older .xls file format using xlrd."""
+    try:
+        # Open the decrypted Excel file using xlrd
+        workbook = xlrd.open_workbook(decrypted_file_path)
+        sheet = workbook.sheet_by_index(0)
+
+        # Collect data from the first sheet
+        excel_data = []
+        for row_num in range(sheet.nrows):
+            row = sheet.row_values(row_num)
+            excel_data.append(row)
+
+        # Render the content in an HTML template
+        return render(request, 'view_docx.html', {
+            'excel_data': excel_data,
+            'file_name': upload.file_name
+        })
+
+    except Exception as e:
+        logger.error(f"Error reading Excel file (.xls): {e}")
+        return HttpResponseServerError("Error reading Excel file (.xls).")
+    
+
+# @login_required
+# def view_text_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Read and decrypt the entire file
+#         try:
+#             with open(file_path, 'rb') as encrypted_file:
+#                 encrypted_file_data = encrypted_file.read()
+
+#             decrypted_file_data = fernet.decrypt(encrypted_file_data).decode('utf-8')
+
+#             # Determine the file type and render the appropriate template
+#             file_extension = os.path.splitext(upload.file.name)[1]
+            
+#             if file_extension == '.py':
+#                 file_type = 'python'
+#             elif file_extension == '.js':
+#                 file_type = 'javascript'
+#             elif file_extension == '.txt':
+#                 file_type = 'text'
+#             else:
+#                 file_type = 'unknown'
+
+#             # Render the content in an HTML template
+#             return render(request, 'view_docx.html', {
+#                 'file_content': decrypted_file_data,
+#                 'file_name': upload.file_name,
+#                 'file_type': file_type
+#             })
+
+#         except Exception as e:
+#             logger.error(f"Error reading text file: {e}")
+#             return HttpResponseServerError("Error reading text file.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_text_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
+
+@login_required
+def view_text_file(request, upload_id):
+    try:
+        # Fetch the uploaded file record for the authenticated user
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+        # Ensure the file has an encryption key
+        if not upload.encryption_key: 
+            logger.error(f"Encryption key not found for file with ID {upload_id}")
+            return HttpResponseServerError("Encryption key not found for this file.")
+
+        try:
+            # Initialize the Fernet cipher for decryption using the encryption key
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error initializing Fernet cipher: {e}")
+            return HttpResponseServerError("Failed to initialize decryption.")
+
+        # Check if the file exists on the server
+        file_path = upload.file.path
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return HttpResponseNotFound("File not found")
+
+        # Read and decrypt the entire file
+        try:
+            with open(file_path, 'rb') as encrypted_file:
+                encrypted_file_data = encrypted_file.read()
+
+            decrypted_file_data = fernet.decrypt(encrypted_file_data).decode('utf-8')
+
+            # Determine the file type and render the appropriate template
+            file_extension = os.path.splitext(upload.file.name)[1].lower()
+            
+            if file_extension == '.py':
+                file_type = 'python'
+            elif file_extension == '.js':
+                file_type = 'javascript'
+            elif file_extension == '.txt':
+                file_type = 'text'
+            else:
+                file_type = 'unknown'
+
+            # Render the content in an HTML template, pass decrypted content
+            return render(request, 'view_docx.html', {
+                'txt_content': decrypted_file_data,
+                'file_name': upload.file_name,
+                'file_type': file_type  # Used for syntax highlighting
+            })
+
+        except Exception as e:
+            logger.error(f"Error reading text file: {e}")
+            return HttpResponseServerError("Error reading text file.")
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_text_file: {e}")
+        return HttpResponseServerError("An error occurred while processing your request.")
+
+
+# def view_video(request, upload_id):
+#     # Get the video upload object
+#     upload = get_object_or_404(UserUpload, id=upload_id)
+
+#     # Render the video on a dedicated page
+#     return render(request, 'view_video.html', {'upload': upload})
+
 
 @login_required
 def delete_upload(request, upload_id):
@@ -529,3 +1121,46 @@ def service2(request):
 def service3(request):
     return render(request, 'service3.html')
 
+
+
+# @login_required
+# def lock_user(request, user_id):
+#     user = User.objects.get(id=user_id)
+#     if request.method == 'POST':
+#         lock_duration = request.POST.get('lock_duration')
+#         if lock_duration == '1_day':
+#             expires_at = timezone.now() + timezone.timedelta(days=1)
+#         else:
+#             expires_at = None
+#         TemporarilyLock.objects.create(user=user, locked_by=request.user, expires_at=expires_at)
+#         user.is_locked = True
+#         user.lock_expires_at = expires_at
+#         user.save()
+#         messages.success(request, f"User {user.username} has been locked.")
+#         return redirect('admin_users')
+#     return render(request, 'lock_user.html')
+
+# @login_required
+# def unlock_user(request, user_id):
+#     user = User.objects.get(id=user_id)
+#     if request.method == 'POST':
+#         TemporarilyLock.objects.filter(user=user).delete()
+#         user.is_locked = False
+#         user.lock_expires_at = None
+#         user.save()
+#         messages.success(request, f"User {user.username} has been unlocked.")
+#         return redirect('admin_users')
+#     return render(request, 'unlock_user.html')
+
+# def locked_page(request):
+#     if request.user.is_locked:
+#         lock = TemporarilyLock.objects.get(user=request.user)
+#         if lock.is_expired():
+#             request.user.is_locked = False
+#             request.user.lock_expires_at = None
+#             request.user.save()
+#             lock.delete()
+#             messages.success(request, "Your account has been unlocked.")
+#             return redirect('/')
+#         return render(request, 'locked_page.html', {'lock': lock})
+#     return redirect('/')

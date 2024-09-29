@@ -1,14 +1,30 @@
-# your_app/management/commands/delete_old_notions.py
-from django.core.management.base import BaseCommand
+# # notion/tasks.py
+# from celery import shared_task
+# from django.utils import timezone
+# from notion.models import Notion
+
+# @shared_task
+# def delete_old_notions():
+#     now = timezone.now()
+#     old_notions = Notion.objects.filter(deletion_date__lt=now)
+#     count = old_notions.count()
+#     old_notions.delete()
+#     return f'{count} old notions deleted.'
+
+from celery import shared_task
 from django.utils import timezone
-from your_app.models import Notion
+from notion.models import Notion
+import logging
 
-class Command(BaseCommand):
-    help = 'Deletes notions older than their scheduled deletion date'
-
-    def handle(self, *args, **kwargs):
-        now = timezone.now()
+@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+def delete_old_notions():
+    now = timezone.now()
+    try:
         old_notions = Notion.objects.filter(deletion_date__lt=now)
         count = old_notions.count()
         old_notions.delete()
-        self.stdout.write(f'{count} notions deleted.')
+        logging.info(f'{count} old notions deleted.')
+        return f'{count} old notions deleted.'
+    except Exception as e:
+        logging.error(f"Error deleting old notions: {e}")
+        return f"Error: {e}"
