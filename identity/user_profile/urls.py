@@ -11,7 +11,10 @@ app_name = 'user_profile'
 
 urlpatterns = [
     path('profile/<int:user_id>/', views.profile, name='profile'),
+    
     path('profile/<int:user_id>/edit/', views.edit_profile, name='edit_profile'),
+    path('save_bio/', views.save_bio, name='save_bio'),
+
     path('media/<int:media_id>/', views.media_detail_view, name='media_detail_view'),
     # path('media/api/<int:media_id>/', views.media_detail_api, name='media_detail_api'),
     # path('media/related/api/<int:media_id>/', views.related_media_api, name='related_media_api'),

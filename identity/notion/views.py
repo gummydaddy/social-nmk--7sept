@@ -20,6 +20,9 @@ from django.db.models import Q, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape, mark_safe
 from django.urls import reverse
+from .forms import UsernameUpdateForm
+from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 # from identity.notion.tasks import send_tagged_user_notifications  # Import the Celery task
 
 

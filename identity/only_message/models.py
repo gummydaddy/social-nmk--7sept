@@ -38,11 +38,6 @@ class ConversationKey(models.Model):
     participants = models.ManyToManyField(AuthUser, related_name='conversations')
     key = models.TextField()
 
-# @receiver(post_save, sender=AuthUser)
-# def create_user_encryption_keys(sender, instance, created, **kwargs):
-#     if created:
-#         key = Fernet.generate_key().decode()
-#         UserEncryptionKeys.objects.create(user=instance, public_key=key, private_key=key)
 
 @receiver(post_save, sender=AuthUser)
 def create_user_encryption_keys(sender, instance, created, **kwargs):
@@ -56,16 +51,6 @@ def create_user_encryption_keys(sender, instance, created, **kwargs):
             signing_public_key=serialize_key(signing_public),
             signing_private_key=serialize_key(signing_private, is_private=True)
         )
-
-# class Message(models.Model):
-#     sender = models.ForeignKey(AuthUser, related_name='sent_messages', on_delete=models.CASCADE)
-#     recipient = models.ForeignKey(AuthUser, related_name='received_messages', on_delete=models.CASCADE)
-#     content = models.TextField()  # Encrypted content
-#     signature = models.TextField(null=True)  # Store the message signature
-#     timestamp = models.DateTimeField(auto_now_add=True)
-
-#     def __str__(self):
-#         return f"{self.sender} -> {self.recipient}: {self.content[:20]}"
 
 
 fs = FileSystemStorage(location='/path/to/save/uploads')

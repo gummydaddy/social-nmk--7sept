@@ -95,6 +95,13 @@
 <body>
     <div class="container">
         <h3>Socyfie Sign Up</h3>
+        {% if messages %}
+        <div class="alert alert-danger" role="alert">
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        </div>
+        {% endif %}
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}

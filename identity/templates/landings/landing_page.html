@@ -602,19 +602,32 @@
                                     
                                     {% elif ".pdf" in upload.file.name %}
                                         <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
+                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
 
                                     {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
                                         <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
 
-                                    {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
+                                    {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
                                         <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
                                         <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
                                         <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
-                                        {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a> {% endcomment %}
+                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
+                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                         <!-- Button to download the Excel file -->
-                                        <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a>
+                                        <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
+
+                                    
+                                    {% elif ".xml" in upload.file.name %}
+                                        <!-- XML files -->
+                                        <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="600px" />
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                    
+                                    {% elif ".zip" in upload.file.name or ".xlsx" in upload.file.name %}
+                                        <!-- ZIP and XLSX files (served as ZIP) -->
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                    
 
                                     {% elif ".pptx" in upload.file.name %}
                                         <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
@@ -642,6 +655,8 @@
                                     {% else %}
                                         <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
                                         <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                        {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
+
                                     {% endif %}
                                 </div>
                             </div>

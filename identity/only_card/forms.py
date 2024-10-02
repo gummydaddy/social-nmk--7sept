@@ -7,14 +7,37 @@ from .models import Group, UserUpload, RegistrationForm, Card, KYC, CustomGroup,
 from cryptography.fernet import Fernet
 from django.core.exceptions import ValidationError
 import mimetypes
+from django.core.validators import RegexValidator
+
 
 
 
 class CustomSignupForm(SignupForm):
-    username = forms.CharField(max_length=20, label='Username')
-    first_name = forms.CharField(max_length=30, label='First Name')
-    last_name = forms.CharField(max_length=30, label='Last Name')
-    email = forms.EmailField(max_length=200, help_text='Required')
+    field_order = ['username', 'email', 'first_name', 'last_name']
+
+    username = forms.CharField(
+        max_length=20, 
+        label='Choose Username', 
+        validators=[RegexValidator(r'^[a-zA-Z0-9]+$', 'Only alphanumeric characters allowed.')],
+        widget=forms.TextInput(attrs={'placeholder': 'Enter username'})
+    )
+    first_name = forms.CharField(
+        max_length=30, 
+        label='First Name', 
+        widget=forms.TextInput(attrs={'placeholder': 'Enter first name'})
+    )
+    last_name = forms.CharField(
+        max_length=30, 
+        label='Last Name', 
+        widget=forms.TextInput(attrs={'placeholder': 'Enter last name'})
+    )
+    email = forms.EmailField(
+        max_length=200, 
+        label='Email Address', 
+        help_text='Required', 
+        error_messages={'required': 'Email is required.'},
+        widget=forms.EmailInput(attrs={'placeholder': 'Enter email'})
+    )
 
     def save(self, request, commit=True):
         user = super(CustomSignupForm, self).save(request)
@@ -27,7 +50,6 @@ class CustomSignupForm(SignupForm):
             user.save()
 
         return user
-
 
 
 

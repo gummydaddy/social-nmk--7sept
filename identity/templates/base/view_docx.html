@@ -14,6 +14,11 @@
                 {{ pptx_content|safe }}
             </div>
 
+        {% elif pdf_content %}
+            <div class="pdf-content">
+                {{ pdf_content|safe }}
+            </div>
+
         {# Handle Word Document (.docx) file preview #}
         {% elif docx_content %}
             <div class="docx-content">

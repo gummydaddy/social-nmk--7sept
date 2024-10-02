@@ -26,6 +26,8 @@ urlpatterns = [
     path('', views.home, name="home"),
     # path('', views.login_view, name="home"),
     path("signup/", views.signup, name="signup"),
+    # path("check_email_verification/<int:user_id>/", views.check_email_verification, name="check_email_verification"),
+    # path('email_verification/<str:token>/<str:email>/', views.email_verification, name='email_verification'),
     # path('activate/<uidb64>/<token>/', views.activate_account, name='activate_account'),    
     path("login/", views.login_view, name="login"),
     path("logout/", views.logout_view, name="logout"),
@@ -38,7 +40,7 @@ urlpatterns = [
     path('view_xml_file/<int:upload_id>/', views.view_xml_file, name='view_xml_file'),
     path('view_pptx_file/<int:upload_id>/', views.view_pptx_file, name='view_pptx_file'),
     path('view_text_file/<int:upload_id>/', views.view_text_file, name='view_text_file'),
-    # path('view_pdf_file/<int:upload_id>/', views.view_pdf_file, name='view_pdf_file'),
+    path('view_pdf_file/<int:upload_id>/', views.view_pdf_file, name='view_pdf_file'),
     # path('handle_xml_or_xlsx_file/<int:upload_id>/', views.handle_xml_or_xlsx_file, name='handle_xml_or_xlsx_file'),
     # path('view_video/<int:upload_id>/', views.view_video, name='view_video'),
 

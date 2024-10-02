@@ -139,20 +139,6 @@
             location.href = "{% url 'user_profile:profile' story.media.user.id %}";
         {% endif %}
     }
-
-    // Automatically go to the next story after 20 seconds
-    {% comment %} setTimeout(function() {
-        handleRightNavigation();
-    }, {{ story_duration }} * 100);
-    function  handleRightNavigation() {
-        {% if next_story %}
-            location.href = "{% url 'user_profile:view_story' next_story.id %}";
-        {% else  %}
-            location.href = "{% url 'user_profile:profile' story.media.user.id %}";
-        {% endif %}
-    } {% endcomment %}
-
-    // Automatically go to the next story after the specified duration
     setTimeout(handleRightNavigation, {{ story_duration }} * 1000);
     function handleRightNavigation() {
         {% if next_story %}
@@ -161,9 +147,5 @@
             location.href = "{% url 'user_profile:profile' story.media.user.id %}";
         {% endif %}
     }
-
-
-
-
 </script>
 {% endblock %}
