@@ -16,7 +16,7 @@
 
         {% elif pdf_content %}
             <div class="pdf-content">
-                {{ pdf_content|safe }}
+                <embed src="{% url 'only_card:view_pdf_file' upload.id %}" type="application/pdf" width="100%" height="500px">
             </div>
 
         {# Handle Word Document (.docx) file preview #}

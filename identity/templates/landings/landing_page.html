@@ -602,7 +602,7 @@
                                     
                                     {% elif ".pdf" in upload.file.name %}
                                         <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
-                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
+                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary" target="_blank">Preview pdf Document</a>
                                         <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
 
                                     {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}

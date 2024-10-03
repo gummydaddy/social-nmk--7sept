@@ -27,7 +27,12 @@ import xml.etree.ElementTree as ET
 import openpyxl  # To handle .xlsx files
 import xlrd  # To handle .xls files
 # import base64
-import PyPDF2  # Library for reading PDF files
+from PyPDF2 import PdfReader
+from django.core.files.storage import FileSystemStorage
+from django.utils.html import escape
+from pdf2image import convert_from_path
+from PIL import Image
+import io
 
 
 
@@ -391,6 +396,71 @@ def view_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
+# @login_required
+# def view_pdf_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Check if the file is a .pdf file
+#         if not file_path.endswith('.pdf'):
+#             logger.error(f"Unsupported file type: {file_path}")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#         # Read and decrypt the entire .pdf file
+#         try:
+#             with open(file_path, 'rb') as encrypted_file:
+#                 encrypted_file_data = encrypted_file.read()
+
+#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+#             # Save the decrypted data to a temporary file to be read by PyPDF2
+#             temp_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+#             with open(temp_file_path, 'wb') as temp_file:
+#                 temp_file.write(decrypted_file_data)
+
+#             # Extract text from the PDF file using PyPDF2
+#             pdf_content = ""
+#             with open(temp_file_path, 'rb') as pdf_file:
+#                 reader = PyPDF2.PdfReader(pdf_file)
+#                 for page_num in range(len(reader.pages)):
+#                     page = reader.pages[page_num]
+#                     pdf_content += f"<h3>Page {page_num + 1}</h3>"
+#                     pdf_content += f"<p>{page.extract_text()}</p>"
+
+#             # Clean up: remove the temporary file after processing
+#             os.remove(temp_file_path)
+
+#             # Render the content in an HTML template
+#             return render(request, 'view_docx.html', {'pdf_content': pdf_content, 'file_name': upload.file_name})
+
+#         except Exception as e:
+#             logger.error(f"Error reading .pdf file: {e}")
+#             return HttpResponseServerError("Error reading .pdf file.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_pdf_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
+
 @login_required
 def view_pdf_file(request, upload_id):
     try:
@@ -432,20 +502,15 @@ def view_pdf_file(request, upload_id):
             with open(temp_file_path, 'wb') as temp_file:
                 temp_file.write(decrypted_file_data)
 
-            # Extract text from the PDF file using PyPDF2
-            pdf_content = ""
-            with open(temp_file_path, 'rb') as pdf_file:
-                reader = PyPDF2.PdfReader(pdf_file)
-                for page_num in range(len(reader.pages)):
-                    page = reader.pages[page_num]
-                    pdf_content += f"<h3>Page {page_num + 1}</h3>"
-                    pdf_content += f"<p>{page.extract_text()}</p>"
+            fs = FileSystemStorage('/tmp')
+            with fs.open(f"decrypted_{upload.file_name}", 'rb') as pdf:
+                response = HttpResponse(pdf, content_type='application/pdf')
+                response['Content-Disposition'] = f'inline; filename="{upload.file_name}"'
 
             # Clean up: remove the temporary file after processing
             os.remove(temp_file_path)
 
-            # Render the content in an HTML template
-            return render(request, 'view_docx.html', {'pdf_content': pdf_content, 'file_name': upload.file_name})
+            return response
 
         except Exception as e:
             logger.error(f"Error reading .pdf file: {e}")
