@@ -129,17 +129,84 @@ def media_tags(request, user_id):
     })
 
 
-@login_required
-def profile(request, user_id):
-    profile_user = get_object_or_404(AuthUser, id=user_id)
+# @login_required
+# def profile(request, user_id):
+#     profile_user = get_object_or_404(AuthUser, id=user_id)
      
 
 
+#     media = Media.objects.filter(user=profile_user).order_by('-created_at')
+#     followers_count = Follow.objects.filter(following=profile_user).count()
+#     following_count = Follow.objects.filter(follower=profile_user).count()
+#     uploads_count = Media.objects.filter(user=profile_user).count()
+
+
+#     # Check if the user has an active story
+#     active_story = Story.objects.filter(user=profile_user, created_at__gt=timezone.now() - timezone.timedelta(hours=24)).first()
+
+#     # Exclude media associated with the active story
+#     if active_story:
+#         media = Media.objects.filter(user=profile_user).exclude(id=active_story.media.id).order_by('-created_at')
+#     else:
+#         media = Media.objects.filter(user=profile_user).order_by('-created_at')
+
+
+#     for item in media:
+#         item.description = linkify(item.description)
+
+#     # Check if the current user has blocked this profile user
+#     is_blocked = BlockedUser.objects.filter(blocker=request.user, blocked=profile_user).exists()
+    
+#     # Check if the profile user has blocked the current user
+#     is_blocked_by_profile_user = BlockedUser.objects.filter(blocker=profile_user, blocked=request.user).exists()
+    
+#     if is_blocked_by_profile_user:
+#         return render(request, 'user_not_found.html')   
+    
+
+#     paginator = Paginator(media, 100)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     # Check if the current user is following the profile user
+#     is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
+
+#      # Check if the profile is private and the current user is not following
+#     if profile_user.profile.is_private and not is_following and request.user != profile_user:
+#         return render(request, 'profile.html', {
+#         'profile_user': profile_user,
+#         # 'page_obj': page_obj,
+#         'followers_count': followers_count,
+#         'following_count': following_count,
+#         'uploads_count': uploads_count,
+#         'is_following': is_following,
+#         # 'active_story': active_story,
+#         'is_blocked': is_blocked,
+#     })  # Render a page that shows the profile is private
+        
+
+#     return render(request, 'profile.html', {
+#         'profile_user': profile_user,
+#         'page_obj': page_obj,
+#         'followers_count': followers_count,
+#         'following_count': following_count,
+#         'uploads_count': uploads_count,
+#         'is_following': is_following,
+#         'active_story': active_story,
+#         'is_blocked': is_blocked,
+#     })
+
+
+@login_required
+def profile(request, user_id):
+    profile_user = get_object_or_404(AuthUser, id=user_id)
+
+    # Fetch all media uploads of the profile user
     media = Media.objects.filter(user=profile_user).order_by('-created_at')
+
     followers_count = Follow.objects.filter(following=profile_user).count()
     following_count = Follow.objects.filter(follower=profile_user).count()
     uploads_count = Media.objects.filter(user=profile_user).count()
-
 
     # Check if the user has an active story
     active_story = Story.objects.filter(user=profile_user, created_at__gt=timezone.now() - timezone.timedelta(hours=24)).first()
@@ -149,7 +216,6 @@ def profile(request, user_id):
         media = Media.objects.filter(user=profile_user).exclude(id=active_story.media.id).order_by('-created_at')
     else:
         media = Media.objects.filter(user=profile_user).order_by('-created_at')
-
 
     for item in media:
         item.description = linkify(item.description)
@@ -162,28 +228,41 @@ def profile(request, user_id):
     
     if is_blocked_by_profile_user:
         return render(request, 'user_not_found.html')   
-    
-
-    paginator = Paginator(media, 100)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
 
     # Check if the current user is following the profile user
     is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
 
-     # Check if the profile is private and the current user is not following
-    if profile_user.profile.is_private and not is_following and request.user != profile_user:
+    # Check if the current user is in the profile user's buddy list
+    is_buddy = Buddy.objects.filter(user=profile_user, buddy=request.user).exists()
+
+    # Filter media based on privacy and relationship
+    filtered_media = []
+    for item in media:
+        if item.is_private and not is_buddy and request.user != profile_user:
+            continue
+        filtered_media.append(item)
+
+    # Filter private media for users not in buddy list
+    private_media = [item for item in media if item.is_private and not is_buddy and request.user != profile_user]
+
+    paginator = Paginator(filtered_media, 100)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Check if the profile is private and the current user is not following or buddy
+    if profile_user.profile.is_private and not is_following and not is_buddy and request.user != profile_user:
         return render(request, 'profile.html', {
-        'profile_user': profile_user,
-        # 'page_obj': page_obj,
-        'followers_count': followers_count,
-        'following_count': following_count,
-        'uploads_count': uploads_count,
-        'is_following': is_following,
-        # 'active_story': active_story,
-        'is_blocked': is_blocked,
-    })  # Render a page that shows the profile is private
-        
+            'profile_user': profile_user,
+            # 'page_obj': page_obj,
+            'followers_count': followers_count,
+            'following_count': following_count,
+            'uploads_count': uploads_count,
+            'is_following': is_following,
+            'is_buddy': is_buddy,
+            # 'active_story': active_story,
+            'is_blocked': is_blocked,
+            'private_media': private_media,  # Pass private media to template
+        })  # Render a page that shows the profile is private
 
     return render(request, 'profile.html', {
         'profile_user': profile_user,
@@ -192,8 +271,10 @@ def profile(request, user_id):
         'following_count': following_count,
         'uploads_count': uploads_count,
         'is_following': is_following,
+        'is_buddy': is_buddy,
         'active_story': active_story,
         'is_blocked': is_blocked,
+        'private_media': [],  # Pass empty list for users in buddy list
     })
 
 
@@ -1125,76 +1206,44 @@ def profile_notifications(request):
     return render(request, 'profile_notifications.html', {'page_obj': page_obj})
 
 
-# @login_required
-# def edit_profile(request, user_id):
-#     profile_user = get_object_or_404(AuthUser, id=user_id)
-
-#     # Ensure the profile exists, create if not
-#     profile, created = Profile.objects.get_or_create(user=profile_user)
-
-#     if request.method == 'POST':
-#         form = ProfileForm(request.POST, request.FILES, instance=profile)
-#         if form.is_valid():
-#             form.save()            
-#             messages.success(request, 'Profile updated successfully!')
-#             return redirect('user_profile:profile', user_id=user_id)
-#         else:
-#             messages.error(request, 'Error updating your profile')
-#     else:
-#         form = ProfileForm(instance=profile)
-
-#     return render(request, 'edit_profile.html', {'form': form, 'profile_user': profile_user})
-
 
 @login_required
 def edit_profile(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
-
-    # Ensure the profile exists, create if not
     profile, created = Profile.objects.get_or_create(user=profile_user)
 
-    # Handle form submissions differently based on what is being updated
+    profile_form = ProfileForm(instance=profile)
+    username_form = UsernameUpdateForm(initial={'new_username': profile_user.username})
+
     if request.method == 'POST':
-        if 'new_username' in request.POST:  # Handle username and profile updates
+        if 'save_changes' in request.POST:  # Handle profile updates
             profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Profile updated successfully!')
+                return redirect('user_profile:profile', user_id=user_id)
+            else:
+                messages.error(request, 'Error updating your profile')
+
+        elif 'update_username' in request.POST:  # Handle username updates
             username_form = UsernameUpdateForm(request.POST)
 
-            if profile_form.is_valid() and username_form.is_valid():
-                # Save the profile form
-                profile_form.save()
-
-                # Update the username
+            if username_form.is_valid():
                 new_username = username_form.cleaned_data['new_username']
                 if new_username != profile_user.username:  # Only update if the username changed
                     profile_user.username = new_username
                     profile_user.save()
-
-                messages.success(request, 'Profile and username updated successfully!')
+                messages.success(request, 'Username updated successfully!')
                 return redirect('user_profile:profile', user_id=user_id)
             else:
-                messages.error(request, 'Error updating your profile or username')
-
-        elif 'bio' in request.POST:  # Handle bio update separately
-            bio_form = ProfileForm(request.POST, instance=profile)
-
-            if bio_form.is_valid():
-                bio_form.save()
-                messages.success(request, 'Bio updated successfully!')
-                return redirect('user_profile:profile', user_id=user_id)
-            else:
-                messages.error(request, 'Error updating your bio')
-
-    else:
-        # Prepopulate both forms with existing data
-        profile_form = ProfileForm(instance=profile)
-        username_form = UsernameUpdateForm(initial={'new_username': profile_user.username})
+                messages.error(request, 'Error updating your username')
 
     return render(request, 'edit_profile.html', {
         'form': profile_form,
-        'username_form': username_form,  # Pass the username form to the template
+        'username_form': username_form,
         'profile_user': profile_user
     })
-
 
 
 @login_required
