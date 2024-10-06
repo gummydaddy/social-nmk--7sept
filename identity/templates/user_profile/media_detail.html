@@ -166,38 +166,44 @@
             Send as Message
         </button> {% endcomment %}
         
-        <div class="comments">
-            {% for comment in media.comments.all %}
-            <div class="comment" id="{{ comment.id }}">
-                <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
-                {{ comment.content|safe }}
-                <div class="dropdown">
-                    <span>⋮</span>
-                    <div class="dropdown-content">
-                        {% if comment.user == request.user %}
-                        <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                        {% elif media.user == request.user %}
-                        <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                        {% endif %}
+        <div class="comments" id="comments-{{ media.id }}">
+            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#comment-list-{{ media.id }}" aria-expanded="false" aria-controls="comment-list-{{ media.id }}">
+                {{ media.comments.count }} Comments
+            </button>
+    
+            <div id="comment-list-{{ media.id }}" class="collapse">
+                {% for comment in media.comments.all %}
+                <div class="comment" id="{{ comment.id }}">
+                    <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
+                    {{ comment.content|safe }}
+                    <div class="dropdown">
+                        <span>⋮</span>
+                        <div class="dropdown-content">
+                            {% if comment.user == request.user %}
+                            <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% elif media.user == request.user %}
+                            <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </div>
+                    <br>{{ comment.created_at }}
                 </div>
-                <br>{{ comment.created_at }}
+                {% endfor %}
+    
+                <!-- Comment form -->
+                <form method="post" action="{% url 'user_profile:comment_media' media.id %}#new-comment" id="comment-form">
+                    {% csrf_token %}
+                    <input type="text" name="content" placeholder="Add a comment" required>
+                    <button type="submit">Post</button>
+                </form>
             </div>
-            {% endfor %}
-        
-            <!-- Comment form -->
-            <form method="post" action="{% url 'user_profile:comment_media' media.id %}#new-comment" id="comment-form">
-                {% csrf_token %}
-                <input type="text" name="content" placeholder="Add a comment" required>
-                <button type="submit">Post</button>
-            </form>
-        </div>               
+        </div>
     </div>
 </div>
 
@@ -271,6 +277,7 @@
 {% endblock %}
 
 {% block media_detail_script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const privacyButton = document.getElementById('media-privacy-button');
