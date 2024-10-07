@@ -11,6 +11,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.mail import send_mail, EmailMessage, get_connection
 from django.core.cache import cache
+from django.utils.module_loading import import_string
 from django.conf import settings
 from .models import KYC, File, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin#, TemporarilyLock
 from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm, PasswordResetForm
@@ -193,6 +194,99 @@ def login_view(request):
 
     else:
         return render(request, 'login_view.html')
+
+
+# Cache settings
+# CACHE_TIMEOUT = 300  # 5 minutes
+# CACHE_PREFIX = 'auth'
+
+# def get_cache_key(key):
+#     return f"{CACHE_PREFIX}_{key}"
+
+# def authenticate_user(username, password):
+#     """
+#     Authenticate user using Firebase and Django.
+    
+#     Args:
+#     username (str): User's username or email.
+#     password (str): User's password.
+    
+#     Returns:
+#     User or None: Authenticated user object or None.
+#     """
+#     cache_key = 'my_key'
+#     user = cache.get(cache_key)
+    
+#     if not user:
+#         try:
+#             # Check if the input is an email or username
+#             if '@' in username:
+#                 user = User.objects.get(email=username)
+#             else:
+#                 user = User.objects.get(username=username)
+            
+#             # Cache user object
+#             cache.set(cache_key, user, CACHE_TIMEOUT)
+#         except User.DoesNotExist:
+#             return None
+        
+#         # Firebase authentication
+#         try:
+#             firebase_user = auth.sign_in_with_email_and_password(user.email, password)
+#             user.set_password(password)
+#             user.save()
+#         except Exception as e:
+#             # Handle Firebase authentication errors
+#             return None
+    
+#     return user
+
+# def group_based_authentication(username_or_email):
+#     """
+#     Authenticate user using group-based authentication.
+    
+#     Args:
+#     username_or_email (str): Group name or username.
+    
+#     Returns:
+#     User or None: Authenticated user object or None.
+#     """
+#     cache_key = get_cache_key(f"group_{username_or_email}")
+#     user = cache.get(cache_key)
+    
+#     if not user:
+#         try:
+#             group = CustomGroup.objects.get(name=username_or_email)
+#             user = group.users.first()
+            
+#             # Cache user object
+#             cache.set(cache_key, user, CACHE_TIMEOUT)
+#         except CustomGroup.DoesNotExist:
+#             return None
+    
+#     return user
+
+# def login_view(request):
+#     if request.method == 'POST':
+#         username_or_email = request.POST['username']
+#         password = request.POST['pass1']
+        
+#         user = authenticate_user(username_or_email, password)
+#         if user is None:
+#             user = group_based_authentication(username_or_email)
+        
+#         if user:
+#             login(request, user)
+#             # Update session and cache
+#             cache.set(get_cache_key(f"user_{user.id}"), user.username, CACHE_TIMEOUT)
+#             return redirect('/landing_page')
+#         else:
+#             # Handle authentication failure
+#             messages.error(request, 'Invalid username or password')
+#             return render(request, 'login_view.html')
+#     else:
+#         return render(request, 'login_view.html')
+
 
 
 @staff_member_required
