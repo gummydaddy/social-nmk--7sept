@@ -47,7 +47,7 @@
     </a>
     <div id="current-media">
         {% if media.file.url|is_video %}
-        <video controls class="img-fluid">
+        <video controls class="img-fluid autoplay-video" muted>
             <source src="{{ media.file.url }}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
@@ -100,17 +100,12 @@
     </div>
 </div>
 
-<div id="related-media-container" class="row row-cols-2 g-4 mt-4">
+<div id="related-media-container" class="row row-cols-3 g-4 mt-4">
     {% for related in related_media %}
     <div class="col related-media-item">
-        {% comment %} <p>
-            <a href="{% url 'user_profile:profile' user_id=related.user.id %}">
-                {{ related.user.username }}
-            </a>
-        </p> {% endcomment %}
         <a href="{% url 'user_profile:explore_detail' related.id %}">
             {% if related.file.url|is_video %}
-            <video controls class="img-fluid">
+            <video controls class="img-fluid autoplay-video" muted>
                 <source src="{{ related.file.url }}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -136,33 +131,9 @@
     {% endfor %}
 </div>
 
-
 <!-- Loading Spinner -->
 <div id="loading-spinner" style="display: none;">
-    {% comment %} <img src="{% static 'img/loading_spinner.gif' %}" alt="Loading..."> {% endcomment %}
     <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-</div>
-
-<!-- Media Detail Modal -->
-<div id="media-detail-modal" class="modal fade" tabindex="-1" aria-labelledby="mediaDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="mediaDetailModalLabel">Media Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Media detail content will be loaded here -->
-                <div id="media-detail-content"></div>
-                <div id="related-media-container" class="row row-cols-3 g-4 mt-4">
-                    <!-- Related media will be appended here -->
-                </div>
-                <div id="related-loading-spinner" style="display: none;">
-                    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Pagination controls -->
@@ -191,6 +162,28 @@
     let page = 1;
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Setup Intersection Observer for videos
+        const videos = document.querySelectorAll('.autoplay-video');
+        const observerOptions = {
+            root: null,
+            threshold: 0.5 // Play video when 50% of it is visible
+        };
+
+        const videoObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            });
+        }, observerOptions);
+
+        videos.forEach(video => {
+            videoObserver.observe(video);
+        });
+
         // Function to handle the like button click
         function handleLikeButtonClick(event) {
             event.preventDefault();
@@ -229,8 +222,6 @@
             link.addEventListener('click', handleLikeButtonClick);
         });
     });
-    
-
 
     function fetchRelatedMedia() {
         page += 1;
@@ -255,14 +246,17 @@
                     if (media.is_video) {
                         const video = document.createElement('video');
                         video.controls = true;
-                        video.classList.add('img-fluid');
-    
+                        video.classList.add('img-fluid', 'autoplay-video');
+                        video.muted = true;
+
                         const source = document.createElement('source');
                         source.src = media.file_url;
                         source.type = 'video/mp4';
     
                         video.appendChild(source);
                         link.appendChild(video);
+    
+                        videoObserver.observe(video); // Observe newly added videos
                     } else {
                         const img = document.createElement('img');
                         img.src = media.file_url;

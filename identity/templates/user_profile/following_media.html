@@ -32,7 +32,7 @@
                     </a>
                     <div class="media-content">
                         {% if media.file.url|is_video %}
-                            <video controls class="img-fluid">
+                            <video controls class="img-fluid autoplay-video" muted>
                                 <source src="{{ media.file.url }}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
@@ -55,7 +55,6 @@
                                 
                                 <span class="like-count">{{ media.likes.count }}</span> likes
                                 <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
-                                {% comment %} <p>{{ media.description|urlize|safe }}</p> {% endcomment %}
                                 <p>{{ media.description|safe }}</p>
                             </div>
                         </p>
@@ -91,27 +90,6 @@
     </span>
 </div>
 
-<!-- Media Detail Modal -->
-<div id="media-detail-modal" class="modal fade" tabindex="-1" aria-labelledby="mediaDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="mediaDetailModalLabel">Media Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Media detail content will be loaded here -->
-                <div id="media-detail-content"></div>
-                <div id="related-media-container" class="row row-cols-3 g-4 mt-4">
-                    <!-- Related media will be appended here -->
-                </div>
-                <div id="related-loading-spinner" style="display: none;">
-                    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block following_media_script %}
@@ -121,6 +99,28 @@
     let page = 1;
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Setup Intersection Observer for videos
+        const videos = document.querySelectorAll('.autoplay-video');
+        const observerOptions = {
+            root: null,
+            threshold: 0.75 // Play video when 50% of it is visible
+        };
+
+        const videoObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            });
+        }, observerOptions);
+
+        videos.forEach(video => {
+            videoObserver.observe(video);
+        });
+
         // Ajax for like link
         document.querySelectorAll('.like-link').forEach(function(link) {
             link.addEventListener('click', function(event) {
@@ -154,7 +154,8 @@
                 });
             });
         });
-
+        
+        /*
         function fetchMoreMedia() {
             page += 1;
             loadingSpinner.style.display = 'block';
@@ -182,7 +183,8 @@
                             if (media.file_url.endsWith('.mp4')) {
                                 const video = document.createElement('video');
                                 video.controls = true;
-                                video.classList.add('img-fluid');
+                                video.muted = true;
+                                video.classList.add('img-fluid', 'autoplay-video');
 
                                 const source = document.createElement('source');
                                 source.src = media.file_url;
@@ -190,6 +192,8 @@
 
                                 video.appendChild(source);
                                 mediaContent.appendChild(video);
+
+                                videoObserver.observe(video); // Observe newly added videos
                             } else {
                                 const img = document.createElement('img');
                                 img.src = media.file_url;
@@ -198,32 +202,6 @@
 
                                 mediaContent.appendChild(img);
                             }
-
-                            const userLink = document.createElement('a');
-                            userLink.href = `/user_profile/profile/${media.user.id}/`;
-                            userLink.textContent = media.user.username;
-                            mediaContent.appendChild(userLink);
-
-                            const likeLink = document.createElement('a');
-                            likeLink.href = `/user_profile/like_media/${media.id}/`;
-                            likeLink.classList.add('like-link');
-                            likeLink.setAttribute('data-url', `/user_profile/like_media/${media.id}/`);
-                            likeLink.setAttribute('data-csrf-token', '{{ csrf_token }}');
-                            if (media.user_has_liked) {
-                                likeLink.textContent = '❤️';
-                            } else {
-                                likeLink.textContent = '♡';
-                            }
-                            mediaContent.appendChild(likeLink);
-
-                            const likeCount = document.createElement('span');
-                            likeCount.classList.add('like-count');
-                            likeCount.textContent = `${media.likes_count} likes`;
-                            mediaContent.appendChild(likeCount);
-
-                            const description = document.createElement('p');
-                            description.innerHTML = media.description.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-                            mediaContent.appendChild(description);
 
                             col.appendChild(mediaContent);
                             mediaContainer.appendChild(col);
@@ -237,7 +215,8 @@
                 console.error('Error fetching more media:', error);
                 loadingSpinner.style.display = 'none';
             });
-        }
+        }*/
+        
 
         function handleScroll() {
             const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
@@ -248,8 +227,6 @@
         }
 
         window.addEventListener('scroll', handleScroll);
-
-        fetchMoreMedia();
     });
 </script>
 {% endblock %}
