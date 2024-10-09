@@ -47,7 +47,7 @@
     </a>
     <div id="current-media">
         {% if media.file.url|is_video %}
-        <video controls class="img-fluid autoplay-video" muted>
+        <video controls class="img-fluid autoplay-video" unmute>
             <source src="{{ media.file.url }}" type="video/mp4">
             Your browser does not support the video tag.
         </video>

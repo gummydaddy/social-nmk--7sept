@@ -7,7 +7,97 @@
 
 {% block main_content %}
 <style>
-    /* Styles remain the same */
+    .media-detail-container {
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2px;  
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        color: #123;
+    }
+
+    .media-detail img,
+    .media-detail video {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .media-detail .actions {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .media-detail .comments {
+        margin-top: 10px;
+    }
+
+    .media-detail .comment {
+        margin-bottom: 10px;
+    }
+
+    .media-detail .comment form {
+        display: inline;
+    }
+
+    .media-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .upload-item {
+        background-color: white;
+        border: 1px solid #ddd;
+        padding: 2px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+    }
+
+    .upload-item + .upload-item {
+        margin-top: 20px;
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        {% comment %} position: absolute; {% endcomment %}
+        right: 0;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+    .description {
+        color: #123;
+    }
 </style>
 
 <div class="media-detail-container">
@@ -16,7 +106,7 @@
     </a>
     <div class="media-detail">
         {% if media.file.url|is_video %}
-            <video controls class="img-fluid autoplay-video" muted>
+            <video controls class="img-fluid autoplay-video" >
                 <source src="{{ media.file.url }}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -27,11 +117,91 @@
             <p>{{ description|safe }}</p>
         </div>
         <div class="actions">
-            <!-- Actions remain the same -->
+            <div>
+                <a href="{% url 'user_profile:like_media' media.id %}" 
+                   class="like-link" 
+                   data-url="{% url 'user_profile:like_media' media.id %}" 
+                   data-csrf-token="{{ csrf_token }}">
+                    {% if request.user in media.likes.all %}
+                        ❤️
+                    {% else %}
+                        ♡
+                    {% endif %}
+                </a> 
+                <span class="like-count">{{ media.likes.count }}</span> likes
+            </div>
+            <div class="dropdown">
+                <span>⋮</span>
+                <div class="dropdown-content">
+                    <form method="POST" action="{% url 'user_profile:save_upload' media.id %}">
+                        {% csrf_token %}
+                        {% if media in request.user.profile.saved_uploads.all %}
+                            <button type="submit" class="btn btn-secondary">Unsave</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        {% endif %}
+                    </form>
+                    {% if request.user == media.user %}
+                    <form method="post" action="{% url 'user_profile:delete_media' media.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    <button type="button" class="btn btn-primary" id="media-privacy-button" data-media-id="{{ media.id }}">
+                        {% if media.is_private or user.profile.is_private %}
+                            {% if not is_following and request.user != user %}
+                                Private (Follow {{ user.username }} to access)
+                            {% else %}
+                                {{ media.is_private|yesno:'Private,Public' }}{{ user.profile.is_private|yesno:', Private' }}
+                            {% endif %}
+                        {% else %}
+                            Public
+                        {% endif %}
+                    </button>                                     
+                    {%else%}
+                    <a href="{% url 'user_profile:not_interested' media.id %}">Not Interested</a>
+                    <a href="{% url 'user_profile:report_media' media.id %}">Report</a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         <div class="comments" id="comments-{{ media.id }}">
-            <!-- Comments remain the same -->
+            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#comment-list-{{ media.id }}" aria-expanded="false" aria-controls="comment-list-{{ media.id }}">
+                {{ media.comments.count }} Comments
+            </button>
+    
+            <div id="comment-list-{{ media.id }}" class="collapse">
+                {% for comment in media.comments.all %}
+                <div class="comment" id="{{ comment.id }}">
+                    <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
+                    {{ comment.content|safe }}
+                    <div class="dropdown">
+                        <span>⋮</span>
+                        <div class="dropdown-content">
+                            {% if comment.user == request.user %}
+                            <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% elif media.user == request.user %}
+                            <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <br>{{ comment.created_at }}
+                </div>
+                {% endfor %}
+    
+                <!-- Comment form -->
+                <form method="post" action="{% url 'user_profile:comment_media' media.id %}#new-comment" id="comment-form">
+                    {% csrf_token %}
+                    <input type="text" name="content" placeholder="Add a comment" required>
+                    <button type="submit">Post</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -48,7 +218,7 @@
 {% endif %}
 
 <h2>{{ media.user.username }}'s Other Uploads</h2>
-<div class="row row-cols-1 g-4">
+<div class="row row-cols-2 g-4">
     {% for upload in page_obj %}
         <div class="col">
             <div id="media-container-{{ upload.id }}" class="upload-item">
@@ -117,43 +287,129 @@
         });
 
         // Existing like button functionality
-        function handleLikeButtonClick(event) {
-            event.preventDefault();
-            const likeLink = event.currentTarget;
-            const url = likeLink.getAttribute('data-url');
-            const csrfToken = likeLink.getAttribute('data-csrf-token');
-
+        const privacyButton = document.getElementById('media-privacy-button');
+    
+        privacyButton.addEventListener('click', function() {
+            const mediaId = privacyButton.getAttribute('data-media-id');
+            const url = `/media/${mediaId}/toggle_privacy/`;  // Construct the URL
+    
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,  // Get CSRF token
                 },
-                body: JSON.stringify({})
             })
             .then(response => response.json())
             .then(data => {
-                const likeCount = likeLink.nextElementSibling;
-                likeCount.textContent = data.like_count;
-                if (data.liked) {
-                    likeLink.classList.add('liked');
-                    likeLink.textContent = '❤️';
+                // Update the button text based on the new privacy status
+                if (data.is_private) {
+                    privacyButton.textContent = 'Private';
                 } else {
-                    likeLink.classList.remove('liked');
-                    likeLink.textContent = '♡';
+                    privacyButton.textContent = 'Public';
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
-        document.querySelectorAll('.like-link').forEach(function(link) {
-            link.addEventListener('click', handleLikeButtonClick);
+            .catch(error => console.error('Error:', error));
         });
+    });
+        
+    //for messaging 
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all "Send as Message" buttons
+        const sendMediaButtons = document.querySelectorAll('.send-media-button');
+        const messageInput = document.querySelector('#id_content');  // The message form's input field
+    
+        sendMediaButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const mediaUrl = button.getAttribute('data-media-url');
+                const mediaDescription = button.getAttribute('data-media-description');
+                
+                // Add media content to the message input field
+                const messageContent = `Media: ${mediaUrl} \nDescription: ${mediaDescription}`;
+                
+                if (messageInput.value) {
+                    messageInput.value += '\n' + messageContent;
+                } else {
+                    messageInput.value = messageContent;
+                }
+            });
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function() {
+        function handleLikeButtonClick(event) {
+                event.preventDefault();
+                const likeLink = event.currentTarget;
+                const url = likeLink.getAttribute('data-url');
+                const csrfToken = likeLink.getAttribute('data-csrf-token');
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const likeCount = likeLink.nextElementSibling;
+                    likeCount.textContent = data.like_count;
+                    if (data.liked) {
+                        likeLink.classList.add('liked');
+                        likeLink.textContent = '❤️';
+                    } else {
+                        likeLink.classList.remove('liked');
+                        likeLink.textContent = '♡';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+
+            document.querySelectorAll('.like-link').forEach(function(link) {
+                link.addEventListener('click', handleLikeButtonClick);
+            });
 
         // Comment form submission logic (remains the same)
+        document.querySelectorAll('.comment-form').forEach(function(form) {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const url = form.getAttribute('action');
+                const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                const content = form.querySelector('input[name="content"]').value;
+
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', csrfToken);
+                formData.append('content', content);
+
+                fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const commentsDiv = form.parentElement;
+                        const newComment = document.createElement('div');
+                        newComment.classList.add('comment');
+                        newComment.innerHTML = `<strong><a href="/user_profile/profile/${data.user_id}">${data.username}</a></strong> ${data.comment_content} on ${data.created_at}`;
+                        commentsDiv.insertBefore(newComment, form);
+
+                        form.querySelector('input[name="content"]').value = '';
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
     });
 </script>
 {% endblock %}

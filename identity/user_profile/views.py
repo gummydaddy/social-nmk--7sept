@@ -774,40 +774,37 @@ def following_media(request):
     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
 
+    # Get users who have blocked the current user
+    users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+    users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+
     # Get users that the current user is following
     followed_users = AuthUser.objects.filter(
         follower_set__follower=request.user
     ).exclude(
-        id__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+        id__in=users_blocked_me
     ).exclude(
-        id__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+        id__in=users_i_blocked
     )
 
     # Get buddy list
     buddy_list = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
 
-    # Get media from followed users and buddies
+    # Fetch media from followed users and buddies
     media_from_followed_users = Media.objects.filter(
         user__in=followed_users
-    ).exclude(
-        user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-    ).exclude(
-        user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    ).order_by('-created_at').exclude(
+        Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=request.user)
     ).exclude(
         engagement__user=request.user, engagement__engagement_type='view'
     )
 
-    # Filter private media for users not in buddy list
-    media_from_followed_users = media_from_followed_users.filter(
-        Q(is_private=False) | Q(user__in=buddy_list) | Q(user=request.user)
-    ).order_by('-created_at')
-
     if not media_from_followed_users.exists():
         # If no more media from followed users, use the explore logic
-        media = Media.objects.exclude(
-            user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+        media = Media.objects.order_by('-created_at').exclude(
+            user__in=users_blocked_me
         ).exclude(
-            user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+            user__in=users_i_blocked
         )
 
         # Apply hashtag preferences and scoring
@@ -831,14 +828,24 @@ def following_media(request):
 
         sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
         sorted_media = [m[0] for m in sorted_media]
+
+        # Apply private media constraints
+        sorted_media = [m for m in sorted_media 
+                        if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
+                        and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
     else:
         sorted_media = list(media_from_followed_users)
+
+        # Apply private media constraints
+        sorted_media = [m for m in sorted_media 
+                        if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
+                        and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
 
     # Apply make_usernames_clickable to descriptions
     for media in sorted_media:
         media.description = make_usernames_clickable(media.description)
 
-    paginator = Paginator(sorted_media, 100)
+    paginator = Paginator(sorted_media, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -848,6 +855,7 @@ def following_media(request):
                 'id': m.id,
                 'file_url': m.file.url,
                 'is_video': m.file.url.endswith('.mp4'),
+                'user_id': m.user.id,  # Ensure user_id is included
                 'user_username': m.user.username,
                 'description': m.description
             }
