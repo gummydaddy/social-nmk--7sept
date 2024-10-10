@@ -268,7 +268,7 @@
         const videos = document.querySelectorAll('.autoplay-video');
         const observerOptions = {
             root: null,
-            threshold: 0.75 // Play video when 50% of it is visible
+            threshold: 0.75 // Play video when 75% of it is visible
         };
 
         const videoObserver = new IntersectionObserver((entries, observer) => {

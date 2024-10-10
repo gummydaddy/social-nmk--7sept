@@ -149,3 +149,15 @@ class Buddy(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s buddy: {self.buddy.username}"
+    
+
+# class Interaction(models.Model):
+#     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='interactions')
+#     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
+#     timestamp = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         ordering = ['-timestamp']
+#         constraints = [
+#             models.UniqueConstraint(fields=['media', 'user'], name='unique_interaction')
+        # ]

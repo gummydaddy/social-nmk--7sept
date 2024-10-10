@@ -1,7 +1,10 @@
+import json
 from django.shortcuts import render, get_object_or_404, redirect
 from PIL import Image, ImageFilter, ImageOps
 from django.core.files.base import ContentFile
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -21,7 +24,17 @@ from .serializers import MediaSerializer
 from django.views.decorators.http import require_POST
 from .utils import linkify, hashtag_queue, add_to_fifo_list, make_usernames_clickable
 import re
-from django.db.models import F, Count, Q
+from django.db.models import F, Count, Q, Exists, OuterRef
+from django.http import JsonResponse
+from django.core.cache import cache
+# from async_views import async_views
+
+
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
+import asyncio
+
+
 import random
 from collections import deque
 from django.template.loader import render_to_string
@@ -474,8 +487,8 @@ def search_uploads(request):
     # Filter media by search query and hashtag filter
     media_objects = Media.objects.order_by('-created_at')
 
-    if query:
-        media_objects = media_objects.filter(
+    if query: 
+        media_objects = media_objects.filter(  
             Q(description__icontains=query) |
             Q(hashtags__name__icontains=query)
         ).distinct()
@@ -684,6 +697,9 @@ def explore_detail(request, media_id):
     })
 
 
+
+
+
 # @login_required
 # def following_media(request):
 #     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
@@ -691,32 +707,37 @@ def explore_detail(request, media_id):
 #     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
 #     viewed_hashtags = user_hashtag_pref.viewed_hashtags
 
+#     # Get users who have blocked the current user
+#     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+#     users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+
 #     # Get users that the current user is following
 #     followed_users = AuthUser.objects.filter(
 #         follower_set__follower=request.user
 #     ).exclude(
-#         id__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+#         id__in=users_blocked_me
 #     ).exclude(
-#         id__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+#         id__in=users_i_blocked
 #     )
-    
-#     # Get media from followed users
+
+#     # Get buddy list
+#     buddy_list = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
+
+#     # Fetch media from followed users and buddies
 #     media_from_followed_users = Media.objects.filter(
 #         user__in=followed_users
-#     ).exclude(
-#         user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-#     ).exclude(
-#         user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+#     ).order_by('-created_at').exclude(
+#         Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=request.user)
 #     ).exclude(
 #         engagement__user=request.user, engagement__engagement_type='view'
-#     ).order_by('-created_at')
+#     )
 
 #     if not media_from_followed_users.exists():
 #         # If no more media from followed users, use the explore logic
-#         media = Media.objects.exclude(
-#             user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
+#         media = Media.objects.order_by('-created_at').exclude(
+#             user__in=users_blocked_me
 #         ).exclude(
-#             user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+#             user__in=users_i_blocked
 #         )
 
 #         # Apply hashtag preferences and scoring
@@ -740,14 +761,24 @@ def explore_detail(request, media_id):
 
 #         sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
 #         sorted_media = [m[0] for m in sorted_media]
+
+#         # Apply private media constraints
+#         sorted_media = [m for m in sorted_media 
+#                         if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
+#                         and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
 #     else:
 #         sorted_media = list(media_from_followed_users)
+
+#         # Apply private media constraints
+#         sorted_media = [m for m in sorted_media 
+#                         if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
+#                         and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
 
 #     # Apply make_usernames_clickable to descriptions
 #     for media in sorted_media:
 #         media.description = make_usernames_clickable(media.description)
 
-#     paginator = Paginator(sorted_media, 100)
+#     paginator = Paginator(sorted_media, 15)
 #     page_number = request.GET.get('page')
 #     page_obj = paginator.get_page(page_number)
 
@@ -769,18 +800,21 @@ def explore_detail(request, media_id):
 
 @login_required
 def following_media(request):
-    user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
+    user = request.user
+
+    # Fetch or create the user's hashtag preferences
+    user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
     liked_hashtags = user_hashtag_pref.liked_hashtags
     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
 
     # Get users who have blocked the current user
-    users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-    users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+    users_blocked_me = BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)
+    users_i_blocked = BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True)
 
     # Get users that the current user is following
     followed_users = AuthUser.objects.filter(
-        follower_set__follower=request.user
+        follower_set__follower=user
     ).exclude(
         id__in=users_blocked_me
     ).exclude(
@@ -788,64 +822,97 @@ def following_media(request):
     )
 
     # Get buddy list
-    buddy_list = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
+    buddy_list = Buddy.objects.filter(user=user).values_list('buddy', flat=True)
 
     # Fetch media from followed users and buddies
     media_from_followed_users = Media.objects.filter(
-        user__in=followed_users
+        Q(user__in=followed_users) | Q(user__in=buddy_list)
+    ).select_related(
+        'user', 'user__profile'
+    ).prefetch_related(
+        'hashtags',  # Prefetch hashtags associated with each media
+        'likes'  # Prefetch likes for calculating engagement levels
+    ).annotate(
+        likes_count=Count('likes'),
+        is_liked=Exists(Engagement.objects.filter(media=OuterRef('id'), user=user, engagement_type='like'))
     ).order_by('-created_at').exclude(
-        Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=request.user)
+        Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=user)
     ).exclude(
-        engagement__user=request.user, engagement__engagement_type='view'
+        engagement__user=user, engagement__engagement_type='view'
     )
 
-    if not media_from_followed_users.exists():
-        # If no more media from followed users, use the explore logic
-        media = Media.objects.order_by('-created_at').exclude(
-            user__in=users_blocked_me
-        ).exclude(
-            user__in=users_i_blocked
-        )
+    # If no media from followed users, use the explore logic
+    explore_media = Media.objects.exclude(
+        user__in=users_blocked_me
+    ).exclude(
+        user__in=users_i_blocked
+    ).select_related(
+        'user', 'user__profile'
+    ).prefetch_related(
+        'hashtags', 'likes'
+    ).annotate(
+        likes_count=Count('likes'),
+        is_liked=Exists(Engagement.objects.filter(media=OuterRef('id'), user=user, engagement_type='like'))
+    ).order_by('-created_at')
 
-        # Apply hashtag preferences and scoring
-        media_list = list(media)
-        random.shuffle(media_list)
+    # Combine all media from followed users and the explore logic
+    combined_media = list(media_from_followed_users) + list(explore_media)
 
-        media_scores = []
-        for m in media_list:
-            score = 0
-            media_hashtags = [h.name for h in m.hashtags.all()]
+    # Apply scoring and constraints
+    media_scores = []
+    for m in combined_media:
+        score = 0
+        media_hashtags = [h.name for h in m.hashtags.all()]
 
-            for hashtag in media_hashtags:
-                if hashtag in liked_hashtags:
-                    score += 1
-                if hashtag in not_interested_hashtags:
-                    score -= 8
-                if hashtag in viewed_hashtags:
-                    score += 0.9  # Adjust this weight as needed
+        # Apply hashtag preferences scoring
+        for hashtag in media_hashtags:
+            if hashtag in liked_hashtags:
+                score += 1
+            if hashtag in not_interested_hashtags:
+                score -= 8
+            if hashtag in viewed_hashtags:
+                score += 0.9  # Adjust this weight as needed
 
-            media_scores.append((m, score))
+        # Boost score based on user activity frequency (number of media posts by the user)
+        user_post_count = m.user.media.count()  # Counting user's media posts
+        if user_post_count > 10:
+            score += 2  # Boost for active users who post frequently
 
-        sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
-        sorted_media = [m[0] for m in sorted_media]
+        # Boost score based on engagement levels (likes count as engagement)
+        if m.likes_count > 50:
+            score += 1.5  # Boost for media with high engagement levels
 
-        # Apply private media constraints
-        sorted_media = [m for m in sorted_media 
-                        if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
-                        and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
-    else:
-        sorted_media = list(media_from_followed_users)
+        # Add media and its score to the list
+        media_scores.append((m, score))
 
-        # Apply private media constraints
-        sorted_media = [m for m in sorted_media 
-                        if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
-                        and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
+    # Sort by score and creation date (newest first)
+    sorted_media = sorted(media_scores, key=lambda x: (x[1], x[0].created_at), reverse=True)
+    sorted_media = [m[0] for m in sorted_media]
+
+    # Apply private media constraints
+    sorted_media = [m for m in sorted_media 
+                    if not (m.is_private and m.user.id not in buddy_list and user != m.user)
+                    and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=user).exists())]
+
+    # Randomize the order while keeping the newest media first
+    random.shuffle(sorted_media)
+
+    # Track engagement for viewed media
+    for media in sorted_media:
+        # Check if the current user has already viewed this media
+        if not Engagement.objects.filter(user=user, media=media, engagement_type='view').exists():
+            # Increment view count and save the media
+            media.view_count = F('view_count') + 1
+            media.save(update_fields=['view_count'])
+
+            # Create a view engagement entry
+            Engagement.objects.create(media=media, user=user, engagement_type='view')
 
     # Apply make_usernames_clickable to descriptions
     for media in sorted_media:
         media.description = make_usernames_clickable(media.description)
 
-    paginator = Paginator(sorted_media, 10)
+    paginator = Paginator(sorted_media, 8)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -855,7 +922,6 @@ def following_media(request):
                 'id': m.id,
                 'file_url': m.file.url,
                 'is_video': m.file.url.endswith('.mp4'),
-                'user_id': m.user.id,  # Ensure user_id is included
                 'user_username': m.user.username,
                 'description': m.description
             }
@@ -865,6 +931,124 @@ def following_media(request):
 
     return render(request, 'following_media.html', {'page_obj': page_obj})
 
+
+# @async_views
+# @login_required
+# async def following_media(request):
+#     user = request.user
+#     # Fetch or create the user's hashtag preferences asynchronously
+#     user_hashtag_pref, _ = await UserHashtagPreference.objects.aget_or_create(user=user)
+#     liked_hashtags = user_hashtag_pref.liked_hashtags
+#     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
+#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
+
+#     # Get block lists asynchronously
+#     users_blocked_me_task = BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)
+#     users_i_blocked_task = BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True)
+#     users_blocked_me, users_i_blocked = await asyncio.gather(users_blocked_me_task, users_i_blocked_task)
+
+#     # Get followed users excluding those blocked
+#     followed_users = await AuthUser.objects.filter(
+#         follower_set__follower=user
+#     ).exclude(
+#         id__in=users_blocked_me
+#     ).exclude(
+#         id__in=users_i_blocked
+#     ).values_list('id', flat=True)
+
+#     # Get buddy list
+#     buddy_list = await Buddy.objects.filter(user=user).values_list('buddy', flat=True)
+
+#     # Fetch media from followed users and buddies with caching
+#     cache_key = f"media_followed_{user.id}"
+#     media_from_followed_users = cache.get(cache_key)
+
+#     if media_from_followed_users is None:
+#         media_from_followed_users = list(await Media.objects.filter(
+#             Q(user__in=followed_users) | Q(user__in=buddy_list)
+#         ).order_by('-created_at').exclude(
+#             Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=user)
+#         ).exclude(
+#             interactions__user=user
+#         ).annotate(
+#             likes_count=Count('likes'),
+#             is_liked=Exists(Media.objects.filter(id=OuterRef('id'), likes=user))
+#         ))
+#         # Cache the result for 10 minutes
+#         cache.set(cache_key, media_from_followed_users, 600)
+
+#     # If no media from followed users is available, use the explore logic
+#     sorted_explore_media = []
+#     if not media_from_followed_users:
+#         explore_media = list(await Media.objects.exclude(
+#             user__in=users_blocked_me
+#         ).exclude(
+#             user__in=users_i_blocked
+#         ).order_by('-created_at'))
+
+#         media_scores = []
+#         for media in explore_media:
+#             score = 0
+#             media_hashtags = [h.name for h in media.hashtags.all()]
+
+#             # Apply hashtag preferences scoring
+#             for hashtag in media_hashtags:
+#                 if hashtag in liked_hashtags:
+#                     score += 1
+#                 if hashtag in not_interested_hashtags:
+#                     score -= 8
+#                 if hashtag in viewed_hashtags:
+#                     score += 0.9
+
+#             # Boost score based on user activity frequency and engagement
+#             if media.user.posts.count() > 10:  # Example: boost for active users
+#                 score += 2
+#             if media.engagement.count() > 50:  # Boost for engaging media
+#                 score += 1.5
+
+#             media_scores.append((media, score))
+
+#         # Sort by score and prioritize newer media
+#         sorted_explore_media = sorted(media_scores, key=lambda x: (x[1], x[0].created_at), reverse=True)
+#         sorted_explore_media = [m[0] for m in sorted_explore_media]
+
+#         # Apply private media constraints
+#         sorted_explore_media = [m for m in sorted_explore_media
+#                                 if not (m.is_private and m.user.id not in buddy_list and user != m.user)
+#                                 and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=user).exists())]
+
+#     # Combine and randomize media lists
+#     combined_media = list(media_from_followed_users) + sorted_explore_media
+#     combined_media.sort(key=lambda m: m.created_at, reverse=True)
+#     random.shuffle(combined_media)
+
+#     # Apply make_usernames_clickable and paginate the combined media
+#     for media in combined_media:
+#         media.description = make_usernames_clickable(media.description)
+
+#     paginator = Paginator(combined_media, 10)
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     # Return JSON if AJAX request
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+#         media_list = [
+#             {
+#                 'id': m.id,
+#                 'file_url': m.file.url,
+#                 'is_video': m.file.url.endswith('.mp4'),
+#                 'user_id': m.user.id,
+#                 'user_username': m.user.username,
+#                 'description': m.description,
+#                 'likes_count': m.likes_count,
+#                 'is_liked': m.is_liked,
+#             }
+#             for m in page_obj
+#         ]
+#         return JsonResponse({'media': media_list})
+
+#     # Render the HTML template
+#     return render(request, 'following_media.html', {'page_obj': page_obj})
 
 @login_required
 def media_engagement(request, media_id):
@@ -881,6 +1065,73 @@ def media_engagement(request, media_id):
     return render(request, 'media_engagement.html', context)
 
 #new for specific description search 
+
+
+# @csrf_exempt
+# @require_POST
+# def log_interaction(request):
+#     try:
+#         # Log the request body for debugging
+#         print(f"Request body: {request.body}")
+
+#         if not request.content_type == 'application/json':
+#             return JsonResponse({'error': 'Invalid content type'}, status=400)
+
+#         # Parse the JSON payload
+#         data = json.loads(request.body)
+#         media_id = data.get('media_id')
+        
+#         if not media_id:
+#             print("Missing media_id in the request payload.")
+#             return JsonResponse({'error': 'Missing media_id'}, status=400)
+        
+#         media = Media.objects.filter(id=media_id).first()
+#         if not media:
+#             print(f"Invalid media_id: {media_id}")
+#             return JsonResponse({'error': 'Invalid media_id'}, status=400)
+
+#         Interaction.objects.create(media=media, user=request.user)
+#         return JsonResponse({'success': True})
+
+#     except json.JSONDecodeError:
+#         print("JSON decode error. Payload may not be valid JSON.")
+#         return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+#     except Exception as e:
+#         print(f"Error in log_interaction: {e}")
+#         return JsonResponse({'error': 'An unexpected error occurred'}, status=400)
+
+
+# @csrf_exempt
+# @require_POST
+# def log_interaction(request):
+#     try:
+#         print(f"Request body: {request.body}")
+
+#         if request.content_type != 'application/json':
+#             return JsonResponse({'error': 'Invalid content type'}, status=400)
+
+#         data = json.loads(request.body)
+#         media_id = data.get('media_id')
+
+#         if not media_id:
+#             print("Missing media_id in the request payload.")
+#             return JsonResponse({'error': 'Missing media_id'}, status=400)
+
+#         try:
+#             media = Media.objects.get(id=media_id)
+#         except Media.DoesNotExist:
+#             print(f"Invalid media_id: {media_id}")
+#             return JsonResponse({'error': 'Invalid media_id'}, status=400)
+
+#         Interaction.objects.create(media=media, user=request.user, interaction_type='view')
+#         return JsonResponse({'success': True})
+
+#     except json.JSONDecodeError:
+#         print("JSON decode error. Payload may not be valid JSON.")
+#         return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
+#     except Exception as e:
+#         print(f"Error in log_interaction: {e}")
+#         return JsonResponse({'error': 'An unexpected error occurred'}, status=400)
 
 
 #to search users 

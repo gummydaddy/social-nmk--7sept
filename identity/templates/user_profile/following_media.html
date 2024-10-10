@@ -32,32 +32,30 @@
                     </a>
                     <div class="media-content">
                         {% if media.file.url|is_video %}
-                            <video controls class="img-fluid autoplay-video" muted>
+                            <video controls class="img-fluid autoplay-video" unmute>
                                 <source src="{{ media.file.url }}" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
                         {% else %}
                             <img src="{{ media.file.url }}" alt="media" class="img-fluid">
                         {% endif %}
-                        <p>
-                            <div class="description">
-                                <a href="{% url 'user_profile:like_media' media.id %}" 
-                                   class="like-link {% if request.user in media.likes.all %}liked{% endif %}" 
-                                   data-url="{% url 'user_profile:like_media' media.id %}" 
-                                   data-media-id="{{ media.id }}" 
-                                   data-csrf-token="{{ csrf_token }}">
-                                    {% if request.user in media.likes.all %}
-                                        ❤️
-                                    {% else %}
-                                        ♡
-                                    {% endif %}
-                                </a> 
-                                
-                                <span class="like-count">{{ media.likes.count }}</span> likes
-                                <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
-                                <p>{{ media.description|safe }}</p>
-                            </div>
-                        </p>
+                        <div class="description">
+                            <a href="{% url 'user_profile:like_media' media.id %}" 
+                               class="like-link {% if request.user in media.likes.all %}liked{% endif %}" 
+                               data-url="{% url 'user_profile:like_media' media.id %}" 
+                               data-media-id="{{ media.id }}" 
+                               data-csrf-token="{{ csrf_token }}">
+                                {% if request.user in media.likes.all %}
+                                    ❤️
+                                {% else %}
+                                    ♡
+                                {% endif %}
+                            </a> 
+                            
+                            <span class="like-count">{{ media.likes.count }}</span> likes
+                            <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
+                            <p>{{ media.description|safe }}</p>
+                        </div>
                     </div>
                 </div>
             {% endfor %}
@@ -66,15 +64,14 @@
         {% endif %}
     </div>
 
-    <!-- Pagination controls -->
-    <div class="pagination">
+     <!-- Pagination controls -->
+     <div class="pagination" >
         <span class="step-links">
             {% if page_obj.has_previous %}
                 <a href="?page=1">&laquo; first</a>
                 <a href="?page={{ page_obj.previous_page_number }}">previous</a>
             {% endif %}
             <span class="current">
-                <br>
                 Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
             </span>
             {% if page_obj.has_next %}
@@ -84,35 +81,12 @@
         </span>
     </div>
 
-
     <!-- Loading Spinner -->
-    <div id="loading-spinner" style="display: none;">
+    <div id="loading-spinner" style="display: none; text-align: center;">
         <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
     </div>
 </div>
 
-
-<!-- Media Detail Modal -->
-<div id="media-detail-modal" class="modal fade" tabindex="-1" aria-labelledby="mediaDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="mediaDetailModalLabel">Media Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Media detail content will be loaded here -->
-                <div id="media-detail-content"></div>
-                <div id="related-media-container" class="row row-cols-3 g-4 mt-4">
-                    <!-- Related media will be appended here -->
-                </div>
-                <div id="related-loading-spinner" style="display: none;">
-                    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block following_media_script %}
@@ -120,13 +94,15 @@
     const mediaContainer = document.getElementById('media-container');
     const loadingSpinner = document.getElementById('loading-spinner');
     let page = 1;
+    let loading = false;
+    let hasMoreMedia = true;
 
     document.addEventListener('DOMContentLoaded', function() {
         // Setup Intersection Observer for videos
         const videos = document.querySelectorAll('.autoplay-video');
         const observerOptions = {
             root: null,
-            threshold: 0.75 // Play video when 50% of it is visible
+            threshold: 0.75 // Play video when 75% of it is visible
         };
 
         const videoObserver = new IntersectionObserver((entries, observer) => {
@@ -178,7 +154,20 @@
             });
         });
 
-        // Initial load
+        function handleScroll() {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+                fetchMoreMedia();
+            }
+        }
+
+        window.addEventListener('scroll', handleScroll);
+    });
+</script>
+{% endblock %}
+
+
+
+{% comment %} // Initial load
         
         fetchMoreMedia();
         /*
@@ -275,22 +264,9 @@
                 } else {
                     window.removeEventListener('scroll', handleScroll);
                 }
-            })*/
+            })
             .catch(error => {
                 console.error('Error fetching more media:', error);
                 loadingSpinner.style.display = 'none';
             });
-        }
-
-        function handleScroll() {
-            const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-
-            if (scrollTop + clientHeight >= scrollHeight - ) {
-                fetchMoreMedia();
-            }
-        }
-
-        window.addEventListener('scroll', handleScroll);
-    });
-</script>
-{% endblock %}
+        }*/ {% endcomment %}
