@@ -1,3 +1,4 @@
+import os
 import json
 from django.shortcuts import render, get_object_or_404, redirect
 from PIL import Image, ImageFilter, ImageOps
@@ -13,6 +14,9 @@ from notion.models import Follow, Notification, Comment, Hashtag, BlockedUser
 from django.views.generic import ListView
 from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Buddy#, Comment
 from .forms import MediaForm, ProfileForm, CommentForm
+from django.core.files.storage import get_storage_class
+from .storage import CompressedMediaStorage
+
 from notion.forms import UsernameUpdateForm
 from PIL import Image, ImageFilter, ImageOps
 import io
@@ -42,26 +46,119 @@ from django.utils.html import escape, mark_safe
 from django.urls import reverse
 
 
+# @login_required
+# def upload_media(request):
+#     if request.method == 'POST':
+#         form = MediaForm(request.POST, request.FILES)
+#         if form.is_valid():
+#             media = form.save(commit=False)
+#             media.user = request.user
+
+#             # Process description to make usernames clickable
+#             # media.description = make_usernames_clickable(escape(media.description))
+#             media.description = escape(media.description)
+#             # media.description = make_usernames_clickable(media.description)
+#             # media.description = linkify(media.description)
+
+#             # Handle image uploads
+#             if media.file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+#                 media.media_type = 'image'
+#                 image = Image.open(media.file)
+#                 filter_name = request.POST.get('filter')
+#                 if filter_name:
+#                     filter_map = {
+#                         'clarendon': ImageFilter.EMBOSS,
+#                         'sepia': 'sepia',  # Custom filter
+#                         'grayscale': 'grayscale',  # Custom filter
+#                         'invert': ImageOps.invert,
+#                     }
+#                     if filter_name == 'sepia':
+#                         sepia_image = ImageOps.colorize(image.convert("L"), "#704214", "#C0C090")
+#                         image = sepia_image
+#                     elif filter_name == 'grayscale':
+#                         grayscale_image = ImageOps.grayscale(image)
+#                         image = grayscale_image
+#                     else:
+#                         image = image.filter(filter_map.get(filter_name, ImageFilter.BLUR))
+
+#                 byte_io = io.BytesIO()
+#                 if image.mode == 'RGBA':
+#                     image = image.convert('RGB')
+#                 image.save(byte_io, format='JPEG')
+#                 media.file = ContentFile(byte_io.getvalue(), media.file.name)
+
+#             # Handle video uploads
+#             elif media.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
+#                 media.media_type = 'video'
+
+#                 # Save the uploaded file to a temporary location
+#                 with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+#                     for chunk in media.file.chunks():
+#                         temp_file.write(chunk)
+#                     temp_file_path = temp_file.name
+
+#                 # Load the video clip
+#                 clip = VideoFileClip(temp_file_path)
+
+#                 # Get start time and duration from the form
+#                 start_time = form.cleaned_data.get('start_time', 0)
+#                 duration = form.cleaned_data.get('duration', clip.duration)
+
+#                 # Validate and adjust start time and duration
+#                 start_time = max(0, min(start_time, clip.duration))
+#                 duration = max(0, min(duration, clip.duration - start_time))
+
+#                 # Process video clip based on start_time and duration
+#                 subclip = clip.subclip(start_time, start_time + duration)
+
+#                 # Ensure the video is no longer than 90 seconds
+#                 if subclip.duration > 90:
+#                     subclip = subclip.subclip(0, 90)
+
+#                 with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_output_file:
+#                     output_file_path = temp_output_file.name
+
+#                 subclip.write_videofile(output_file_path, codec='libx264', audio_codec='aac')
+#                 subclip.close()
+
+#                 with open(output_file_path, 'rb') as file:
+#                     media.file = ContentFile(file.read(), media.file.name)
+
+#             media.save()
+#             form.save_m2m()  # Save tags
+#             return redirect('user_profile:profile', request.user.id)
+#     else:
+#         form = MediaForm()
+#     return render(request, 'upload.html', {'form': form})
+
+import logging
+logger = logging.getLogger(__name__)
+
+
 @login_required
 def upload_media(request):
+    logger.info(f"User {request.user.username} is uploading media")
     if request.method == 'POST':
         form = MediaForm(request.POST, request.FILES)
         if form.is_valid():
+            logger.info("MediaForm is valid.")
             media = form.save(commit=False)
             media.user = request.user
 
             # Process description to make usernames clickable
-            # media.description = make_usernames_clickable(escape(media.description))
             media.description = escape(media.description)
-            # media.description = make_usernames_clickable(media.description)
-            # media.description = linkify(media.description)
+
+            # Use CompressedMediaStorage for saving the file
+            storage = CompressedMediaStorage()
 
             # Handle image uploads
             if media.file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+                logger.info(f"Image file detected: {media.file.name}")
                 media.media_type = 'image'
                 image = Image.open(media.file)
                 filter_name = request.POST.get('filter')
                 if filter_name:
+                    logger.info(f"Applying filter: {filter_name} to image: {media.file.name}")
                     filter_map = {
                         'clarendon': ImageFilter.EMBOSS,
                         'sepia': 'sepia',  # Custom filter
@@ -85,6 +182,7 @@ def upload_media(request):
 
             # Handle video uploads
             elif media.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
+                logger.info(f"Video file detected: {media.file.name}")
                 media.media_type = 'video'
 
                 # Save the uploaded file to a temporary location
@@ -104,6 +202,8 @@ def upload_media(request):
                 start_time = max(0, min(start_time, clip.duration))
                 duration = max(0, min(duration, clip.duration - start_time))
 
+                logger.info(f"Processing video: {media.file.name} with start_time={start_time} and duration={duration}")
+
                 # Process video clip based on start_time and duration
                 subclip = clip.subclip(start_time, start_time + duration)
 
@@ -120,9 +220,19 @@ def upload_media(request):
                 with open(output_file_path, 'rb') as file:
                     media.file = ContentFile(file.read(), media.file.name)
 
-            media.save()
-            form.save_m2m()  # Save tags
-            return redirect('user_profile:profile', request.user.id)
+            else:
+                logger.warning(f"Unknown file type uploaded: {media.file.name}")
+
+            try:
+                media.file.name = storage.save(media.file.name, media.file)
+                media.save()
+                logger.info(f"Media file {media.file.name} saved successfully for user {request.user.username}")
+                form.save_m2m()  # Save tags
+                return redirect('user_profile:profile', request.user.id)
+            except Exception as e:
+                logger.error(f"Error saving media file {media.file.name}: {e}")
+        else:
+            logger.warning("MediaForm is invalid.")
     else:
         form = MediaForm()
     return render(request, 'upload.html', {'form': form})
@@ -791,21 +901,23 @@ def explore_detail(request, media_id):
 
 
 
-
 # @login_required
 # def following_media(request):
-#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
+#     user = request.user
+
+#     # Fetch or create the user's hashtag preferences
+#     user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
 #     liked_hashtags = user_hashtag_pref.liked_hashtags
 #     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
 #     viewed_hashtags = user_hashtag_pref.viewed_hashtags
 
 #     # Get users who have blocked the current user
-#     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-#     users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
+#     users_blocked_me = BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)
+#     users_i_blocked = BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True)
 
 #     # Get users that the current user is following
 #     followed_users = AuthUser.objects.filter(
-#         follower_set__follower=request.user
+#         follower_set__follower=user
 #     ).exclude(
 #         id__in=users_blocked_me
 #     ).exclude(
@@ -813,64 +925,97 @@ def explore_detail(request, media_id):
 #     )
 
 #     # Get buddy list
-#     buddy_list = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
+#     buddy_list = Buddy.objects.filter(user=user).values_list('buddy', flat=True)
 
 #     # Fetch media from followed users and buddies
 #     media_from_followed_users = Media.objects.filter(
-#         user__in=followed_users
+#         Q(user__in=followed_users) | Q(user__in=buddy_list)
+#     ).select_related(
+#         'user', 'user__profile'
+#     ).prefetch_related(
+#         'hashtags',  # Prefetch hashtags associated with each media
+#         'likes'  # Prefetch likes for calculating engagement levels
+#     ).annotate(
+#         likes_count=Count('likes'),
+#         is_liked=Exists(Engagement.objects.filter(media=OuterRef('id'), user=user, engagement_type='like'))
 #     ).order_by('-created_at').exclude(
-#         Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=request.user)
+#         Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=user)
 #     ).exclude(
-#         engagement__user=request.user, engagement__engagement_type='view'
+#         engagement__user=user, engagement__engagement_type='view'
 #     )
 
-#     if not media_from_followed_users.exists():
-#         # If no more media from followed users, use the explore logic
-#         media = Media.objects.order_by('-created_at').exclude(
-#             user__in=users_blocked_me
-#         ).exclude(
-#             user__in=users_i_blocked
-#         )
+#     # If no media from followed users, use the explore logic
+#     explore_media = Media.objects.exclude(
+#         user__in=users_blocked_me
+#     ).exclude(
+#         user__in=users_i_blocked
+#     ).select_related(
+#         'user', 'user__profile'
+#     ).prefetch_related(
+#         'hashtags', 'likes'
+#     ).annotate(
+#         likes_count=Count('likes'),
+#         is_liked=Exists(Engagement.objects.filter(media=OuterRef('id'), user=user, engagement_type='like'))
+#     ).order_by('-created_at')
 
-#         # Apply hashtag preferences and scoring
-#         media_list = list(media)
-#         random.shuffle(media_list)
+#     # Combine all media from followed users and the explore logic
+#     combined_media = list(media_from_followed_users) + list(explore_media)
 
-#         media_scores = []
-#         for m in media_list:
-#             score = 0
-#             media_hashtags = [h.name for h in m.hashtags.all()]
+#     # Apply scoring and constraints
+#     media_scores = []
+#     for m in combined_media:
+#         score = 0
+#         media_hashtags = [h.name for h in m.hashtags.all()]
 
-#             for hashtag in media_hashtags:
-#                 if hashtag in liked_hashtags:
-#                     score += 1
-#                 if hashtag in not_interested_hashtags:
-#                     score -= 8
-#                 if hashtag in viewed_hashtags:
-#                     score += 0.9  # Adjust this weight as needed
+#         # Apply hashtag preferences scoring
+#         for hashtag in media_hashtags:
+#             if hashtag in liked_hashtags:
+#                 score += 1
+#             if hashtag in not_interested_hashtags:
+#                 score -= 8
+#             if hashtag in viewed_hashtags:
+#                 score += 0.9  # Adjust this weight as needed
 
-#             media_scores.append((m, score))
+#         # Boost score based on user activity frequency (number of media posts by the user)
+#         user_post_count = m.user.media.count()  # Counting user's media posts
+#         if user_post_count > 10:
+#             score += 2  # Boost for active users who post frequently
 
-#         sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
-#         sorted_media = [m[0] for m in sorted_media]
+#         # Boost score based on engagement levels (likes count as engagement)
+#         if m.likes_count > 50:
+#             score += 1.5  # Boost for media with high engagement levels
 
-#         # Apply private media constraints
-#         sorted_media = [m for m in sorted_media 
-#                         if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
-#                         and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
-#     else:
-#         sorted_media = list(media_from_followed_users)
+#         # Add media and its score to the list
+#         media_scores.append((m, score))
 
-#         # Apply private media constraints
-#         sorted_media = [m for m in sorted_media 
-#                         if not (m.is_private and m.user.id not in buddy_list and request.user != m.user)
-#                         and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=request.user).exists())]
+#     # Sort by score and creation date (newest first)
+#     sorted_media = sorted(media_scores, key=lambda x: (x[1], x[0].created_at), reverse=True)
+#     sorted_media = [m[0] for m in sorted_media]
+
+#     # Apply private media constraints
+#     sorted_media = [m for m in sorted_media 
+#                     if not (m.is_private and m.user.id not in buddy_list and user != m.user)
+#                     and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=user).exists())]
+
+#     # Randomize the order while keeping the newest media first
+#     random.shuffle(sorted_media)
+
+#     # Track engagement for viewed media
+#     for media in sorted_media:
+#         # Check if the current user has already viewed this media
+#         if not Engagement.objects.filter(user=user, media=media, engagement_type='view').exists():
+#             # Increment view count and save the media
+#             media.view_count = F('view_count') + 1
+#             media.save(update_fields=['view_count'])
+
+#             # Create a view engagement entry
+#             Engagement.objects.create(media=media, user=user, engagement_type='view')
 
 #     # Apply make_usernames_clickable to descriptions
 #     for media in sorted_media:
 #         media.description = make_usernames_clickable(media.description)
 
-#     paginator = Paginator(sorted_media, 15)
+#     paginator = Paginator(sorted_media, 8)
 #     page_number = request.GET.get('page')
 #     page_obj = paginator.get_page(page_number)
 
@@ -890,20 +1035,50 @@ def explore_detail(request, media_id):
 #     return render(request, 'following_media.html', {'page_obj': page_obj})
 
 
+
+from random import shuffle
+# Define constants for scoring weights
+LIKED_HASHTAG_WEIGHT = 3
+NOT_INTERESTED_HASHTAG_WEIGHT = -10
+VIEWED_HASHTAG_WEIGHT = 1
+ACTIVE_USER_WEIGHT = 2
+HIGH_ENGAGEMENT_WEIGHT = 2
+
+def calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed_hashtags):
+    score = 0
+    media_hashtags = [h.name for h in media.hashtags.all()]
+    
+    for hashtag in media_hashtags:
+        if hashtag in liked_hashtags:
+            score += LIKED_HASHTAG_WEIGHT
+        if hashtag in not_interested_hashtags:
+            score += NOT_INTERESTED_HASHTAG_WEIGHT
+        if hashtag in viewed_hashtags:
+            score += VIEWED_HASHTAG_WEIGHT
+            
+    user_post_count = media.user.media.count()
+    if user_post_count > 10:
+        score += ACTIVE_USER_WEIGHT
+        
+    if media.likes_count > 50:
+        score += HIGH_ENGAGEMENT_WEIGHT
+        
+    return score
+
 @login_required
 def following_media(request):
     user = request.user
-
+    
     # Fetch or create the user's hashtag preferences
     user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
     liked_hashtags = user_hashtag_pref.liked_hashtags
     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
-
+    
     # Get users who have blocked the current user
     users_blocked_me = BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)
     users_i_blocked = BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True)
-
+    
     # Get users that the current user is following
     followed_users = AuthUser.objects.filter(
         follower_set__follower=user
@@ -912,16 +1087,16 @@ def following_media(request):
     ).exclude(
         id__in=users_i_blocked
     )
-
+    
     # Get buddy list
     buddy_list = Buddy.objects.filter(user=user).values_list('buddy', flat=True)
-
+    
     # Fetch media from followed users and buddies
     media_from_followed_users = Media.objects.filter(
         Q(user__in=followed_users) | Q(user__in=buddy_list)
     ).select_related(
         'user', 'user__profile'
-    ).prefetch_related(
+        ).prefetch_related(
         'hashtags',  # Prefetch hashtags associated with each media
         'likes'  # Prefetch likes for calculating engagement levels
     ).annotate(
@@ -953,28 +1128,7 @@ def following_media(request):
     # Apply scoring and constraints
     media_scores = []
     for m in combined_media:
-        score = 0
-        media_hashtags = [h.name for h in m.hashtags.all()]
-
-        # Apply hashtag preferences scoring
-        for hashtag in media_hashtags:
-            if hashtag in liked_hashtags:
-                score += 1
-            if hashtag in not_interested_hashtags:
-                score -= 8
-            if hashtag in viewed_hashtags:
-                score += 0.9  # Adjust this weight as needed
-
-        # Boost score based on user activity frequency (number of media posts by the user)
-        user_post_count = m.user.media.count()  # Counting user's media posts
-        if user_post_count > 10:
-            score += 2  # Boost for active users who post frequently
-
-        # Boost score based on engagement levels (likes count as engagement)
-        if m.likes_count > 50:
-            score += 1.5  # Boost for media with high engagement levels
-
-        # Add media and its score to the list
+        score = calculate_media_score(m, liked_hashtags, not_interested_hashtags, viewed_hashtags)
         media_scores.append((m, score))
 
     # Sort by score and creation date (newest first)
@@ -987,17 +1141,13 @@ def following_media(request):
                     and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=user).exists())]
 
     # Randomize the order while keeping the newest media first
-    random.shuffle(sorted_media)
+    shuffle(sorted_media)
 
     # Track engagement for viewed media
     for media in sorted_media:
-        # Check if the current user has already viewed this media
         if not Engagement.objects.filter(user=user, media=media, engagement_type='view').exists():
-            # Increment view count and save the media
             media.view_count = F('view_count') + 1
             media.save(update_fields=['view_count'])
-
-            # Create a view engagement entry
             Engagement.objects.create(media=media, user=user, engagement_type='view')
 
     # Apply make_usernames_clickable to descriptions
@@ -1022,7 +1172,6 @@ def following_media(request):
         return JsonResponse({'media': media_list})
 
     return render(request, 'following_media.html', {'page_obj': page_obj})
-
 
 
 @login_required

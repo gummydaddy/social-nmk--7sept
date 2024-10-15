@@ -73,7 +73,7 @@ class Hashtag(models.Model):
     
 
 class UserHashtagPreference(models.Model):
-    user = models.OneToOneField(AuthUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(AuthUser, on_delete=models.CASCADE, related_name='hashtag_preference')
     liked_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags liked by the user
     not_interested_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags marked as not interested by the user
     viewed_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags viewed by the user
