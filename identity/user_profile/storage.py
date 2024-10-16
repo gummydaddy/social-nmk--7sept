@@ -132,7 +132,7 @@ logger = logging.getLogger(__name__)
 
 class CompressedMediaStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
-        self.image_quality = kwargs.pop('image_quality', 85)
+        self.image_quality = kwargs.pop('image_quality', 65)
         self.video_crf = kwargs.pop('video_crf', 28)
         self.max_image_dimension = kwargs.pop('max_image_dimension', 1920)
         super().__init__(*args, **kwargs)
