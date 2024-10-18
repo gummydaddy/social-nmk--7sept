@@ -6,6 +6,8 @@ from django.contrib.auth.models import User as AuthUser
 from django.core.files.storage import FileSystemStorage
 from .storage import CompressedMediaStorage
 from django.utils import timezone
+from django.db.models import JSONField
+
 
 
 class Profile(models.Model):
@@ -15,7 +17,8 @@ class Profile(models.Model):
     bio = models.TextField(blank=True, null=True)
     saved_uploads = models.ManyToManyField('Media', related_name='saved_by_users', blank=True)
     is_private = models.BooleanField(default=False)  # New field to track privacy
-
+    email_confirmed = models.BooleanField(default=False)  # New field to track email confirmation
+    firebase_uid = models.CharField(max_length=255, blank=True, null=True)  # Field to store Firebase UID
 
     def __str__(self):
         return self.user.username
@@ -67,65 +70,45 @@ class Hashtag(models.Model):
 
     def __str__(self):
         return self.name
-
-
-# class UserHashtagPreference(models.Model):
-#     user = models.OneToOneField(AuthUser, on_delete=models.CASCADE)
-#     liked_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags liked by the user
-#     not_interested_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags marked as not interested by the user
-#     viewed_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags viewed by the user
-#     viewed_media = models.JSONField(default=list)  # Store the last viewed media IDs
-
-#     def add_viewed_hashtag(self, hashtags):
-#         # Add hashtags to the list while ensuring it's unique and contains only the last 50 items
-#         self.viewed_hashtags = hashtags + self.viewed_hashtags
-#         self.viewed_hashtags = list(dict.fromkeys(self.viewed_hashtags))[:50]
-#         self.save(update_fields=['viewed_hashtags'])
-
-#     def add_viewed_media(self, media_ids):
-#         # Add media IDs to the list while ensuring it's unique and contains only the last 50 items
-#         self.viewed_media = media_ids + self.viewed_media
-#         self.viewed_media = list(dict.fromkeys(self.viewed_media))[:50]
-#         self.save(update_fields=['viewed_media'])
     
 
 class UserHashtagPreference(models.Model):
-    user = models.OneToOneField(AuthUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(AuthUser, on_delete=models.CASCADE, related_name='hashtag_preference')
     liked_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags liked by the user
     not_interested_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags marked as not interested by the user
     viewed_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags viewed by the user
     viewed_media = models.JSONField(default=list)  # Store the last viewed media IDs
+    not_interested_media = models.JSONField(default=list)  # Store the last 50 unique media IDs that the user is not interested in
 
-    # New field to store the last 50 unique media IDs that the user is not interested in
-    not_interested_media = models.JSONField(default=list)
+    # New field to store the last 35 unique search keywords
+    search_hashtags = models.JSONField(default=list)
 
     def add_viewed_hashtag(self, hashtags):
-        """
-        Add hashtags to the viewed_hashtags list while ensuring it contains only unique
-        hashtags and stores only the last 50 entries.
-        """
         self.viewed_hashtags = hashtags + self.viewed_hashtags
         self.viewed_hashtags = list(dict.fromkeys(self.viewed_hashtags))[:50]
         self.save(update_fields=['viewed_hashtags'])
 
     def add_viewed_media(self, media_ids):
-        """
-        Add media IDs to the viewed_media list while ensuring it contains only unique
-        media IDs and stores only the last 50 entries.
-        """
         self.viewed_media = media_ids + self.viewed_media
         self.viewed_media = list(dict.fromkeys(self.viewed_media))[:50]
         self.save(update_fields=['viewed_media'])
 
-    # New method to add media to the not interested media list
     def add_not_interested_media(self, media_id):
-        """
-        Add a media ID to the not_interested_media list while ensuring it contains only unique
-        media IDs and stores only the last 50 entries.
-        """
         self.not_interested_media = [media_id] + self.not_interested_media
         self.not_interested_media = list(dict.fromkeys(self.not_interested_media))[:50]
         self.save(update_fields=['not_interested_media'])
+
+    # New method to add search keywords to the search_hashtags list
+    def add_search_hashtag(self, search_keyword):
+        """
+        Add a search keyword to the search_hashtags list while ensuring it contains only unique
+        keywords and stores only the last 35 entries (FIFO).
+        """
+        if search_keyword:  # Check if the search keyword is not empty
+            self.search_hashtags = [search_keyword] + self.search_hashtags
+            self.search_hashtags = list(dict.fromkeys(self.search_hashtags))[:35]
+            self.save(update_fields=['search_hashtags'])
+
 
 
 class AdminNotification(models.Model):
@@ -168,3 +151,15 @@ class Buddy(models.Model):
 
     def __str__(self):
         return f"{self.user.username}'s buddy: {self.buddy.username}"
+    
+
+# class Interaction(models.Model):
+#     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='interactions')
+#     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
+#     timestamp = models.DateTimeField(auto_now_add=True)
+
+#     class Meta:
+#         ordering = ['-timestamp']
+#         constraints = [
+#             models.UniqueConstraint(fields=['media', 'user'], name='unique_interaction')
+        # ]

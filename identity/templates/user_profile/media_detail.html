@@ -95,6 +95,9 @@
     .dropdown:hover .dropdown-content {
         display: block;
     }
+    .description {
+        color: #123;
+    }
 </style>
 
 <div class="media-detail-container">
@@ -103,7 +106,7 @@
     </a>
     <div class="media-detail">
         {% if media.file.url|is_video %}
-            <video controls class="img-fluid">
+            <video controls class="img-fluid autoplay-video" >
                 <source src="{{ media.file.url }}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -161,43 +164,45 @@
                 </div>
             </div>
         </div>
-        {% comment %} <button class="btn btn-primary send-media-button" data-media-url="{{ media.file.url }}"
-            data-media-description="{{ description }}">
-            Send as Message
-        </button> {% endcomment %}
-        
-        <div class="comments">
-            {% for comment in media.comments.all %}
-            <div class="comment" id="{{ comment.id }}">
-                <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
-                {{ comment.content|safe }}
-                <div class="dropdown">
-                    <span>⋮</span>
-                    <div class="dropdown-content">
-                        {% if comment.user == request.user %}
-                        <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                        {% elif media.user == request.user %}
-                        <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                        {% endif %}
+
+        <div class="comments" id="comments-{{ media.id }}">
+            <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#comment-list-{{ media.id }}" aria-expanded="false" aria-controls="comment-list-{{ media.id }}">
+                {{ media.comments.count }} Comments
+            </button>
+    
+            <div id="comment-list-{{ media.id }}" class="collapse">
+                {% for comment in media.comments.all %}
+                <div class="comment" id="{{ comment.id }}">
+                    <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
+                    {{ comment.content|safe }}
+                    <div class="dropdown">
+                        <span>⋮</span>
+                        <div class="dropdown-content">
+                            {% if comment.user == request.user %}
+                            <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% elif media.user == request.user %}
+                            <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </div>
+                    <br>{{ comment.created_at }}
                 </div>
-                <br>{{ comment.created_at }}
+                {% endfor %}
+    
+                <!-- Comment form -->
+                <form method="post" action="{% url 'user_profile:comment_media' media.id %}#new-comment" id="comment-form">
+                    {% csrf_token %}
+                    <input type="text" name="content" placeholder="Add a comment" required>
+                    <button type="submit">Post</button>
+                </form>
             </div>
-            {% endfor %}
-        
-            <!-- Comment form -->
-            <form method="post" action="{% url 'user_profile:comment_media' media.id %}#new-comment" id="comment-form">
-                {% csrf_token %}
-                <input type="text" name="content" placeholder="Add a comment" required>
-                <button type="submit">Post</button>
-            </form>
-        </div>               
+        </div>
     </div>
 </div>
 
@@ -212,25 +217,21 @@
     </div>
 {% endif %}
 
-<!-- Display User's Other Uploads -->
 <h2>{{ media.user.username }}'s Other Uploads</h2>
-<div class="row row-cols-1 g-4">
+<div class="row row-cols-2 g-4">
     {% for upload in page_obj %}
         <div class="col">
             <div id="media-container-{{ upload.id }}" class="upload-item">
                 <a href="{% url 'user_profile:media_detail_view' upload.id %}">
                     {% if upload.file.url|is_video %}
-                        <!-- Video -->
-                        <video controls class="img-fluid">
+                        <video controls class="img-fluid autoplay-video" muted>
                             <source src="{{ upload.file.url }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
                     {% else %}
-                        <!-- Image -->
                         <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
                     {% endif %}
                 </a>
-                
 
                 <!-- View Count -->
                 <div class="view-count">
@@ -257,22 +258,35 @@
     {% endif %}
 </div>
 
-
-<!-- Infinite Scroll for related uploads -->
-{% comment %} <div id="other-uploads" class="media-wrapper">  {% endcomment %}
-    
-    <!-- The uploads will be appended here by JavaScript -->
-{% comment %} </div> {% endcomment %}
-
-<!-- Loading Spinner -->
-{% comment %} <div id="loading-spinner" style="display: none;">
-    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-</div> {% endcomment %}
 {% endblock %}
 
 {% block media_detail_script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Setup Intersection Observer for videos
+        const videos = document.querySelectorAll('.autoplay-video');
+        const observerOptions = {
+            root: null,
+            threshold: 0.75 // Play video when 75% of it is visible
+        };
+
+        const videoObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            });
+        }, observerOptions);
+
+        videos.forEach(video => {
+            videoObserver.observe(video);
+        });
+
+        // Existing like button functionality
         const privacyButton = document.getElementById('media-privacy-button');
     
         privacyButton.addEventListener('click', function() {
@@ -321,48 +335,44 @@
             });
         });
     });
-    
-
-    
-    
-
     document.addEventListener('DOMContentLoaded', function() {
         function handleLikeButtonClick(event) {
-            event.preventDefault();
-            const likeLink = event.currentTarget;
-            const url = likeLink.getAttribute('data-url');
-            const csrfToken = likeLink.getAttribute('data-csrf-token');
+                event.preventDefault();
+                const likeLink = event.currentTarget;
+                const url = likeLink.getAttribute('data-url');
+                const csrfToken = likeLink.getAttribute('data-csrf-token');
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                const likeCount = likeLink.nextElementSibling;
-                likeCount.textContent = data.like_count;
-                if (data.liked) {
-                    likeLink.classList.add('liked');
-                    likeLink.textContent = '❤️';
-                } else {
-                    likeLink.classList.remove('liked');
-                    likeLink.textContent = '♡';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const likeCount = likeLink.nextElementSibling;
+                    likeCount.textContent = data.like_count;
+                    if (data.liked) {
+                        likeLink.classList.add('liked');
+                        likeLink.textContent = '❤️';
+                    } else {
+                        likeLink.classList.remove('liked');
+                        likeLink.textContent = '♡';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            }
+
+            document.querySelectorAll('.like-link').forEach(function(link) {
+                link.addEventListener('click', handleLikeButtonClick);
             });
-        }
 
-        document.querySelectorAll('.like-link').forEach(function(link) {
-            link.addEventListener('click', handleLikeButtonClick);
-        });
-
+        // Comment form submission logic (remains the same)
         document.querySelectorAll('.comment-form').forEach(function(form) {
             form.addEventListener('submit', function(event) {
                 event.preventDefault();

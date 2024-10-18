@@ -11,6 +11,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.core.mail import send_mail, EmailMessage, get_connection
 from django.core.cache import cache
+from django.utils.module_loading import import_string
 from django.conf import settings
 from .models import KYC, File, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin#, TemporarilyLock
 from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm, PasswordResetForm
@@ -27,6 +28,13 @@ import xml.etree.ElementTree as ET
 import openpyxl  # To handle .xlsx files
 import xlrd  # To handle .xls files
 # import base64
+from PyPDF2 import PdfReader
+from django.core.files.storage import FileSystemStorage
+from django.utils.html import escape
+from pdf2image import convert_from_path
+from PIL import Image
+import io
+
 
 
 
@@ -63,20 +71,6 @@ def send_confirmation_email(user):
     send_mail(subject, message, email_from, recipient_list)
 
 
-# def signup(request):
-#     if request.method == 'POST':
-#         form = CustomSignupForm(request.POST)
-#         if form.is_valid():
-#             user = form.save(request)
-#             # send_confirmation_email(user)
-#             login(request, user)
-#             messages.success(request, "Your account has been created successfully. Please check your email to confirm your account.")
-#             return redirect('/')
-#         else:
-#             messages.error(request, "Failed to create account. Please check the form entries.")
-#     else:
-#         form = CustomSignupForm()
-#     return render(request, 'signup.html', {'form': form})
 
 
 def signup(request):
@@ -200,6 +194,98 @@ def login_view(request):
 
     else:
         return render(request, 'login_view.html')
+
+
+# Cache settings
+# CACHE_TIMEOUT = 300  # 5 minutes
+# CACHE_PREFIX = 'auth'
+
+# def get_cache_key(key):
+#     return f"{CACHE_PREFIX}_{key}"
+
+# def authenticate_user(username, password):
+#     """
+#     Authenticate user using Firebase and Django.
+    
+#     Args:
+#     username (str): User's username or email.
+#     password (str): User's password.
+    
+#     Returns:
+#     User or None: Authenticated user object or None.
+#     """
+#     cache_key = 'my_key'
+#     user = cache.get(cache_key)
+    
+#     if not user:
+#         try:
+#             # Check if the input is an email or username
+#             if '@' in username:
+#                 user = User.objects.get(email=username)
+#             else:
+#                 user = User.objects.get(username=username)
+            
+#             # Cache user object
+#             cache.set(cache_key, user, CACHE_TIMEOUT)
+#         except User.DoesNotExist:
+#             return None
+        
+#         # Firebase authentication
+#         try:
+#             firebase_user = auth.sign_in_with_email_and_password(user.email, password)
+#             user.set_password(password)
+#             user.save()
+#         except Exception as e:
+#             # Handle Firebase authentication errors
+#             return None
+    
+#     return user
+
+# def group_based_authentication(username_or_email):
+#     """
+#     Authenticate user using group-based authentication.
+    
+#     Args:
+#     username_or_email (str): Group name or username.
+    
+#     Returns:
+#     User or None: Authenticated user object or None.
+#     """
+#     cache_key = get_cache_key(f"group_{username_or_email}")
+#     user = cache.get(cache_key)
+    
+#     if not user:
+#         try:
+#             group = CustomGroup.objects.get(name=username_or_email)
+#             user = group.users.first()
+            
+#             # Cache user object
+#             cache.set(cache_key, user, CACHE_TIMEOUT)
+#         except CustomGroup.DoesNotExist:
+#             return None
+    
+#     return user
+
+# def login_view(request):
+#     if request.method == 'POST':
+#         username_or_email = request.POST['username']
+#         password = request.POST['pass1']
+        
+#         user = authenticate_user(username_or_email, password)
+#         if user is None:
+#             user = group_based_authentication(username_or_email)
+        
+#         if user:
+#             login(request, user)
+#             # Update session and cache
+#             cache.set(get_cache_key(f"user_{user.id}"), user.username, CACHE_TIMEOUT)
+#             return redirect('/landing_page')
+#         else:
+#             # Handle authentication failure
+#             messages.error(request, 'Invalid username or password')
+#             return render(request, 'login_view.html')
+#     else:
+#         return render(request, 'login_view.html')
 
 
 
@@ -401,6 +487,131 @@ def view_file(request, upload_id):
 
     except Exception as e:
         logger.error(f"Unhandled exception in view_file: {e}")
+        return HttpResponseServerError("An error occurred while processing your request.")
+
+
+# @login_required
+# def view_pdf_file(request, upload_id):
+#     try:
+#         # Fetch the uploaded file record for the authenticated user
+#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+#         # Ensure the file has an encryption key
+#         if not upload.encryption_key:
+#             logger.error(f"Encryption key not found for file with ID {upload_id}")
+#             return HttpResponseServerError("Encryption key not found for this file.")
+
+#         try:
+#             # Initialize the Fernet cipher for decryption using the encryption key
+#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
+#         except Exception as e:
+#             logger.error(f"Error initializing Fernet cipher: {e}")
+#             return HttpResponseServerError("Failed to initialize decryption.")
+
+#         # Check if the file exists on the server
+#         file_path = upload.file.path
+#         if not os.path.exists(file_path):
+#             logger.error(f"File not found: {file_path}")
+#             return HttpResponseNotFound("File not found")
+
+#         # Check if the file is a .pdf file
+#         if not file_path.endswith('.pdf'):
+#             logger.error(f"Unsupported file type: {file_path}")
+#             return HttpResponseServerError("Unsupported file type.")
+
+#         # Read and decrypt the entire .pdf file
+#         try:
+#             with open(file_path, 'rb') as encrypted_file:
+#                 encrypted_file_data = encrypted_file.read()
+
+#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+#             # Save the decrypted data to a temporary file to be read by PyPDF2
+#             temp_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+#             with open(temp_file_path, 'wb') as temp_file:
+#                 temp_file.write(decrypted_file_data)
+
+#             # Extract text from the PDF file using PyPDF2
+#             pdf_content = ""
+#             with open(temp_file_path, 'rb') as pdf_file:
+#                 reader = PyPDF2.PdfReader(pdf_file)
+#                 for page_num in range(len(reader.pages)):
+#                     page = reader.pages[page_num]
+#                     pdf_content += f"<h3>Page {page_num + 1}</h3>"
+#                     pdf_content += f"<p>{page.extract_text()}</p>"
+
+#             # Clean up: remove the temporary file after processing
+#             os.remove(temp_file_path)
+
+#             # Render the content in an HTML template
+#             return render(request, 'view_docx.html', {'pdf_content': pdf_content, 'file_name': upload.file_name})
+
+#         except Exception as e:
+#             logger.error(f"Error reading .pdf file: {e}")
+#             return HttpResponseServerError("Error reading .pdf file.")
+
+#     except Exception as e:
+#         logger.error(f"Unhandled exception in view_pdf_file: {e}")
+#         return HttpResponseServerError("An error occurred while processing your request.")
+
+
+@login_required
+def view_pdf_file(request, upload_id):
+    try:
+        # Fetch the uploaded file record for the authenticated user
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
+
+        # Ensure the file has an encryption key
+        if not upload.encryption_key:
+            logger.error(f"Encryption key not found for file with ID {upload_id}")
+            return HttpResponseServerError("Encryption key not found for this file.")
+
+        try:
+            # Initialize the Fernet cipher for decryption using the encryption key
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error initializing Fernet cipher: {e}")
+            return HttpResponseServerError("Failed to initialize decryption.")
+
+        # Check if the file exists on the server
+        file_path = upload.file.path
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return HttpResponseNotFound("File not found")
+
+        # Check if the file is a .pdf file
+        if not file_path.endswith('.pdf'):
+            logger.error(f"Unsupported file type: {file_path}")
+            return HttpResponseServerError("Unsupported file type.")
+
+        # Read and decrypt the entire .pdf file
+        try:
+            with open(file_path, 'rb') as encrypted_file:
+                encrypted_file_data = encrypted_file.read()
+
+            decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+            # Save the decrypted data to a temporary file to be read by PyPDF2
+            temp_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
+            with open(temp_file_path, 'wb') as temp_file:
+                temp_file.write(decrypted_file_data)
+
+            fs = FileSystemStorage('/tmp')
+            with fs.open(f"decrypted_{upload.file_name}", 'rb') as pdf:
+                response = HttpResponse(pdf, content_type='application/pdf')
+                response['Content-Disposition'] = f'inline; filename="{upload.file_name}"'
+
+            # Clean up: remove the temporary file after processing
+            os.remove(temp_file_path)
+
+            return response
+
+        except Exception as e:
+            logger.error(f"Error reading .pdf file: {e}")
+            return HttpResponseServerError("Error reading .pdf file.")
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_pdf_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
@@ -870,65 +1081,6 @@ def handle_xls_file(decrypted_file_path, upload):
         return HttpResponseServerError("Error reading Excel file (.xls).")
     
 
-# @login_required
-# def view_text_file(request, upload_id):
-#     try:
-#         # Fetch the uploaded file record for the authenticated user
-#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-#         # Ensure the file has an encryption key
-#         if not upload.encryption_key:
-#             logger.error(f"Encryption key not found for file with ID {upload_id}")
-#             return HttpResponseServerError("Encryption key not found for this file.")
-
-#         try:
-#             # Initialize the Fernet cipher for decryption using the encryption key
-#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
-#         except Exception as e:
-#             logger.error(f"Error initializing Fernet cipher: {e}")
-#             return HttpResponseServerError("Failed to initialize decryption.")
-
-#         # Check if the file exists on the server
-#         file_path = upload.file.path
-#         if not os.path.exists(file_path):
-#             logger.error(f"File not found: {file_path}")
-#             return HttpResponseNotFound("File not found")
-
-#         # Read and decrypt the entire file
-#         try:
-#             with open(file_path, 'rb') as encrypted_file:
-#                 encrypted_file_data = encrypted_file.read()
-
-#             decrypted_file_data = fernet.decrypt(encrypted_file_data).decode('utf-8')
-
-#             # Determine the file type and render the appropriate template
-#             file_extension = os.path.splitext(upload.file.name)[1]
-            
-#             if file_extension == '.py':
-#                 file_type = 'python'
-#             elif file_extension == '.js':
-#                 file_type = 'javascript'
-#             elif file_extension == '.txt':
-#                 file_type = 'text'
-#             else:
-#                 file_type = 'unknown'
-
-#             # Render the content in an HTML template
-#             return render(request, 'view_docx.html', {
-#                 'file_content': decrypted_file_data,
-#                 'file_name': upload.file_name,
-#                 'file_type': file_type
-#             })
-
-#         except Exception as e:
-#             logger.error(f"Error reading text file: {e}")
-#             return HttpResponseServerError("Error reading text file.")
-
-#     except Exception as e:
-#         logger.error(f"Unhandled exception in view_text_file: {e}")
-#         return HttpResponseServerError("An error occurred while processing your request.")
-
-
 @login_required
 def view_text_file(request, upload_id):
     try:
@@ -1123,44 +1275,129 @@ def service3(request):
 
 
 
-# @login_required
-# def lock_user(request, user_id):
-#     user = User.objects.get(id=user_id)
+# def signup(request):
 #     if request.method == 'POST':
-#         lock_duration = request.POST.get('lock_duration')
-#         if lock_duration == '1_day':
-#             expires_at = timezone.now() + timezone.timedelta(days=1)
+#         form = CustomSignupForm(request.POST)
+#         if form.is_valid():
+#             # Extract user data from the form
+#             username = form.cleaned_data.get('username')
+#             email = form.cleaned_data.get('email')
+#             password = form.cleaned_data.get('password1')  # Assuming you have a password1 field
+#             first_name = form.cleaned_data.get('first_name')
+#             last_name = form.cleaned_data.get('last_name')
+
+#             # Generate a temporary token for email confirmation
+#             confirmation_token = str(uuid.uuid4())
+
+#             try:
+#                 # Check if TemporaryUser with the given email exists
+#                 temporary_user, created = TemporaryUser.objects.update_or_create(
+#                     email=email,
+#                     defaults={
+#                         'username': username,
+#                         'password': password,  # Should be hashed
+#                         'first_name': first_name,
+#                         'last_name': last_name,
+#                         'token': confirmation_token,
+#                         'token_expires': timezone.now() + timedelta(hours=24),
+#                     }
+#                 )
+
+#                 # Send confirmation email with the token
+#                 confirmation_url = request.build_absolute_uri(f'/confirm-email/{confirmation_token}/')
+#                 send_mail(
+#                     'Confirm your email',
+#                     f'Please confirm your email by clicking the link: {confirmation_url}',
+#                     'from@example.com',
+#                     [email],
+#                     fail_silently=False,
+#                 )
+
+#                 messages.success(request, "A confirmation email has been sent. Please check your inbox.")
+#                 return redirect('/')
+
+#             except Exception as e:
+#                 messages.error(request, f"Failed to initiate account creation: {e}")
 #         else:
-#             expires_at = None
-#         TemporarilyLock.objects.create(user=user, locked_by=request.user, expires_at=expires_at)
-#         user.is_locked = True
-#         user.lock_expires_at = expires_at
-#         user.save()
-#         messages.success(request, f"User {user.username} has been locked.")
-#         return redirect('admin_users')
-#     return render(request, 'lock_user.html')
+#             messages.error(request, "Failed to create account. Please check the form entries.")
+#     else:
+#         form = CustomSignupForm()
 
-# @login_required
-# def unlock_user(request, user_id):
-#     user = User.objects.get(id=user_id)
-#     if request.method == 'POST':
-#         TemporarilyLock.objects.filter(user=user).delete()
-#         user.is_locked = False
-#         user.lock_expires_at = None
-#         user.save()
-#         messages.success(request, f"User {user.username} has been unlocked.")
-#         return redirect('admin_users')
-#     return render(request, 'unlock_user.html')
+#     return render(request, 'signup.html', {'form': form})
 
-# def locked_page(request):
-#     if request.user.is_locked:
-#         lock = TemporarilyLock.objects.get(user=request.user)
-#         if lock.is_expired():
-#             request.user.is_locked = False
-#             request.user.lock_expires_at = None
-#             request.user.save()
-#             lock.delete()
-#             messages.success(request, "Your account has been unlocked.")
+
+# from django.contrib.auth.hashers import make_password
+
+# def confirm_email(request, token):
+#     # Get the temporary user by token
+#     temporary_user = get_object_or_404(TemporaryUser, token=token)
+
+#     # Check if token is still valid
+#     if not temporary_user.is_token_valid():
+#         messages.error(request, "The confirmation link has expired. Please try signing up again.")
+#         return redirect('/signup')
+
+#     try:
+#         # Create user in Firebase with the stored credentials
+#         # If the password is stored hashed, you may need to handle Firebase accordingly
+#         firebase_user = auth.create_user_with_email_and_password(
+#             temporary_user.email,
+#             temporary_user.password  # If stored hashed, adjust this for Firebase requirements
+#         )
+#         auth.send_email_verification(firebase_user['idToken'])  # Optional Firebase email verification
+
+#         # Now create the user in Django
+#         user_model = User(
+#             first_name=temporary_user.first_name,
+#             last_name=temporary_user.last_name,
+#             email=temporary_user.email,
+#             username=temporary_user.username,
+#         )
+#         # If the password was hashed before, apply the same logic here
+#         user_model.set_password(temporary_user.password)  # Ensure hashing for Django user password
+#         user_model.save()
+
+#         # Log the user in Django (Optional: Consider waiting until Firebase email verification is complete)
+#         login(request, user_model)
+
+#         # Remove the temporary user record after successful creation
+#         temporary_user.delete()
+
+#         messages.success(request, "Your account has been successfully verified and created.")
+#         return redirect('/')
+
+#     except Exception as e:
+#         messages.error(request, f"Account creation failed: {e}")
+#         return redirect('/signup')
+
+# def check_firebase_email_verification(request, user_id):
+#     try:
+#         # Get the user from Firebase by their Django user_id or Firebase UID
+#         user = User.objects.get(pk=user_id)
+        
+#         # Re-authenticate or refresh the Firebase user details
+#         firebase_user = auth.get_account_info(user.firebase_uid)  # Fetch Firebase user details
+        
+#         # Check if the email is verified
+#         if firebase_user['users'][0]['emailVerified']:
+#             # Activate the user in Django
+#             user.is_active = True
+#             user.save()
+
+#             # Log the user in Django
+#             login(request, user)
+            
+#             messages.success(request, "Your email has been verified. You are now logged in.")
 #             return redirect('/')
-#         return render(request, 'locked_page.html', {'lock': lock})
-#     return redirect('/')
+
+#         else:
+#             messages.error(request, "Your email is not verified yet. Please check your email.")
+#             return redirect('/verify-email-pending')
+
+#     except User.DoesNotExist:
+#         messages.error(request, "User not found.")
+#         return redirect('/signup')
+
+#     except Exception as e:
+#         messages.error(request, f"Error checking verification: {e}")
+#         return redirect('/signup')

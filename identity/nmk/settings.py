@@ -116,6 +116,13 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': '127.0.0.1:6379/1',  # For Redis
+        # 'LOCATION': '127.0.0.1:11211',  # For Memcached
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'DB': 1,  # Use a different database
+        },
+        'KEY_PREFIX': 'example caches'
     }
 }
 
@@ -299,7 +306,8 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'nmkfinancialservices@gmail.com'
-EMAIL_HOST_PASSWORD = '090399Akash$'
+# EMAIL_HOST_PASSWORD = 'zakh htez cvyq pgmr' #yadavvaibhav
+EMAIL_HOST_PASSWORD = 'qbms zhou gdpm ludo' #nmkfinincial
 
 
 

@@ -64,6 +64,8 @@ class Comment(models.Model):
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='comments', null=True)
     notion = models.ForeignKey(Notion, on_delete=models.CASCADE, related_name='comments',null=True )
     content = CompressedTextField()
+    likes = models.ManyToManyField(AuthUser, related_name='liked_comments', blank=True)  # Now directly a ManyToManyField for likes
+    dislikes = models.ManyToManyField(AuthUser, related_name='disliked_comments', blank=True)  # Now directly a ManyToManyField for likes
     created_at = models.DateTimeField(auto_now_add=True)
     hashtags = models.ManyToManyField(Hashtag, related_name='comments', blank=True)
     tagged_users = models.ManyToManyField(AuthUser, related_name='tagged_comments', blank=True)

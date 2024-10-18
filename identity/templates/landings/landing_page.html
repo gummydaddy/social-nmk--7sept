@@ -101,7 +101,7 @@
             {% comment %} width: 80%; {% endcomment %}
             margin: 20px auto;
             padding: 10px;
-            background-color: #fffff0;
+            background-color: #fff;
             box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
             border-radius: 1px;
             position: relative;
@@ -123,7 +123,7 @@
         #globe-button {
             position: relative;
             top: 0px;
-            right: 20px;
+            right: 18px;
             background-color: transparent;
             border: none;
             cursor: pointer;
@@ -359,9 +359,9 @@
         .openbtn {
             font-size: 15px;
             cursor: pointer;
-            background-color: #111;
-            color: white;
-            border: none;
+            background-color: #fffff0;
+            color: black;
+            border: 1px;
         }
 
         {% comment %} .message-container {
@@ -471,6 +471,11 @@
 
         <div id="mySidebar" class="sidebar">
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+            <div>
+                <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+                  <i class="fas fa-bell"></i>
+                </button>
+              </div>
             <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a>
             {% comment %} <a class="dropdown-toggle" href="#" id="servicesDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
                 Services
@@ -509,7 +514,7 @@
         <header>
             {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
                 
-                <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                <nav class="navbar navbar-expand-lg navbar-dark bg-black">
                     <div class="container">
                         <a href="{% url 'only_message:message_list_view' %}" class="button-link">
                             <button class="messagebtn"> 💬 </button>
@@ -602,19 +607,32 @@
                                     
                                     {% elif ".pdf" in upload.file.name %}
                                         <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
+                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
 
                                     {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
                                         <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
                                         <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
 
-                                    {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
+                                    {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
                                         <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
                                         <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
                                         <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
-                                        {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a> {% endcomment %}
+                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
+                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                         <!-- Button to download the Excel file -->
-                                        <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a>
+                                        <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
+
+                                    
+                                    {% elif ".xml" in upload.file.name %}
+                                        <!-- XML files -->
+                                        <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="600px" />
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                    
+                                    {% elif ".zip" in upload.file.name or ".xlsx" in upload.file.name %}
+                                        <!-- ZIP and XLSX files (served as ZIP) -->
+                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                    
 
                                     {% elif ".pptx" in upload.file.name %}
                                         <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
@@ -642,6 +660,8 @@
                                     {% else %}
                                         <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
                                         <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                        {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
+
                                     {% endif %}
                                 </div>
                             </div>
@@ -669,10 +689,10 @@
         </main>
         {% block footer %}
 
-        <footer class="bg-primary text-white py-3">
+        <footer class="bg-primary text-white bg-black py-3">
             <div class="bottom-strip d-flex justify-content-around">
 
-                <div class="home">
+                <div class="home bg-white">
                     <a href="{% url 'only_card:landing_page' %}">
                         <i class="fas fa-home"></i>
                     </a>
@@ -680,14 +700,15 @@
 
                 {% block new_notion %}
 
-                <div class="notion">
+                <div class="notion bg-white">
                     <a href="{% url 'notion:notion_home' notion_id=request.user.id%}">notions</a>
                 </div>
 
                 {% endblock %}
 
-                <div class="profile">
-                    <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
+                <div class="profile bg-white">
+                    {% comment %} <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button"> {% endcomment %}
+                    <a href="{% url 'user_profile:following_media' %}" class="profile-button">
                         <i class="fas fa-user-circle"></i>
                     </a>
                 </div>

@@ -16,7 +16,8 @@ from cryptography.fernet import Fernet
 from django.conf import settings
 from .user_fields import LockedField
 import logging
-
+from django.utils import timezone
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,19 @@ def default_file_name():
 #profile picture16april
 
 #document upload & delete15april
+
+
+class TemporaryUser(models.Model):
+    username = models.CharField(max_length=150)
+    email = models.EmailField(unique=True)
+    password = models.CharField(max_length=128)  # This should be hashed for security
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
+    token = models.CharField(max_length=100, unique=True)
+    token_expires = models.DateTimeField()
+
+    def is_token_valid(self):
+        return self.token_expires > timezone.now()
 
 
 class UserStorage(models.Model):
