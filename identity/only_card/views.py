@@ -1,4 +1,6 @@
+# from datetime import timedelta, timezone
 from urllib import request
+import uuid
 import pyrebase
 from django import forms
 from django.forms import CharField, EmailField
@@ -13,12 +15,14 @@ from django.core.mail import send_mail, EmailMessage, get_connection
 from django.core.cache import cache
 from django.utils.module_loading import import_string
 from django.conf import settings
-from .models import KYC, File, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin#, TemporarilyLock
+from .models import KYC, File, TemporaryUser, UserAssociation, UserUpload, RegistrationForm, CustomGroup, CustomGroupAdmin#, TemporarilyLock
 from .forms import CustomSignupForm, UserUploadForm, DeleteUploadForm, RegistrationFormForm, KYCForm, CardForm, GroupCreationForm, SubgroupSignupForm, PasswordResetForm
 from twilio.rest import Client
 from cryptography.fernet import Fernet
 import os
 import logging
+from django.utils import timezone  # Import Django's timezone utility
+from datetime import timedelta
 from django.contrib.auth import update_session_auth_hash
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 import mimetypes
@@ -1308,7 +1312,7 @@ def service3(request):
 #                 send_mail(
 #                     'Confirm your email',
 #                     f'Please confirm your email by clicking the link: {confirmation_url}',
-#                     'from@example.com',
+#                     'no-reply@socyfie.com',  # This should match or be consistent with DEFAULT_FROM_EMAIL in settings
 #                     [email],
 #                     fail_silently=False,
 #                 )

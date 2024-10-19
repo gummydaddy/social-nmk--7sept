@@ -209,3 +209,36 @@ class SubgroupSignupForm(forms.ModelForm):
                 # Create a CustomGroupAdmin instance
                 CustomGroupAdmin.objects.create(group=instance, user=self.user)
         return instance
+    
+
+
+#     class RegistrationFormForm(forms.ModelForm):
+#     class Meta:
+#         model = RegistrationForm
+#         fields = ['association_name', 'gst_number', 'country_of_origin', 'legal_documents']
+#         labels = {
+#             "association_name": "Association Name",
+#             "gst_number": "GST Number or Legal Registration Number",
+#             "country_of_origin": "Country of Origin",
+#             "legal_documents": "Legal Documents (Aadhar/PAN/ID Card)"
+#         }
+#         widgets = {
+#             "gst_number": forms.TextInput(attrs={"placeholder": "Enter GST or Registration Number"}),
+#             "country_of_origin": forms.TextInput(attrs={"placeholder": "Enter Country of Origin"}),
+#         }
+
+# class GroupCreationForm(forms.ModelForm):
+#     class Meta:
+#         model = CustomGroup
+#         fields = ['name', 'description']
+
+#     def __init__(self, *args, **kwargs):
+#         self.user = kwargs.pop('user', None)  # Extract the 'user' argument if provided
+#         super().__init__(*args, **kwargs)
+
+#     def save(self, commit=True):
+#         instance = super().save(commit=commit)
+#         if commit and self.user:
+#             instance.admins.add(self.user)
+#             CustomGroupAdmin.objects.create(group=instance, user=self.user)
+#         return instance
