@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserUpload, RegistrationForm, File, Card, KYC, CustomGroup, CustomGroupAdmin, UserAssociation, UserStorage#, TemporarilyLock
+from .models import UserUpload, RegistrationForm, File, Card, KYC, CustomGroup, CustomGroupAdmin, UserAssociation, UserStorage, TemporaryUser#, TemporarilyLock
 from .forms import GroupCreationForm
 from django.contrib import messages
 from django.urls import reverse
@@ -15,6 +15,7 @@ admin.site.register(Card)  # Register Group model with the custom admin site
 admin.site.register(KYC)  # Register Group model with the custom admin site
 admin.site.register(CustomGroupAdmin)  # Register Group model with the custom admin site
 admin.site.register(UserStorage)  # Register Group model with the custom admin site
+admin.site.register(TemporaryUser)  # Register Group model with the custom admin site
 # admin.site.register(TemporarilyLock)  # Register Group model with the custom admin site
 
 

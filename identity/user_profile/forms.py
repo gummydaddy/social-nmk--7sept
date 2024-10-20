@@ -83,7 +83,9 @@ class ProfileForm(forms.ModelForm):
         if self.cleaned_data['profile_picture']:
             profile_picture = self.cleaned_data['profile_picture']
             image = Image.open(profile_picture)
-            image = image.resize((150, 150), Image.ANTIALIAS)
+            # image = image.resize((150, 150), Image.ANTIALIAS)
+            image = image.resize((150, 150), Image.LANCZOS)
+
 
             # Save the image to a BytesIO object
             image_io = BytesIO()

@@ -212,3 +212,46 @@ class UserAssociation(models.Model):
     association_email = models.EmailField()
     # Add a field to track approval status
     is_approved = models.BooleanField(default=False)
+
+
+
+
+
+
+    # class CustomGroup(models.Model):
+    # name = models.CharField(max_length=100)
+    # description = models.TextField(blank=True, null=True)
+    # parent_group = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='subgroups')
+    # users = models.ManyToManyField(AuthUser, blank=True, related_name='custom_groups')
+    # admins = models.ManyToManyField(AuthUser, blank=True, related_name='admin_groups')
+    # is_approved = models.BooleanField(default=False)
+    # legal_documents = models.FileField(upload_to='legal_documents/', null=True, blank=True)
+    # pending_approval = models.BooleanField(default=True)  # Simplified for status management
+
+    # def __str__(self):
+    #     return self.name
+    
+
+    # class CustomGroupAdmin(models.Model):
+    # group = models.ForeignKey(CustomGroup, on_delete=models.CASCADE, related_name='group_admins')
+    # user = models.ForeignKey(AuthUser, on_delete=models.CASCADE)
+
+    # def __str__(self):
+    #     return f"{self.user.username} - {self.group.name}"
+
+    # def clean(self):
+    #     if self.group.parent_group is None and not self.user.is_superuser:
+    #         raise ValidationErr('Only superusers can be admins for main groups.')
+        
+
+
+    # class RegistrationForm(models.Model):
+    # user = models.OneToOneField(AuthUser, on_delete=models.CASCADE)
+    # association_name = models.CharField(max_length=100)  
+    # gst_number = models.CharField(max_length=15)  
+    # country_of_origin = models.CharField(max_length=100)  
+    # legal_documents = models.FileField(upload_to='legal_documents/', null=True, blank=True)
+    # status = models.CharField(max_length=10, choices=[('pending', 'Pending'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='pending')
+
+    # def __str__(self):
+    #     return f"{self.user.username} - Registration"

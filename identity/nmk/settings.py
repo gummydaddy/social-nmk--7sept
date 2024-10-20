@@ -31,7 +31,7 @@ ENCRYPTION_KEY = 't77yaXGqyj4S82d8G1N1Svj2TmMEB_YSGlbz7lW4284='
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', "8080", "localhost"]
+ALLOWED_HOSTS = ['127.0.0.1', "8080", "localhost", "www.socyfie.com"]
 
 SITE_ID = 2
 
@@ -308,6 +308,7 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'nmkfinancialservices@gmail.com'
 # EMAIL_HOST_PASSWORD = 'zakh htez cvyq pgmr' #yadavvaibhav
 EMAIL_HOST_PASSWORD = 'qbms zhou gdpm ludo' #nmkfinincial
+DEFAULT_FROM_EMAIL = 'no-reply@socyfie.com'  # Optional, sets the default sender address for emails
 
 
 

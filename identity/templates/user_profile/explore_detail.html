@@ -71,7 +71,7 @@
                 {% endif %}
             </a>
             <span class="like-count">{{ media.likes.count }}</span> likes
-            <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
+            {% comment %} <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a> {% endcomment %}
             <div class="comments" id="comments-{{ media.id }}">
                 <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#comment-list-{{ media.id }}" aria-expanded="false" aria-controls="comment-list-{{ media.id }}">
                     {{ media.comments.count }} Comments
