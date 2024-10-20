@@ -143,9 +143,9 @@
 {% endblock %}
 
 {% block footer %}
-<footer class="bg-primary text-white py-3">
+<footer class="bg-black text-white py-3">
   <div class="bottom-strip d-flex justify-content-around">
-    <div class="home">
+    <div class="home bg-white">
       <a href="{% url 'only_card:landing_page' %}">
         <i class="fas fa-home"></i>
       </a>
@@ -159,7 +159,7 @@
       </form>
       {% endblock %}
     </div>
-    <div class="profile">
+    <div class="profile bg-white">
       <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
         <i class="fas fa-user-circle"></i>
         {% comment %} alt="Profile Image" {% endcomment %}

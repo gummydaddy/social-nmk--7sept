@@ -90,6 +90,7 @@ distributed @ file:///opt/concourse/worker/volumes/live/061a375f-fbe4-45b4-4d80-
 Django==4.2.10
 django-allauth==0.62.1
 django-appconf==1.0.6
+django-async==0.7.3
 django-countries==7.6.1
 django-crispy-forms==2.1
 django-debug-toolbar==4.3.0
@@ -186,6 +187,7 @@ libarchive-c @ file:///tmp/build/80754af9/python-libarchive-c_1617780486945/work
 libclang==14.0.6
 llvmlite==0.36.0
 locket==0.2.1
+lockfile==0.12.2
 lxml @ file:///opt/concourse/worker/volumes/live/42fc56a4-88b4-4605-6037-9605f4e5eeeb/volume/lxml_1616443240194/work
 Markdown==3.4.1
 MarkupSafe==2.1.5
@@ -463,6 +465,7 @@ selenium==4.8.0
 Send2Trash @ file:///tmp/build/80754af9/send2trash_1607525499227/work
 service-identity==24.1.0
 simplegeneric==0.8.1
+simplejson==3.19.3
 singledispatch @ file:///tmp/build/80754af9/singledispatch_1614366001199/work
 six @ file:///opt/concourse/worker/volumes/live/5b31cb27-1e37-4ca5-6e9f-86246eb206d2/volume/six_1605205320872/work
 smart-open==6.4.0
