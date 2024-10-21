@@ -10,14 +10,14 @@ from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.contrib import messages
-from notion.models import Follow, Notification, Comment, Hashtag, BlockedUser
+from service_auth.notion.models import Follow, Notification, Comment, Hashtag, BlockedUser
 from django.views.generic import ListView
 from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Buddy#, Comment
 from .forms import MediaForm, ProfileForm, CommentForm
 from django.core.files.storage import get_storage_class
 from .storage import CompressedMediaStorage
 
-from notion.forms import UsernameUpdateForm
+from service_auth.notion.forms import UsernameUpdateForm
 from PIL import Image, ImageFilter, ImageOps
 import io
 import tempfile

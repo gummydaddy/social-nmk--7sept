@@ -1,5 +1,5 @@
 # user_profile/utils.py
-from user_profile.models import AuthUser
+from service_auth.user_profile.models import AuthUser
 from django.urls import reverse
 import re
 from collections import deque

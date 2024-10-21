@@ -1,9 +1,9 @@
 from django.urls import path
 from . import views, admin
 
-from only_card import views as only_card_views  # Import views from only_card
-from notion import views as notion_views  # Import views from only_card
-from only_message import views as only_message_views
+from service_auth.only_card import views as only_card_views  # Import views from only_card
+from service_auth.notion import views as notion_views  # Import views from only_card
+from service_auth.only_message import views as only_message_views
 
 
 

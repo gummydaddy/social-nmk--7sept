@@ -1,8 +1,8 @@
 import re
 from django import template
 from django.contrib.auth.models import User as AuthUser
-from user_profile.models import Media
-from user_profile.utils import make_usernames_clickable, linkify
+from service_auth.user_profile.models import Media
+from service_auth.user_profile.utils import make_usernames_clickable, linkify
 
 
 register = template.Library()

@@ -6,7 +6,7 @@ from .models import Notion, Follow, Comment, Hashtag, Notification, BlockedUser
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
-from only_card.models import CustomGroupAdmin
+from service_auth.only_card.models import CustomGroupAdmin
 from .utils import make_usernames_clickable
 from django.views.decorators.csrf import csrf_protect
 import re

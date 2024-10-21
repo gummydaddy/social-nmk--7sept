@@ -2,7 +2,7 @@ from django.contrib import admin, messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Hashtag #,Comment
-from notion.models import Follow, Comment
+from service_auth.notion.models import Follow, Comment
 from django.urls import path
 
 

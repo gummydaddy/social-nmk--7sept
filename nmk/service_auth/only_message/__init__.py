@@ -1,1 +1,1 @@
-default_app_config = 'only_message.apps.Only_messageConfig'
+default_app_config = 'service_auth.only_message.apps.Only_messageConfig'

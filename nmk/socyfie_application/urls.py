@@ -28,12 +28,12 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
 
     #app
-    path('' , include('only_card.urls')),
-    path('' , include('only_coin.urls')),
-    path('' , include('notion.urls', namespace='notion')),
-    path('' , include('user_profile.urls')),
-    path('' , include('nmk_chain.urls')),
-    path('' , include('only_message.urls', namespace='only_message')),
+    path('' , include('service_auth.only_card.urls')),
+    # path('' , include('only_coin.urls')),
+    path('' , include('service_auth.notion.urls', namespace='notion')),
+    path('' , include('service_auth.user_profile.urls')),
+    # path('' , include('nmk.nmk_chain.urls')),
+    path('' , include('service_auth.only_message.urls', namespace='only_message')),
     
     path('accounts/login_view/', auth_views.LoginView.as_view(), name='login_view'),  # Login view
 

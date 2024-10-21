@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from only_card import views as only_card_views  # Import views from only_card
+from service_auth.only_card import views as only_card_views  # Import views from only_card
 
 app_name = "notion" 
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Media
-from notion.models import Comment
+from service_auth.notion.models import Comment
 
 class CommentSerializer(serializers.ModelSerializer):
     user_username = serializers.CharField(source='user.username')

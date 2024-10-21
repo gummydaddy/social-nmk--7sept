@@ -4,7 +4,7 @@ from django.contrib.auth.models import User as AuthUser
 
 from .utils import linkify, make_usernames_clickable
 from .models import Media, Profile
-from notion.models import Comment
+from service_auth.notion.models import Comment
 from PIL import Image
 from io import BytesIO
 from django.core.files.uploadedfile import SimpleUploadedFile

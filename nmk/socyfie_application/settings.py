@@ -72,14 +72,14 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "only_card",
-    'only_coin',
+    # 'service_auth.only_coin',
     'nmk_chain',
-    'notion',
-    'user_profile',
+    "service_auth.only_card",
+    'service_auth.notion',
+    'service_auth.user_profile',
+    'service_auth.only_message',
     # 'user_profile.apps.UserProfileConfig',
     'channels',
-    'only_message',
     'social_django',
     'sslserver',
     'crispy_forms'
@@ -97,9 +97,9 @@ SOCIALACCOUNT_PROVIDERS = {
     }
 }
 
-# WSGI_APPLICATION = "nmk.wsgi.application"
+# WSGI_APPLICATION = "socyfie_application.wsgi.application"
 # new29
-ASGI_APPLICATION = 'nmk.asgi.application'  
+ASGI_APPLICATION = 'socyfie_application.asgi.application'  
 
 
 CHANNEL_LAYERS = {
@@ -108,7 +108,7 @@ CHANNEL_LAYERS = {
         'CONFIG': {
             'hosts': [('localhost', 6379)],
         },
-        'ROUTING': 'only_message_channels.routing.channel_routing',
+        'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
     }
 }
 
@@ -155,8 +155,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    'only_card.middleware.SubgroupApprovalMiddleware',
-    'only_message.middleware.UpdateLastActivityMiddleware',
+    'service_auth.only_card.middleware.SubgroupApprovalMiddleware',
+    'service_auth.only_message.middleware.UpdateLastActivityMiddleware',
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 
@@ -175,9 +175,9 @@ CSRF_COOKIE_SECURE = True
 
 
 
-ROOT_URLCONF = "nmk.urls"
+ROOT_URLCONF = "socyfie_application.urls"
 # LOGIN_URL = 'only_card:login_view'
-LOGIN_REDIRECT_URL = 'only_card:login_view'
+LOGIN_REDIRECT_URL = 'service_auth.only_card:login_view'
 #LOGOUT_REDIRECT_URL = "/"
 
 
@@ -264,10 +264,11 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# *
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": "database_setup/db.sqlite3",
     }
 }
 

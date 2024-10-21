@@ -3,7 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import User as AuthUser
 from .fields import CompressedTextField
-from user_profile.models import Media
+from service_auth.user_profile.models import Media
 from django.utils.timezone import now #new
 from django.utils import timezone
 from datetime import timedelta

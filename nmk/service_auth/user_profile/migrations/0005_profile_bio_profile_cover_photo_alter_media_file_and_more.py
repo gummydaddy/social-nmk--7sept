@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import user_profile.storage
+import service_auth.user_profile.storage
 
 
 class Migration(migrations.Migration):
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             model_name="media",
             name="file",
             field=models.FileField(
-                storage=user_profile.storage.CompressedMediaStorage(),
+                storage=service_auth.user_profile.storage.CompressedMediaStorage(),
                 upload_to="media/",
             ),
         ),

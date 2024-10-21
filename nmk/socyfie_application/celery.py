@@ -5,9 +5,9 @@ from celery import Celery
 from celery.schedules import crontab
 
 # Set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nmk.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'service_auth.settings')
 
-app = Celery('nmk')
+app = Celery('service_auth')
 
 # Using a string here means the worker doesn't have to serialize
 # the configuration object to child processes.
