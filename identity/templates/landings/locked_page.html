@@ -1,9 +1,0 @@
-{% extends 'landing_page.html' %}
-
-{% block content %}
-  <h1>Account Locked</h1>
-  <p>Your account has been locked by an administrator.</p>
-  {% if lock.expires_at %}
-    <p>Lock will expire on {{ lock.expires_at }}.</p>
-  {% endif %}
-{% endblock %}
