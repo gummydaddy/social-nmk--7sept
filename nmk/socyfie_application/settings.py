@@ -23,13 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-enqdbn^j&gt@ei5+q&#q+t8k4rhyle1j&$c!y%t7&z7e#)_k!h"
-#ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY') or '<your_generated_encryption_key>'
-ENCRYPTION_KEY = 't77yaXGqyj4S82d8G1N1Svj2TmMEB_YSGlbz7lW4284='
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+
 
 ALLOWED_HOSTS = ['127.0.0.1', "8080", "localhost", "www.socyfie.com"]
 
@@ -60,6 +55,7 @@ APPEND_SLASH = True
 
 # Application definition
 INSTALLED_APPS = [
+
     "django.contrib.admin",
     "django.contrib.auth",
     'django.contrib.sites',
@@ -71,18 +67,39 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # 'django-select2',
     "rest_framework",
+    
+    # 'user_profile.apps.UserProfileConfig',
+    'channels',
+    'social_django',
+    'sslserver',
+    'crispy_forms',
+    'celery',
+    'cryptography',
+    'redis',
+    'pyrebase',
+    'bleach',
+    # 'pillow',
+    # 'python-docx',
+    # 'python-pptx',
+    'openpyxl',
+    'xlrd',
+    # 'pyPDF2',
+    'pdf2image',
+    'moviepy',
+    # 'ffmpeg',
+    'twilio',
+
+
+
     # 'service_auth.only_coin',
     'nmk_chain',
     "service_auth.only_card",
     'service_auth.notion',
     'service_auth.user_profile',
     'service_auth.only_message',
-    # 'user_profile.apps.UserProfileConfig',
-    'channels',
-    'social_django',
-    'sslserver',
-    'crispy_forms'
+
 
 ]
 
@@ -265,6 +282,14 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # *
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = "django-insecure-enqdbn^j&gt@ei5+q&#q+t8k4rhyle1j&$c!y%t7&z7e#)_k!h"
+#ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY') or '<your_generated_encryption_key>'
+ENCRYPTION_KEY = 't77yaXGqyj4S82d8G1N1Svj2TmMEB_YSGlbz7lW4284='
+
+# SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
