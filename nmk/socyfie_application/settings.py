@@ -90,6 +90,7 @@ INSTALLED_APPS = [
     'moviepy',
     # 'ffmpeg',
     'twilio',
+    'six',
 
 
 
@@ -230,7 +231,7 @@ TEMPLATES = [
 ]
 
 
-MEDIA_URL = 'media/'
+MEDIA_URL = 'nmk/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
@@ -288,8 +289,8 @@ SECRET_KEY = "django-insecure-enqdbn^j&gt@ei5+q&#q+t8k4rhyle1j&$c!y%t7&z7e#)_k!h
 ENCRYPTION_KEY = 't77yaXGqyj4S82d8G1N1Svj2TmMEB_YSGlbz7lW4284='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-DEBUG = os.getenv("DEBUG", "False") == "True"
+DEBUG = True
+# DEBUG = os.getenv("DEBUG", "False") == "True"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

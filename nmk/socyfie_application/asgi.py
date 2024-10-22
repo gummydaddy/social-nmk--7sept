@@ -13,7 +13,7 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 import service_auth.only_message.routing
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service_auth.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "socyfie_application.settings")
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

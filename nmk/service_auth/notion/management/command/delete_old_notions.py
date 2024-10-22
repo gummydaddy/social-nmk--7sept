@@ -22,6 +22,7 @@ def delete_old_notions():
     try:
         old_notions = Notion.objects.filter(deletion_date__lt=now)
         count = old_notions.count()
+        logging.info(f"Get the count : {count} and old_notions: {old_notions}")
         old_notions.delete()
         logging.info(f'{count} old notions deleted.')
         return f'{count} old notions deleted.'

@@ -119,9 +119,10 @@ def signup(request):
 
 def login_view(request):
     if request.method == 'POST':
-        print(f'print if it is coming to this block')
+        
         username_or_email = request.POST['username']
         password = request.POST['pass1']
+        print(f'print if it is coming to this block')
 
         try:
             # Check if the input is an email or username
