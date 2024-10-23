@@ -16,8 +16,12 @@ urlpatterns = [
     path('save_bio/', views.save_bio, name='save_bio'),
 
     path('media/<int:media_id>/', views.media_detail_view, name='media_detail_view'),
-    # path('media/api/<int:media_id>/', views.media_detail_api, name='media_detail_api'),
-    # path('media/related/api/<int:media_id>/', views.related_media_api, name='related_media_api'),
+    
+    path('upload-audio/', views.upload_audio, name='upload_audio'),
+
+    # path('voices/', views.voices, name='voices'),  # Ensure this line is correct
+    path('voices/<int:user_id>/', views.voices, name='voices'),  # Ensure this line is correct
+
     path('follow_user/<int:user_id>/', views.follow_user, name='follow_user'),
     path('unfollow_user/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
     path('upload_media/', views.upload_media, name='upload_media'),

@@ -25,10 +25,3 @@ app.conf.beat_schedule =  {
         'schedule': crontab(minute='*'),
     },
 }
-
-# {
-#     'delete-old-notions-every-minute': {
-#         'task': 'notion.tasks.delete_old_notions',
-#         'schedule': crontab(minute='*'),
-#     },
-# }

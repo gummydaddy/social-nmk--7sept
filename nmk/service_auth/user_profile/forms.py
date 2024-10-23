@@ -3,7 +3,7 @@ from django_select2.forms import Select2MultipleWidget
 from django.contrib.auth.models import User as AuthUser
 
 from .utils import linkify, make_usernames_clickable
-from .models import Media, Profile
+from .models import Media, Profile, Audio, UserHashtagPreference, Hashtag
 from service_auth.notion.models import Comment
 from PIL import Image
 from io import BytesIO
@@ -36,6 +36,53 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ['content']
+
+
+class AudioForm(forms.ModelForm):
+    tags = forms.ModelMultipleChoiceField(
+        queryset=AuthUser.objects.all(),
+        widget=Select2MultipleWidget(
+            attrs={'data-placeholder': 'Search for users to tag...', 'class': 'form-control'}
+        ),
+        required=False
+    )
+    hashtags = forms.ModelMultipleChoiceField(
+        queryset=UserHashtagPreference.objects.all(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+
+    class Meta:
+        model = Audio
+        fields = ('file', 'description', 'is_paid', 'is_private', 'duration')
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5, 'cols': 50}),
+        }
+        # You can mark duration as required=False here as well.
+        extra_kwargs = {
+            'duration': {'required': False}
+        }
+
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        allowed_types = ['audio/mpeg', 'audio/wav', 'audio/ogg']
+        if file.content_type not in allowed_types:
+            raise ValidationError('Unsupported file type. Only MP3, WAV, and OGG are allowed.')
+        return file
+
+    def clean_size(self):
+        file = self.cleaned_data['file']
+        if file.size > 100 * 1024 * 1024:  # 100 MB
+            raise ValidationError('File size exceeds the maximum limit of 100MB.')
+        return file.size
+
+    def clean_duration(self):
+        # Make sure to check if duration is available (optional)
+        duration = self.cleaned_data.get('duration')
+        if duration and (duration < 1 or duration > 3600):
+            raise ValidationError('Duration must be between 1 second and 1 hour.')
+        return duration
+
 
 
 # class ProfileForm(forms.ModelForm):

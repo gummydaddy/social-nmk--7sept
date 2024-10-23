@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User as AuthUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 #from notion.models import Follow
 from django.core.files.storage import FileSystemStorage
 from .storage import CompressedMediaStorage
@@ -50,6 +51,31 @@ class Media(models.Model):
     def delete_file(self):
         if self.file:
             self.file.delete(save=False)
+
+
+class Audio(models.Model):
+    user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='audio')
+    file = models.FileField(upload_to='media/', storage=CompressedMediaStorage())
+    description = models.TextField(blank=True, null=True)
+    is_paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.ManyToManyField(AuthUser, related_name='liked_audio', blank=True)
+    view_count = models.PositiveIntegerField(default=0)  # To keep track of views
+    reported_by = models.ManyToManyField(AuthUser, related_name='reported_audio', blank=True)  # report
+    report_count = models.IntegerField(default=0)
+    tags = models.ManyToManyField(AuthUser, related_name='tagged_audio', blank=True)  # New field for tagging users
+    is_private = models.BooleanField(default=False)  # New field to track privacy
+    duration = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(3600)], blank =True, null=True)  # in seconds
+    size = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(1024*1024*100)])  # in bytes, max 100MB
+    hashtags = models.ManyToManyField('Hashtag', related_name='audio', blank=True)
+
+    def __str__(self):
+        return self.description
+
+    def delete_file(self):
+        if self.file:
+            self.file.delete(save=False)
+
 
 
 class Story(models.Model):

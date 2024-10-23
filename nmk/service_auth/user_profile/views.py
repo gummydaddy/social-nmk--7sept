@@ -12,8 +12,8 @@ from django.utils import timezone
 from django.contrib import messages
 from service_auth.notion.models import Follow, Notification, Comment, Hashtag, BlockedUser
 from django.views.generic import ListView
-from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Buddy#, Comment
-from .forms import MediaForm, ProfileForm, CommentForm
+from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Buddy, Audio#, Comment
+from .forms import MediaForm, ProfileForm, CommentForm, AudioForm
 from django.core.files.storage import get_storage_class
 from .storage import CompressedMediaStorage
 
@@ -21,7 +21,7 @@ from service_auth.notion.forms import UsernameUpdateForm
 from PIL import Image, ImageFilter, ImageOps
 import io
 import tempfile
-from moviepy.editor import VideoFileClip
+from moviepy.editor import VideoFileClip, AudioFileClip
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from .serializers import MediaSerializer
@@ -273,6 +273,114 @@ def upload_media(request):
     else:
         form = MediaForm()
     return render(request, 'upload.html', {'form': form})
+
+
+
+@login_required
+def upload_audio(request):
+    logger.info(f"User {request.user.username} is uploading audio")
+    
+    if request.method == 'POST':
+        form = AudioForm(request.POST, request.FILES)
+        
+        if form.is_valid():
+            logger.info("AudioForm is valid.")
+            audio = form.save(commit=False)
+            audio.user = request.user
+
+            # Process description to escape HTML tags
+            audio.description = escape(audio.description)
+
+            # Use CompressedMediaStorage for saving the file
+            storage = CompressedMediaStorage()
+
+            # Handle the uploaded audio file
+            if audio.file.name.lower().endswith(('.mp3', '.wav', '.ogg')):
+                logger.info(f"Audio file detected: {audio.file.name}")
+                audio.media_type = 'audio'
+
+                # Save the uploaded file to a temporary location for processing
+                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+                    for chunk in audio.file.chunks():
+                        temp_file.write(chunk)
+                    temp_file_path = temp_file.name
+
+                # Load the audio clip using AudioFileClip
+                clip = AudioFileClip(temp_file_path)
+
+                # Set duration dynamically based on the clip's actual duration
+                duration = clip.duration
+                if duration > 3600:
+                    duration = 3600  # Ensure it's no longer than 1 hour
+
+                audio.duration = duration  # Set the duration on the model
+
+                subclip = clip.subclip(0, duration)
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_output_file:
+                    output_file_path = temp_output_file.name
+
+                # Write the audio to the output file
+                subclip.write_audiofile(output_file_path)
+                subclip.close()
+
+                with open(output_file_path, 'rb') as output_file:
+                    audio.file = ContentFile(output_file.read(), audio.file.name)
+
+                # Set the size field before saving the model
+                audio.size = audio.file.size  # Get the size of the processed file
+
+            # Save the audio file using the appropriate storage
+            try:
+                audio.file.name = storage.save(audio.file.name, audio.file)
+                audio.save()  # Save the audio instance with size and duration
+                form.save_m2m()  # Save the ManyToMany relationships (tags, hashtags)
+                logger.info(f"Audio file {audio.file.name} saved successfully for user {request.user.username}")
+                return redirect('user_profile:voices', request.user.id)
+            except Exception as e:
+                logger.error(f"Error saving audio file {audio.file.name}: {e}")
+                return render(request, 'upload_audio.html', {'form': form, 'error': str(e)})
+
+        else:
+            # If form is invalid, log and return errors to the template
+            logger.warning("AudioForm is invalid.")
+            logger.error(f"Form errors: {form.errors}")
+            return redirect('user_profile:voices', request.user.id)
+
+    else:
+        # If GET request, simply render the form
+        form = AudioForm()
+        return render(request, 'upload_audio.html', {'form': form})
+
+
+
+
+# View function
+def voices(request, user_id):
+    profile_user = get_object_or_404(AuthUser, id=user_id)
+
+    # Fetch all audio uploads, ordered by creation date
+    audio_files = Audio.objects.all().order_by('-created_at')
+
+    # Filter audio based on privacy and relationship to the user
+    filtered_audio = []
+    for audio in audio_files:
+        if audio.is_private and audio.user != request.user and not audio.tags.filter(id=request.user.id).exists():
+            continue
+        filtered_audio.append(audio)
+
+    # Paginate the results, 100 audio files per page
+    paginator = Paginator(filtered_audio, 100)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Render the voices.html template and pass context
+    return render(request, 'voices.html', {
+        'page_obj': page_obj,
+        'audio_count': Audio.objects.count(),
+        'profile_user': profile_user,
+    })
+
 
 
 @login_required
@@ -1557,199 +1665,6 @@ def delete_user_comment(request, comment_id):
         return redirect('user_profile:media_detail_view', media_id=media.id)
     return redirect('user_profile:media_detail_view', media_id=media.id)
 
-
-# @login_required
-# def media_detail_view(request, media_id):
-#     media = get_object_or_404(Media, id=media_id)
-#     user = media.user  # The owner of the media
-
-#     # Check if the current user is blocked by the media owner
-#     is_blocked_by_media_owner = BlockedUser.objects.filter(blocker=user, blocked=request.user).exists()
-
-#     # Check if the current user has blocked the media owner
-#     has_blocked_media_owner = BlockedUser.objects.filter(blocker=request.user, blocked=user).exists()
-
-#     # If the current user is blocked by the media owner, return a 'user_not_found' page
-#     if is_blocked_by_media_owner:
-#         return render(request, 'user_not_found.html')  # Show an "upload not found" message
-
-#     # Check if the current user is following the media owner
-#     is_following = Follow.objects.filter(follower=request.user, following=user).exists()
-
-#     # Check if the current user is in the media owner's buddy list
-#     is_buddy = Buddy.objects.filter(user=user, buddy=request.user).exists()
-
-#     # Check if the media is private and only buddies or the owner can view it
-#     if media.is_private and not is_buddy and request.user != user:
-#         return render(request, 'private_upload.html')  # Show an "upload is private" message
-
-#     # Check if the media is private, the user's profile is private, the current user is not a follower, and the current user is not the owner
-#     if (media.is_private or user.profile.is_private) and not is_following and request.user != user:
-#         return render(request, 'private_upload.html')  # Show an "upload is private" message
-
-#     # User hashtag preference (tracking viewed media and hashtags)
-#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
-#     liked_hashtags = user_hashtag_pref.liked_hashtags
-#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
-#     viewed_media = user_hashtag_pref.viewed_media
-
-#     # Update viewed media and hashtags
-#     if media.id not in viewed_media:
-#         viewed_media.append(media.id)
-#         user_hashtag_pref.viewed_media = viewed_media
-#         user_hashtag_pref.save()
-
-#     description_hashtags = re.findall(r'#(\w+)', media.description)
-#     user_hashtag_pref.add_viewed_hashtag(description_hashtags)
-
-#     # Related media logic with privacy constraints applied
-#     related_media = Media.objects.filter(
-#         Q(user=user) | 
-#         Q(user__in=Buddy.objects.filter(user=user, buddy=request.user).values_list('buddy', flat=True)) | 
-#         Q(user__in=Follow.objects.filter(follower=request.user).values_list('following', flat=True))
-#     ).exclude(id=media_id)
-
-#     # Exclude media from users who have blocked the current user
-#     related_media = related_media.exclude(user__in=BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True))
-
-#     # Exclude media from users who the current user has blocked
-#     related_media = related_media.exclude(user__in=BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True))
-
-#     # Filter out private media from non-buddies and non-followers
-#     related_media = related_media.filter(
-#         Q(is_private=False) | 
-#         Q(user=request.user) | 
-#         Q(user__in=Buddy.objects.filter(user=user, buddy=request.user).values_list('buddy', flat=True)) | 
-#         Q(user__in=Follow.objects.filter(follower=request.user).values_list('following', flat=True))
-#     )
-
-#     # Related media logic by hashtags and description
-#     related_media_by_hashtags = Media.objects.filter(hashtags__name__in=[hashtag.name for hashtag in media.hashtags.all()]).exclude(id=media_id)
-#     related_media_by_description = Media.objects.filter(description__icontains=' '.join([hashtag.name for hashtag in media.hashtags.all()])).exclude(id=media_id)
-
-#     # Combine the three querysets and remove duplicates
-#     related_media = list(set(list(related_media) + list(related_media_by_hashtags) + list(related_media_by_description)))
-
-#     # Additional filtering and scoring based on user preferences
-#     if liked_hashtags:
-#         related_media = Media.objects.filter(id__in=[m.id for m in related_media]).annotate(
-#             num_liked_hashtags=Count(
-#                 'hashtags',
-#                 filter=Q(hashtags__name__in=liked_hashtags)
-#             )
-#         ).order_by('-num_liked_hashtags', '?')
-#     else:
-#         related_media = Media.objects.filter(id__in=[m.id for m in related_media]).order_by('?')
-
-#     # Scoring system for related media
-#     media_scores = []
-#     for related in related_media:
-#         score = 0
-#         media_hashtags = [h.name for h in related.hashtags.all()]
-#         description_hashtags = re.findall(r'#(\w+)', related.description)
-
-#         for hashtag in media_hashtags + description_hashtags:
-#             if hashtag in liked_hashtags:
-#                 score += 1.5
-#             if hashtag in viewed_hashtags:
-#                 score += 0.9
-#             if hashtag in user_hashtag_pref.not_interested_hashtags:
-#                 score -= 8
-
-#         media_scores.append((related, score))
-
-#     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
-#     related_media = [m[0] for m in sorted_media][:100]
-
-#     # Engagement tracking
-#     if not Engagement.objects.filter(user=request.user, media=media, engagement_type='view').exists():
-#         media.view_count = F('view_count') + 1
-#         media.save(update_fields=['view_count'])
-#         Engagement.objects.create(media=media, user=request.user, engagement_type='view')
-
-#     # Making usernames clickable in the description
-#     description = make_usernames_clickable(media.description)
-
-#     if request.method == 'POST' and request.is_ajax():
-#         content = request.POST.get('content')
-#         hashtags = set(re.findall(r'#(\w+)', content))
-#         tagged_usernames = set(re.findall(r'@(\w+)', content))
-
-#         comment = Comment.objects.create(user=request.user, media=media, content=content)
-
-#         for tag in hashtags:
-#             hashtag, created = Hashtag.objects.get_or_create(name=tag)
-#             comment.hashtags.add(hashtag)
-
-#         for username in tagged_usernames:
-#             try:
-#                 tagged_user = AuthUser.objects.get(username=username)
-#                 comment.tagged_users.add(tagged_user)
-#                 Notification.objects.create(
-#                     user=tagged_user,
-#                     content=f'{request.user.username} tagged you in a comment: {comment.content}',
-#                     type='tag',
-#                     related_user=request.user,
-#                     related_media=media,
-#                     related_comment=comment
-#                 )
-#             except AuthUser.DoesNotExist:
-#                 pass
-
-#         Notification.objects.create(
-#             user=media.user,
-#             content=f'{request.user.username} commented on your media.',
-#             type='comment',
-#             related_user=request.user,
-#             related_media=media,
-#             related_comment=comment
-#         )
-
-#         return JsonResponse({
-#             'status': 'success',
-#             'username': request.user.username,
-#             'comment_content': comment.content
-#         })
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         media_data = {
-#             'id': media.id,
-#             'file_url': media.file.url,
-#             'is_video': media.file.url.endswith('.mp4'),
-#             'user_username': media.user.username,
-#             'description': description,
-#             'is_following': is_following,
-#             'is_buddy': is_buddy,  # Added is_buddy for JSON response
-#             'has_blocked_media_owner': has_blocked_media_owner,  # Added for JSON response
-#             'is_blocked_by_media_owner': is_blocked_by_media_owner  # Added for JSON response
-#         }
-#         related_media_list = [
-#             {
-#                 'id': m.id,
-#                 'file_url': m.file.url,
-#                 'is_video': m.file.url.endswith('.mp4'),
-#                 'user_username': m.user.username,
-#             } 
-#             for m in related_media
-#             if not BlockedUser.objects.filter(blocker=m.user, blocked=request.user).exists()  # exclude media from users who blocked the current user
-#             if not BlockedUser.objects.filter(blocker=request.user, blocked=m.user).exists()  # exclude media from users who the current user has blocked
-#             if not m.is_private or m.user == request.user or m.user in request.user.buddy_list.all() or request.user in m.user.follower_set.all()
-#         ]
-#         return JsonResponse({'media': media_data, 'related_media': related_media_list})
-
-#     paginator = Paginator(related_media, 100)
-#     page_obj = paginator.get_page(1)
-#     context = {
-#         'media': media,
-#         'page_obj': page_obj,
-#         'uploads': page_obj,
-#         'description': description,
-#         'is_following': is_following,
-#         'is_buddy': is_buddy,  # Passed is_buddy to template
-#         'has_blocked_media_owner': has_blocked_media_owner,  # Passed for template
-#         'is_blocked_by_media_owner': is_blocked_by_media_owner  # Passed for template
-#     }
-#     return render(request, 'media_detail.html', context)
 
 
 @login_required

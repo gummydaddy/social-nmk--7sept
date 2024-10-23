@@ -231,6 +231,16 @@ TEMPLATES = [
 ]
 
 
+COMPRESSED_MEDIA_STORAGE = {
+    'storage': 'nmk.service_auth.storage.CompressedMediaStorage',
+    'options': {
+        'image_quality': 65,
+        'video_crf': 28,
+        'max_image_dimension': 1920,
+        'audio_bitrate': '128k',
+    },
+}
+
 MEDIA_URL = 'nmk/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
