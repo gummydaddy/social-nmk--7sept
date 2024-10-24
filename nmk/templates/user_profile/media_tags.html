@@ -1,0 +1,48 @@
+{% extends "landing_page.html" %}
+{% load static %}
+{% load custom_filters %}
+
+
+{% block main_content %}
+<h2>{{ profile_user.username }}'s Tagged Media</h2>
+<div class="row row-cols-3 g-4" id="media-container">
+    {% for media in page_obj %}
+        <div class="col media-item">
+            <a href="{% url 'user_profile:media_detail_view' media.id %}">
+                {% if media.file.url|is_video %}
+                    <video controls class="img-fluid">
+                        <source src="{{ media.file.url }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% else %}
+                    <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+                {% endif %}
+            </a>
+            <p>
+                <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
+                    {{ media.user.username }}
+                </a>
+            </p>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endblock %}

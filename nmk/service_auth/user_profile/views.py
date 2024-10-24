@@ -81,93 +81,6 @@ def calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed
     return score
 
 
-
-
-# @login_required
-# def upload_media(request):
-#     if request.method == 'POST':
-#         form = MediaForm(request.POST, request.FILES)
-#         if form.is_valid():
-#             media = form.save(commit=False)
-#             media.user = request.user
-
-#             # Process description to make usernames clickable
-#             # media.description = make_usernames_clickable(escape(media.description))
-#             media.description = escape(media.description)
-#             # media.description = make_usernames_clickable(media.description)
-#             # media.description = linkify(media.description)
-
-#             # Handle image uploads
-#             if media.file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
-#                 media.media_type = 'image'
-#                 image = Image.open(media.file)
-#                 filter_name = request.POST.get('filter')
-#                 if filter_name:
-#                     filter_map = {
-#                         'clarendon': ImageFilter.EMBOSS,
-#                         'sepia': 'sepia',  # Custom filter
-#                         'grayscale': 'grayscale',  # Custom filter
-#                         'invert': ImageOps.invert,
-#                     }
-#                     if filter_name == 'sepia':
-#                         sepia_image = ImageOps.colorize(image.convert("L"), "#704214", "#C0C090")
-#                         image = sepia_image
-#                     elif filter_name == 'grayscale':
-#                         grayscale_image = ImageOps.grayscale(image)
-#                         image = grayscale_image
-#                     else:
-#                         image = image.filter(filter_map.get(filter_name, ImageFilter.BLUR))
-
-#                 byte_io = io.BytesIO()
-#                 if image.mode == 'RGBA':
-#                     image = image.convert('RGB')
-#                 image.save(byte_io, format='JPEG')
-#                 media.file = ContentFile(byte_io.getvalue(), media.file.name)
-
-#             # Handle video uploads
-#             elif media.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
-#                 media.media_type = 'video'
-
-#                 # Save the uploaded file to a temporary location
-#                 with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-#                     for chunk in media.file.chunks():
-#                         temp_file.write(chunk)
-#                     temp_file_path = temp_file.name
-
-#                 # Load the video clip
-#                 clip = VideoFileClip(temp_file_path)
-
-#                 # Get start time and duration from the form
-#                 start_time = form.cleaned_data.get('start_time', 0)
-#                 duration = form.cleaned_data.get('duration', clip.duration)
-
-#                 # Validate and adjust start time and duration
-#                 start_time = max(0, min(start_time, clip.duration))
-#                 duration = max(0, min(duration, clip.duration - start_time))
-
-#                 # Process video clip based on start_time and duration
-#                 subclip = clip.subclip(start_time, start_time + duration)
-
-#                 # Ensure the video is no longer than 90 seconds
-#                 if subclip.duration > 90:
-#                     subclip = subclip.subclip(0, 90)
-
-#                 with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_output_file:
-#                     output_file_path = temp_output_file.name
-
-#                 subclip.write_videofile(output_file_path, codec='libx264', audio_codec='aac')
-#                 subclip.close()
-
-#                 with open(output_file_path, 'rb') as file:
-#                     media.file = ContentFile(file.read(), media.file.name)
-
-#             media.save()
-#             form.save_m2m()  # Save tags
-#             return redirect('user_profile:profile', request.user.id)
-#     else:
-#         form = MediaForm()
-#     return render(request, 'upload.html', {'form': form})
-
 import logging
 logger = logging.getLogger(__name__)
 
@@ -367,6 +280,10 @@ def voices(request, user_id):
     for audio in audio_files:
         if audio.is_private and audio.user != request.user and not audio.tags.filter(id=request.user.id).exists():
             continue
+        
+        # Make usernames and URLs in the description clickable
+        audio.description = make_usernames_clickable(audio.description)
+
         filtered_audio.append(audio)
 
     # Paginate the results, 100 audio files per page
@@ -396,73 +313,6 @@ def media_tags(request, user_id):
         'page_obj': page_obj,
     })
 
-
-# @login_required
-# def profile(request, user_id):
-#     profile_user = get_object_or_404(AuthUser, id=user_id)
-     
-
-
-#     media = Media.objects.filter(user=profile_user).order_by('-created_at')
-#     followers_count = Follow.objects.filter(following=profile_user).count()
-#     following_count = Follow.objects.filter(follower=profile_user).count()
-#     uploads_count = Media.objects.filter(user=profile_user).count()
-
-
-#     # Check if the user has an active story
-#     active_story = Story.objects.filter(user=profile_user, created_at__gt=timezone.now() - timezone.timedelta(hours=24)).first()
-
-#     # Exclude media associated with the active story
-#     if active_story:
-#         media = Media.objects.filter(user=profile_user).exclude(id=active_story.media.id).order_by('-created_at')
-#     else:
-#         media = Media.objects.filter(user=profile_user).order_by('-created_at')
-
-
-#     for item in media:
-#         item.description = linkify(item.description)
-
-#     # Check if the current user has blocked this profile user
-#     is_blocked = BlockedUser.objects.filter(blocker=request.user, blocked=profile_user).exists()
-    
-#     # Check if the profile user has blocked the current user
-#     is_blocked_by_profile_user = BlockedUser.objects.filter(blocker=profile_user, blocked=request.user).exists()
-    
-#     if is_blocked_by_profile_user:
-#         return render(request, 'user_not_found.html')   
-    
-
-#     paginator = Paginator(media, 100)
-#     page_number = request.GET.get('page')
-#     page_obj = paginator.get_page(page_number)
-
-#     # Check if the current user is following the profile user
-#     is_following = Follow.objects.filter(follower=request.user, following=profile_user).exists()
-
-#      # Check if the profile is private and the current user is not following
-#     if profile_user.profile.is_private and not is_following and request.user != profile_user:
-#         return render(request, 'profile.html', {
-#         'profile_user': profile_user,
-#         # 'page_obj': page_obj,
-#         'followers_count': followers_count,
-#         'following_count': following_count,
-#         'uploads_count': uploads_count,
-#         'is_following': is_following,
-#         # 'active_story': active_story,
-#         'is_blocked': is_blocked,
-#     })  # Render a page that shows the profile is private
-        
-
-#     return render(request, 'profile.html', {
-#         'profile_user': profile_user,
-#         'page_obj': page_obj,
-#         'followers_count': followers_count,
-#         'following_count': following_count,
-#         'uploads_count': uploads_count,
-#         'is_following': is_following,
-#         'active_story': active_story,
-#         'is_blocked': is_blocked,
-#     })
 
 
 @login_required
@@ -624,105 +474,6 @@ def tag_user_search(request):
 
     return JsonResponse({'results': []}, safe=False)
 
-
-# @login_required
-# def explore(request):
-#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
-#     liked_hashtags = user_hashtag_pref.liked_hashtags
-#     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
-#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
-#     viewed_media = user_hashtag_pref.viewed_media
-#     not_interested_media = user_hashtag_pref.not_interested_media  # Media IDs the user marked as not interested
-
-#     hashtag_filter = request.GET.get('hashtag', '')
-
-#     # Get users who have blocked the current user
-#     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-#     users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
-
-#     # Fetch media and exclude media from users who have blocked the current user
-#     media_objects = Media.objects.order_by('-created_at').exclude(
-#         user__in=users_blocked_me
-#     ).exclude(
-#         user__in=users_i_blocked
-#     )
-
-#     # Exclude private media if the media owner has not added the current user as a buddy
-#     media_objects = media_objects.exclude(
-#         Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
-#     )
-
-#     # Exclude media from private profiles if the current user is not a buddy or follower
-#     media_objects = media_objects.exclude(
-#         Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
-#     )
-
-#     # Filter by hashtag if a hashtag filter is provided
-#     if hashtag_filter:
-#         media_objects = media_objects.filter(hashtags__name__icontains=hashtag_filter)
-
-#     # Exclude media that the user marked as not interested
-#     media_objects = media_objects.exclude(id__in=not_interested_media)
-
-#     # Shuffle and score media based on user preferences
-#     media_list = list(media_objects)
-#     random.shuffle(media_list)
-
-#     new_media = [media for media in media_list if media.id not in viewed_media]
-#     old_media = [media for media in media_list if media.id in viewed_media]
-
-#     media_scores = []
-#     for media in new_media + old_media:
-#         score = 0
-#         media_hashtags = [h.name for h in media.hashtags.all()]
-#         description_hashtags = re.findall(r'#(\w+)', media.description)
-
-#         # Increase/decrease score based on user's hashtag preferences
-#         for hashtag in media_hashtags + description_hashtags:
-#             if hashtag in liked_hashtags:
-#                 score += 1.5
-#             if hashtag in viewed_hashtags:
-#                 score += 0.9
-#             if hashtag in not_interested_hashtags:
-#                 score -= 8  # Penalize media containing "not interested" hashtags
-
-#         media_scores.append((media, score))
-
-#     # Sort media by score (highest first)
-#     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
-#     sorted_media = [m[0] for m in sorted_media]
-
-#     # Paginate media results
-#     paginator = Paginator(sorted_media, 100)
-#     page_number = request.GET.get('page')
-#     page_obj = paginator.get_page(page_number)
-
-#     # Update the user's viewed media list
-#     for media in page_obj:
-#         if media.id not in viewed_media:
-#             viewed_media.append(media.id)
-#     user_hashtag_pref.viewed_media = viewed_media
-#     user_hashtag_pref.save()
-
-#     # Return JSON response for AJAX requests
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         media_list = [
-#             {
-#                 'id': m.id,
-#                 'file_url': m.file.url,
-#                 'is_video': m.file.url.endswith('.mp4'),
-#                 'user_username': m.user.username,
-#                 'description': m.description
-#             }
-#             for m in page_obj
-#         ]
-#         return JsonResponse({'media': media_list})
-
-#     # Render the explore page for normal requests
-#     return render(request, 'explore.html', {
-#         'page_obj': page_obj,
-#         'hashtag_filter': hashtag_filter
-#     })
 
 
 @login_required
@@ -908,145 +659,6 @@ def search_uploads(request):
 
 
 
-
-# @login_required
-# def explore_detail(request, media_id):
-#     media = get_object_or_404(Media, id=media_id)
-#     user = media.user  # The owner of the media
-
-#     # Check if the current user is blocked by the media owner
-#     is_blocked_by_media_owner = BlockedUser.objects.filter(blocker=user, blocked=request.user).exists()
-
-#     # Check if the current user has blocked the media owner
-#     has_blocked_media_owner = BlockedUser.objects.filter(blocker=request.user, blocked=user).exists()
-
-#     # If the current user is blocked by the media owner, return a 'user_not_found' or restricted view page
-#     if is_blocked_by_media_owner:
-#         return render(request, 'user_not_found.html')  # Show an "upload not found" message
-
-#     # Check if the current user is following the media owner
-#     is_following = Follow.objects.filter(follower=request.user, following=user).exists()
-
-#     # Check if the current user is in the media owner's buddy list
-#     is_buddy = Buddy.objects.filter(user=user, buddy=request.user).exists()
-
-#     # Check if the media is private, and the current user is not allowed to view it
-#     # The current user can view it only if they are in the buddy list or they are the media owner
-#     if (media.is_private or user.profile.is_private) and not is_buddy and not is_following and request.user != user:
-#         return render(request, 'private_upload.html')  # Show an "upload is private" message
-
-#     # User hashtag preference (tracking viewed media and hashtags)
-#     user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
-#     liked_hashtags = user_hashtag_pref.liked_hashtags
-#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
-#     viewed_media = user_hashtag_pref.viewed_media
-#     not_interested_media = user_hashtag_pref.not_interested_media  # Add this line
-
-#     # Update viewed media and hashtags
-#     if media.id not in viewed_media:
-#         viewed_media.append(media.id)
-#         user_hashtag_pref.viewed_media = viewed_media
-#         user_hashtag_pref.save()
-
-#     description_hashtags = re.findall(r'#(\w+)', media.description)
-#     user_hashtag_pref.add_viewed_hashtag(description_hashtags)
-
-#     # Related media logic
-#     related_media = Media.objects.exclude(id=media_id)
-
-#     # Exclude media marked as not interested by the current user (new constraint)
-#     related_media = related_media.exclude(id__in=not_interested_media)
-
-#     # Exclude related media from users who have blocked the current user
-#     users_blocked_me = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-#     users_i_blocked = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
-#     related_media = related_media.exclude(user__in=users_blocked_me).exclude(user__in=users_i_blocked)
-
-#     # Exclude private media from users who are not in the current user's buddy list or followers
-#     related_media = related_media.exclude(
-#         Q(is_private=True) & ~Q(user__buddy_list__buddy=request.user)
-#     )
-
-#     # Exclude all media from users with private profiles if the current user is not a buddy or follower
-#     related_media = related_media.exclude(
-#         Q(user__profile__is_private=True) & ~Q(user__buddy_list__buddy=request.user) & ~Q(user__follower_set__follower=request.user) & ~Q(user=request.user)
-#     )
-
-#     # Filter related media by liked hashtags
-#     if liked_hashtags:
-#         related_media = related_media.annotate(
-#             num_liked_hashtags=Count(
-#                 'hashtags',
-#                 filter=Q(hashtags__name__in=liked_hashtags)
-#             )
-#         ).order_by('-num_liked_hashtags', '?')
-#     else:
-#         related_media = related_media.order_by('?')
-
-#     # Scoring system
-#     media_scores = []
-#     for related in related_media:
-#         score = 0
-#         media_hashtags = [h.name for h in related.hashtags.all()]
-#         description_hashtags = re.findall(r'#(\w+)', related.description)
-
-#         # Increase/decrease score based on user's hashtag preferences
-#         for hashtag in media_hashtags + description_hashtags:
-#             if hashtag in liked_hashtags:
-#                 score += 1.5
-#             if hashtag in viewed_hashtags:
-#                 score += 0.9
-#             if hashtag in user_hashtag_pref.not_interested_hashtags:
-#                 score -= 8  # Penalize media containing "not interested" hashtags
-
-#         media_scores.append((related, score))
-
-#     # Sort related media by score
-#     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
-#     related_media = [m[0] for m in sorted_media][:100]
-
-#     # Engagement tracking
-#     if not Engagement.objects.filter(user=request.user, media=media, engagement_type='view').exists():
-#         media.view_count = F('view_count') + 1
-#         media.save(update_fields=['view_count'])
-#         Engagement.objects.create(media=media, user=request.user, engagement_type='view')
-
-#     # Making usernames clickable in the description
-#     description = make_usernames_clickable(media.description)
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         media_data = {
-#             'id': media.id,
-#             'file_url': media.file.url,
-#             'is_video': media.file.url.endswith('.mp4'),
-#             'user_username': media.user.username,
-#             'description': description,
-#             'is_buddy': is_buddy,
-#             'is_following': is_following,
-#             'has_blocked_media_owner': has_blocked_media_owner,
-#             'is_blocked_by_media_owner': is_blocked_by_media_owner
-#         }
-#         related_media_list = [
-#             {
-#                 'id': m.id,
-#                 'file_url': m.file.url,
-#                 'is_video': m.file.url.endswith('.mp4'),
-#                 'user_username': m.user.username
-#             } for m in related_media
-#         ]
-#         return JsonResponse({'media': media_data, 'related_media': related_media_list})
-
-#     return render(request, 'explore_detail.html', {
-#         'media': media,
-#         'related_media': related_media,
-#         'description': description,
-#         'is_buddy': is_buddy,
-#         'is_following': is_following,
-#         'has_blocked_media_owner': has_blocked_media_owner,
-#         'is_blocked_by_media_owner': is_blocked_by_media_owner
-#     })
-
-
 @login_required
 def explore_detail(request, media_id):
     media = get_object_or_404(Media, id=media_id)
@@ -1182,143 +794,6 @@ def explore_detail(request, media_id):
 
 
 
-
-
-# @login_required
-# def following_media(request):
-#     user = request.user
-
-#     # Fetch or create the user's hashtag preferences
-#     user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
-#     liked_hashtags = user_hashtag_pref.liked_hashtags
-#     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
-#     viewed_hashtags = user_hashtag_pref.viewed_hashtags
-
-#     # Get users who have blocked the current user
-#     users_blocked_me = BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)
-#     users_i_blocked = BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True)
-
-#     # Get users that the current user is following
-#     followed_users = AuthUser.objects.filter(
-#         follower_set__follower=user
-#     ).exclude(
-#         id__in=users_blocked_me
-#     ).exclude(
-#         id__in=users_i_blocked
-#     )
-
-#     # Get buddy list
-#     buddy_list = Buddy.objects.filter(user=user).values_list('buddy', flat=True)
-
-#     # Fetch media from followed users and buddies
-#     media_from_followed_users = Media.objects.filter(
-#         Q(user__in=followed_users) | Q(user__in=buddy_list)
-#     ).select_related(
-#         'user', 'user__profile'
-#     ).prefetch_related(
-#         'hashtags',  # Prefetch hashtags associated with each media
-#         'likes'  # Prefetch likes for calculating engagement levels
-#     ).annotate(
-#         likes_count=Count('likes'),
-#         is_liked=Exists(Engagement.objects.filter(media=OuterRef('id'), user=user, engagement_type='like'))
-#     ).order_by('-created_at').exclude(
-#         Q(is_private=True) & ~Q(user__in=buddy_list) & ~Q(user=user)
-#     ).exclude(
-#         engagement__user=user, engagement__engagement_type='view'
-#     )
-
-#     # If no media from followed users, use the explore logic
-#     explore_media = Media.objects.exclude(
-#         user__in=users_blocked_me
-#     ).exclude(
-#         user__in=users_i_blocked
-#     ).select_related(
-#         'user', 'user__profile'
-#     ).prefetch_related(
-#         'hashtags', 'likes'
-#     ).annotate(
-#         likes_count=Count('likes'),
-#         is_liked=Exists(Engagement.objects.filter(media=OuterRef('id'), user=user, engagement_type='like'))
-#     ).order_by('-created_at')
-
-#     # Combine all media from followed users and the explore logic
-#     combined_media = list(media_from_followed_users) + list(explore_media)
-
-#     # Apply scoring and constraints
-#     media_scores = []
-#     for m in combined_media:
-#         score = 0
-#         media_hashtags = [h.name for h in m.hashtags.all()]
-
-#         # Apply hashtag preferences scoring
-#         for hashtag in media_hashtags:
-#             if hashtag in liked_hashtags:
-#                 score += 1
-#             if hashtag in not_interested_hashtags:
-#                 score -= 8
-#             if hashtag in viewed_hashtags:
-#                 score += 0.9  # Adjust this weight as needed
-
-#         # Boost score based on user activity frequency (number of media posts by the user)
-#         user_post_count = m.user.media.count()  # Counting user's media posts
-#         if user_post_count > 10:
-#             score += 2  # Boost for active users who post frequently
-
-#         # Boost score based on engagement levels (likes count as engagement)
-#         if m.likes_count > 50:
-#             score += 1.5  # Boost for media with high engagement levels
-
-#         # Add media and its score to the list
-#         media_scores.append((m, score))
-
-#     # Sort by score and creation date (newest first)
-#     sorted_media = sorted(media_scores, key=lambda x: (x[1], x[0].created_at), reverse=True)
-#     sorted_media = [m[0] for m in sorted_media]
-
-#     # Apply private media constraints
-#     sorted_media = [m for m in sorted_media 
-#                     if not (m.is_private and m.user.id not in buddy_list and user != m.user)
-#                     and not (m.user.profile.is_private and not m.user.follower_set.filter(follower=user).exists())]
-
-#     # Randomize the order while keeping the newest media first
-#     random.shuffle(sorted_media)
-
-#     # Track engagement for viewed media
-#     for media in sorted_media:
-#         # Check if the current user has already viewed this media
-#         if not Engagement.objects.filter(user=user, media=media, engagement_type='view').exists():
-#             # Increment view count and save the media
-#             media.view_count = F('view_count') + 1
-#             media.save(update_fields=['view_count'])
-
-#             # Create a view engagement entry
-#             Engagement.objects.create(media=media, user=user, engagement_type='view')
-
-#     # Apply make_usernames_clickable to descriptions
-#     for media in sorted_media:
-#         media.description = make_usernames_clickable(media.description)
-
-#     paginator = Paginator(sorted_media, 8)
-#     page_number = request.GET.get('page')
-#     page_obj = paginator.get_page(page_number)
-
-#     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-#         media_list = [
-#             {
-#                 'id': m.id,
-#                 'file_url': m.file.url,
-#                 'is_video': m.file.url.endswith('.mp4'),
-#                 'user_username': m.user.username,
-#                 'description': m.description
-#             }
-#             for m in page_obj
-#         ]
-#         return JsonResponse({'media': media_list})
-
-#     return render(request, 'following_media.html', {'page_obj': page_obj})
-
-
-
 @login_required
 def following_media(request):
     user = request.user
@@ -1451,40 +926,6 @@ def media_engagement(request, media_id):
     return render(request, 'media_engagement.html', context)
 
 #new for specific description search 
-
-
-# @csrf_exempt
-# @require_POST
-# def log_interaction(request):
-#     try:
-#         # Log the request body for debugging
-#         print(f"Request body: {request.body}")
-
-#         if not request.content_type == 'application/json':
-#             return JsonResponse({'error': 'Invalid content type'}, status=400)
-
-#         # Parse the JSON payload
-#         data = json.loads(request.body)
-#         media_id = data.get('media_id')
-        
-#         if not media_id:
-#             print("Missing media_id in the request payload.")
-#             return JsonResponse({'error': 'Missing media_id'}, status=400)
-        
-#         media = Media.objects.filter(id=media_id).first()
-#         if not media:
-#             print(f"Invalid media_id: {media_id}")
-#             return JsonResponse({'error': 'Invalid media_id'}, status=400)
-
-#         Interaction.objects.create(media=media, user=request.user)
-#         return JsonResponse({'success': True})
-
-#     except json.JSONDecodeError:
-#         print("JSON decode error. Payload may not be valid JSON.")
-#         return JsonResponse({'error': 'Invalid JSON payload'}, status=400)
-#     except Exception as e:
-#         print(f"Error in log_interaction: {e}")
-#         return JsonResponse({'error': 'An unexpected error occurred'}, status=400)
 
 
 # @csrf_exempt
@@ -1664,6 +1105,110 @@ def delete_user_comment(request, comment_id):
         comment.delete()
         return redirect('user_profile:media_detail_view', media_id=media.id)
     return redirect('user_profile:media_detail_view', media_id=media.id)
+
+
+@login_required
+def like_audio(request, audio_id):
+    audio = get_object_or_404(Audio, id=audio_id)
+    user_hashtag_pref, created = UserHashtagPreference.objects.get_or_create(user=request.user)
+
+    # Check if the user has already liked the audio
+    if request.user in audio.likes.all():
+        audio.likes.remove(request.user)
+        liked = False
+    else:
+        audio.likes.add(request.user)
+        liked = True
+
+        # Update the liked hashtags list based on the audio description
+        hashtags_in_description = re.findall(r'#(\w+)', audio.description)
+        for hashtag in hashtags_in_description:
+            user_hashtag_pref.liked_hashtags = add_to_fifo_list(user_hashtag_pref.liked_hashtags, hashtag)
+
+        user_hashtag_pref.save()
+
+        # Create a clickable notification for the audio owner
+        if request.user != audio.user:  # Avoid notifying the audio owner if they like their own audio
+            Notification.objects.create(
+                user=audio.user,
+                content=f'{request.user.username} liked your audio: <a href="{reverse("user_profile:voices", args=[audio.id])}">View Audio</a>',
+                type='like',
+                related_user=request.user,
+                related_audio=audio
+            )
+
+    # Handle AJAX requests to return like status and like count
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({'liked': liked, 'like_count': audio.likes.count()})
+
+    # Redirect back to the referring page or to the audio detail view
+    return redirect(request.META.get('HTTP_REFERER', reverse('user_profile:voices', args=[audio.id])))
+
+
+@login_required
+def comment_audio(request, audio_id):
+    audio = get_object_or_404(Audio, id=audio_id)
+    
+    if request.method == 'POST':
+        content = request.POST.get('content', '')
+        hashtags = set(re.findall(r'#(\w+)', content))
+        tagged_usernames = set(re.findall(r'@(\w+)', content))
+
+        # Transform content to include clickable usernames and sanitize it
+        content = make_usernames_clickable(escape(content))
+
+        # Create the comment associated with the audio
+        comment = Comment.objects.create(user=request.user, audio=audio, content=content)
+
+        # Process hashtags
+        for tag in hashtags:
+            hashtag, created = Hashtag.objects.get_or_create(name=tag)
+            comment.hashtags.add(hashtag)
+
+        # Process tagged usernames and create notifications for tagged users
+        for username in tagged_usernames:
+            try:
+                tagged_user = AuthUser.objects.get(username=username)
+                comment.tagged_users.add(tagged_user)
+
+                # Create a clickable notification for the tagged user
+                Notification.objects.create(
+                    user=tagged_user,
+                    content=f'{request.user.username} mentioned you in a comment: <a href="{reverse("user_profile:voices", args=[audio.id])}#{comment.id}">View Comment</a>',
+                    type='mention',
+                    related_user=request.user,
+                    related_audio=audio,
+                    comment=comment
+                )
+            except AuthUser.DoesNotExist:
+                pass
+
+        # Create a notification for the audio owner
+        if request.user != audio.user:  # Avoid notifying the audio owner if they are commenting on their own audio
+            Notification.objects.create(
+                user=audio.user,
+                content=f'{request.user.username} commented on your audio: <a href="{reverse("user_profile:voices", args=[audio.id])}#{comment.id}">View Comment</a>',
+                type='comment',
+                related_user=request.user,
+                related_audio=audio,
+                comment=comment
+            )
+
+        # Redirect to the audio detail view with the new comment's anchor (scroll to the comment)
+        return redirect(f"{reverse('user_profile:voices', args=[audio.id])}#{comment.id}")
+
+    # If not POST, fallback to redirecting to the audio detail page
+    return redirect(reverse('user_profile:voices', args=[audio.id]))
+
+
+@login_required
+def delete_user_audio_comment(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    audio = comment.audio
+    if request.user == comment.user or request.user == audio.user:
+        comment.delete()
+        return redirect('user_profile:voices', audio_id=audio.id)
+    return redirect('user_profile:voices', audio_id=audio.id)
 
 
 

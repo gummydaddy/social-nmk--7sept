@@ -1,0 +1,361 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block main_content %}
+<style>
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .g-4, .gy-4 {
+        --bs-gutter-y: 1.rem;
+    }
+    {% comment %} .g-4, .gx-4 {
+        --bs-gutter-x: 1.rem;
+    } {% endcomment %}
+
+    .dropdown-content {
+        display: none;
+        position: relative;
+        right: 0;
+        background-color: white;
+        min-width: 140px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+
+    .dropdown-content a {
+        color: black;
+        padding: 12px 1px;
+        text-decoration: none;
+        display: block;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+</style>
+<div id="media-detail-container">
+    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
+        {{ media.user.username }}
+    </a>
+    <div id="current-media">
+        {% if media.file.url|is_video %}
+        <video controls class="img-fluid autoplay-video" unmute>
+            <source src="{{ media.file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        {% else %}
+        <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+        {% endif %}
+    </div>
+    <div id="media-description" class="description">
+        <p>{{ description|safe }}</p>
+        <!-- Actions -->
+        <div class="actions">
+            <a href="{% url 'user_profile:like_media' media.id %}" 
+               class="like-link {% if request.user in media.likes.all %}liked{% endif %}" 
+               data-url="{% url 'user_profile:like_media' media.id %}" 
+               data-media-id="{{ media.id }}" 
+               data-csrf-token="{{ csrf_token }}">
+                {% if request.user in media.likes.all %}
+                    ❤️
+                {% else %}
+                    ♡
+                {% endif %}
+            </a>
+            <span class="like-count">{{ media.likes.count }}</span> likes
+            {% comment %} <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a> {% endcomment %}
+            <div class="comments" id="comments-{{ media.id }}">
+                <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#comment-list-{{ media.id }}" aria-expanded="false" aria-controls="comment-list-{{ media.id }}">
+                    {{ media.comments.count }} Comments
+                </button>
+        
+                <div id="comment-list-{{ media.id }}" class="collapse">
+                    {% for comment in media.comments.all %}
+                    <div class="comment" id="{{ comment.id }}">
+                        <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
+                        {{ comment.content|safe }}
+                        <div class="dropdown">
+                            <span>⋮</span>
+                            <div class="dropdown-content">
+                                {% if comment.user == request.user %}
+                                <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                                {% elif media.user == request.user %}
+                                <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <br>{{ comment.created_at }}
+                    </div>
+                    {% endfor %}
+        
+                    <!-- Comment form -->
+                    <form method="post" action="{% url 'user_profile:comment_media' media.id %}#new-comment" id="comment-form">
+                        {% csrf_token %}
+                        <input type="text" name="content" placeholder="Add a comment" required>
+                        <button type="submit">Post</button>
+                    </form>
+                </div>
+            </div>
+            <div class="dropdown">
+                <span>⋮</span>
+                <div class="dropdown-content">
+                    <!-- Save/Unsave Button -->
+                    <form method="POST" action="{% url 'user_profile:save_upload' media.id %}">
+                        {% csrf_token %}
+                        {% if media in request.user.profile.saved_uploads.all %}
+                            <button type="submit" class="btn btn-secondary">Unsave</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        {% endif %}
+                    </form>
+                    {% if request.user == media.user %}
+                    <form method="post" action="{% url 'user_profile:delete_media' media.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    {%else%}
+                    <a href="{% url 'user_profile:not_interested' media.id %}">Not Interested</a>
+                    <a href="{% url 'user_profile:report_media' media.id %}">Report</a>
+                    {% endif %}
+                </div>  
+                
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="related-media-container" class="row row-cols-3 g-4 mt-4">
+    {% for related in related_media %}
+    <div class="col related-media-item">
+        <a href="{% url 'user_profile:explore_detail' related.id %}">
+            {% if related.file.url|is_video %}
+            <video controls class="img-fluid autoplay-video" muted>
+                <source src="{{ related.file.url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            {% else %}
+            <img src="{{ related.file.url }}" alt="media" class="img-fluid">
+            {% endif %}
+        </a>
+        <div class="actions">
+            <a href="{% url 'user_profile:like_media' related.id %}" 
+               class="like-link {% if request.user in related.likes.all %}liked{% endif %}" 
+               data-url="{% url 'user_profile:like_media' related.id %}" 
+               data-media-id="{{ related.id }}" 
+               data-csrf-token="{{ csrf_token }}">
+                {% if request.user in related.likes.all %}
+                    ❤️
+                {% else %}
+                    ♡
+                {% endif %}
+            </a>
+            <span class="like-count">{{ related.likes.count }}</span> 
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Loading Spinner -->
+<div id="loading-spinner" style="display: none;">
+    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
+</div>
+
+<!-- Pagination controls -->
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+        <span class="current">
+            <br>
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+        </span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+{% endblock %}
+
+{% block explore_detail_script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+<script>
+    const relatedContainer = document.getElementById('related-media-container');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    let page = 1;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup Intersection Observer for videos
+        const videos = document.querySelectorAll('.autoplay-video');
+        const observerOptions = {
+            root: null,
+            threshold: 0.75 // Play video when 50% of it is visible
+        };
+
+        const videoObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                const video = entry.target;
+                if (entry.isIntersecting) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            });
+        }, observerOptions);
+
+        videos.forEach(video => {
+            videoObserver.observe(video);
+        });
+
+        // Function to handle the like button click
+        function handleLikeButtonClick(event) {
+            event.preventDefault();
+            const likeLink = event.currentTarget;
+            const url = likeLink.getAttribute('data-url');
+            const csrfToken = likeLink.getAttribute('data-csrf-token');
+    
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const likeCount = likeLink.nextElementSibling;
+                likeCount.textContent = `${data.like_count} likes`;
+                if (data.liked) {
+                    likeLink.classList.add('liked');
+                    likeLink.textContent = '❤️';
+                } else {
+                    likeLink.classList.remove('liked');
+                    likeLink.textContent = '♡';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    
+        // Attach the like button click event handler initially for already loaded media
+        document.querySelectorAll('.like-link').forEach(function(link) {
+            link.addEventListener('click', handleLikeButtonClick);
+        });
+    });
+
+    function fetchRelatedMedia() {
+        page += 1;
+        loadingSpinner.style.display = 'block';
+    
+        fetch(`{{ request.path }}?page=${page}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingSpinner.style.display = 'none';
+            if (data.related_media.length > 0) {
+                data.related_media.forEach(media => {
+                    const col = document.createElement('div');
+                    col.classList.add('col', 'related-media-item');
+    
+                    const link = document.createElement('a');
+                    link.href = `/user_profile/explore_detail/${media.id}/`;
+    
+                    if (media.is_video) {
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.classList.add('img-fluid', 'autoplay-video');
+                        video.muted = true;
+
+                        const source = document.createElement('source');
+                        source.src = media.file_url;
+                        source.type = 'video/mp4';
+    
+                        video.appendChild(source);
+                        link.appendChild(video);
+    
+                        videoObserver.observe(video); // Observe newly added videos
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = media.file_url;
+                        img.alt = 'media';
+                        img.classList.add('img-fluid');
+    
+                        link.appendChild(img);
+                    }
+    
+                    col.appendChild(link);
+    
+                    const userLink = document.createElement('p');
+                    userLink.innerHTML = `<a href="/user_profile/profile/${media.user.id}/">${media.user_username}</a>`;
+                    col.appendChild(userLink);
+    
+                    // Add like button
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.classList.add('actions');
+    
+                    const likeLink = document.createElement('a');
+                    likeLink.href = `/user_profile/like_media/${media.id}/`;
+                    likeLink.classList.add('like-link');
+                    if (media.is_liked_by_user) {
+                        likeLink.classList.add('liked');
+                        likeLink.textContent = '❤️';
+                    } else {
+                        likeLink.textContent = '♡';
+                    }
+                    likeLink.dataset.url = `/user_profile/like_media/${media.id}/`;
+                    likeLink.dataset.mediaId = media.id;
+                    likeLink.dataset.csrfToken = media.csrf_token;
+    
+                    const likeCount = document.createElement('span');
+                    likeCount.classList.add('like-count');
+                    likeCount.textContent = `${media.likes_count} likes`;
+    
+                    actionsDiv.appendChild(likeLink);
+                    actionsDiv.appendChild(likeCount);
+    
+                    col.appendChild(actionsDiv);
+    
+                    relatedContainer.appendChild(col);
+    
+                    // Attach like button click event handler
+                    likeLink.addEventListener('click', handleLikeButtonClick);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching related media:', error);
+            loadingSpinner.style.display = 'none';
+        });
+    }
+    
+
+    window.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        if (scrollTop + clientHeight >= scrollHeight - 5) {
+            fetchRelatedMedia();
+        }
+    });
+</script>
+{% endblock %}

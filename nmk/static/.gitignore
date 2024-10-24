@@ -1,0 +1,54 @@
+@login_required
+def create_ad(request):
+    if request.method == 'POST':
+        form = AdForm(request.POST, request.FILES)
+        if form.is_valid():
+            ad = form.save(commit=False)
+            ad.user = request.user
+            ad.save()
+            return redirect('ad_detail', pk=ad.pk)
+    else:
+        form = AdForm()
+    return render(request, 'create_ad.html', {'form': form})
+
+
+@login_required
+def activate_ad(request, pk):
+    ad = get_object_or_404(Ad, pk=pk)
+    if request.method == 'POST':
+        if request.user.profile.balance >= ad.price:
+            request.user.profile.balance -= ad.price
+            request.user.profile.save()
+            ad.is_active = True
+            ad.save()
+            return redirect('ad_detail', pk=ad.pk)
+        else:
+            messages.error(request, 'Not enough balance to activate this ad.')
+    return render(request, 'activate_ad.html', {'ad': ad})
+
+
+class AdListView(ListView):
+    model = Ad
+    template_name = 'ad_list.html'
+    context_object_name = 'ads'
+
+    def get_queryset(self):
+        return Ad.objects.filter(is_active=True)
+    
+
+
+stripe.api_key = 'sk_test_12345'  # Replace with your own Stripe secret key
+@require_POST
+def charge(request, pk):
+    ad = get_object_or_404(Ad, pk=pk)
+    try:
+        charge = stripe.Charge.create(
+            amount=int(ad.price * 100),  # Stripe expects the amount in cents
+            currency='usd',
+            source=request.POST['stripeToken'],
+        )
+        ad.is_active = False
+        ad.save()
+        return redirect('ad_list')
+    except stripe.error.StripeError as e:
+        return render(request, 'charge_error.html', {'error_message': str(e)})

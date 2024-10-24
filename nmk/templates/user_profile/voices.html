@@ -1,0 +1,210 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% load custom_filters %}
+
+
+{% block main_content %}
+<style>
+  .dropdown {
+      position: relative;
+      display: inline-block;
+  }
+
+  .g-4, .gy-4 {
+      --bs-gutter-y: 1.rem;
+  }
+  {% comment %} .g-4, .gx-4 {
+      --bs-gutter-x: 1.rem;
+  } {% endcomment %}
+
+  .dropdown-content {
+      display: none;
+      position: relative;
+      right: 0;
+      background-color: white;
+      min-width: 140px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+  }
+
+  .dropdown-content a {
+      color: black;
+      padding: 12px 1px;
+      text-decoration: none;
+      display: block;
+  }
+
+  .dropdown-content a:hover {
+      background-color: #ddd;
+  }
+
+  .dropdown:hover .dropdown-content {
+      display: block;
+  }
+</style>
+  <h1>Voices </h1>
+    {% if profile_user == request.user %}
+    <p>
+        <div class="uploads-section">
+            <div class="row row-cols-1 g-4">
+                <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_audio' %}'">Upload Voice</button>
+            </div>
+        </div>
+    </p>
+    {% endif %}
+
+  <div class="audio-list">
+    {% for audio in page_obj %}
+      <div class="audio-item">
+        <h2>{{ audio.file_name }}</h2>
+        <a href="{% url 'user_profile:profile' user_id=audio.user.id %}">
+          {{ audio.user.username }}
+        </a>  </br>
+        <audio controls>
+          <source src="{{ audio.file.url }}" type="audio/mpeg">
+          Your browser does not support the audio element.
+        </audio>
+        <p>{{ audio.description|safe }}</p>
+        <h8>{{ audio.created_at }}</h8>
+        <strong>Tags:</strong> 
+        {% for tag in audio.tags.all %}
+            @{{ tag.username }}  <!-- Show tagged users -->
+        {% endfor %}
+        <!-- Actions for Audio -->
+        <div class="actions">
+          <!-- Like Button -->
+          <a href="{% url 'user_profile:like_audio' audio.id %}" 
+            class="like-link {% if request.user in audio.likes.all %}liked{% endif %}" 
+            data-url="{% url 'user_profile:like_audio' audio.id %}" 
+            data-audio-id="{{ audio.id }}" 
+            data-csrf-token="{{ csrf_token }}">
+              {% if request.user in audio.likes.all %}
+                  ❤️
+              {% else %}
+                  ♡
+              {% endif %}
+          </a>
+          <span class="like-count">{{ audio.likes.count }}</span> likes
+
+          <!-- Comments Section -->
+          <div class="comments" id="comments-{{ audio.id }}">
+              <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#comment-list-{{ audio.id }}" aria-expanded="false" aria-controls="comment-list-{{ audio.id }}">
+                  {{ audio.comments.count }} Comments
+              </button>
+
+              <div id="comment-list-{{ audio.id }}" class="collapse">
+                  {% for comment in audio.comments.all %}
+                  <div class="comment" id="{{ comment.id }}">
+                      <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
+                      {{ comment.content|safe }}
+                      <div class="dropdown">
+                          <span>⋮</span>
+                          <div class="dropdown-content">
+                              {% if comment.user == request.user %}
+                              <form method="post" action="{% url 'user_profile:delete_user_audio_comment' comment.id %}" style="display:inline;">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                              </form>
+                              {% elif audio.user == request.user %}
+                              <form method="post" action="{% url 'user_profile:delete_user_audio_comment' comment.id %}" style="display:inline;">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                              </form>
+                              {% endif %}
+                          </div>
+                      </div>
+                      <br>{{ comment.created_at }}
+                  </div>
+                  {% endfor %}
+
+                  <!-- Comment form -->
+                  <form method="post" action="{% url 'user_profile:comment_audio' audio.id %}#new-comment" id="comment-form">
+                      {% csrf_token %}
+                      <input type="text" name="content" placeholder="Add a comment" required>
+                      <button type="submit">Post</button>
+                  </form>
+              </div>
+          </div>
+
+          <!-- Dropdown Menu for Additional Actions -->
+          {% comment %} <div class="dropdown">
+              <span>⋮</span>
+              <div class="dropdown-content">
+                  <!-- Save/Unsave Button -->
+                  
+
+                  <!-- Delete Button or Report Option -->
+                  {% if request.user == audio.user %}
+                  <form method="post" action="{% url 'user_profile:delete_audio' audio.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-danger">Delete</button>
+                  </form>
+                  {% else %}
+                  <a href="{% url 'user_profile:not_interested_audio' audio.id %}">Not Interested</a>
+                  <a href="{% url 'user_profile:report_audio' audio.id %}">Report</a>
+                  {% endif %}
+              </div>  
+          </div> {% endcomment %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  <!-- Pagination controls -->
+    <div class="pagination" >
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+            {% endif %}
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+{% endblock %}
+
+{% block explore_detail_script %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+<script>
+  const relatedContainer = document.getElementById('related-media-container');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    let page = 1;
+    // Function to handle the like button click
+    function handleLikeButtonClick(event) {
+      event.preventDefault();
+      const likeLink = event.currentTarget;
+      const url = likeLink.getAttribute('data-url');
+      const csrfToken = likeLink.getAttribute('data-csrf-token');
+
+      fetch(url, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken,
+              'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: JSON.stringify({})
+      })
+      .then(response => response.json())
+      .then(data => {
+          const likeCount = likeLink.nextElementSibling;
+          likeCount.textContent = `${data.like_count} likes`;
+          if (data.liked) {
+              likeLink.classList.add('liked');
+              likeLink.textContent = '❤️';
+          } else {
+              likeLink.classList.remove('liked');
+              likeLink.textContent = '♡';
+          }
+      })
+      .catch(error => {
+          console.error('Error:', error);
+      });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends 'landing_page.html' %}
+
+{% block content %}
+  <h1>{{ ad.title }}</h1>
+  <p>{{ ad.description }}</p>
+  <img src="{{ ad.image.url }}" alt="{{ ad.title }}">
+  <p>Price: {{ ad.price }}</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" name="activate_ad">Activate and Pay</button>
+  </form>
+{% endblock %}
