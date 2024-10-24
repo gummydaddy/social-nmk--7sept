@@ -54,14 +54,11 @@ class AudioForm(forms.ModelForm):
 
     class Meta:
         model = Audio
-        fields = ('file', 'description', 'is_paid', 'is_private', 'duration')
+        fields = ('file', 'description', 'is_paid', 'is_private')
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'cols': 50}),
         }
-        # You can mark duration as required=False here as well.
-        extra_kwargs = {
-            'duration': {'required': False}
-        }
+
 
     def clean_file(self):
         file = self.cleaned_data['file']

@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Hashtag #,Comment
+from .models import Media, Audio, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Hashtag #,Comment
 from service_auth.notion.models import Follow, Comment
 from django.urls import path
 
@@ -9,6 +9,7 @@ from django.urls import path
 
 # Register your models here.
 admin.site.register(Media)  # Register Group model with the custom admin site
+admin.site.register(Audio)  # Register Group model with the custom admin site
 # admin.site.register(Follow)  # Register Group model with the custom admin site
 admin.site.register(Profile)  # Register Group model with the custom admin site
 admin.site.register(Engagement)  # Register Group model with the custom admin site

@@ -3,7 +3,7 @@
 from django.db import models
 from django.contrib.auth.models import User as AuthUser
 from .fields import CompressedTextField
-from service_auth.user_profile.models import Media
+from service_auth.user_profile.models import Media, Audio
 from django.utils.timezone import now #new
 from django.utils import timezone
 from datetime import timedelta
@@ -62,6 +62,7 @@ class Follow(models.Model):
 class Comment(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='comments')
     media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='comments', null=True)
+    audio = models.ForeignKey(Audio, on_delete=models.CASCADE, related_name='comments', null=True, blank=True)  # Allow null for media comments
     notion = models.ForeignKey(Notion, on_delete=models.CASCADE, related_name='comments',null=True )
     content = CompressedTextField()
     # likes = models.ManyToManyField(AuthUser, related_name='liked_comments', blank=True)  # Now directly a ManyToManyField for likes
@@ -72,6 +73,12 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.content
+    
+    def is_media_comment(self):
+        return self.media is not None
+
+    def is_audio_comment(self):
+        return self.audio is not None
 
 class Notification(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='notifications', null = True)
@@ -82,6 +89,7 @@ class Notification(models.Model):
     comment = models.ForeignKey('Comment', null=True, blank=True, on_delete=models.CASCADE, related_name='notifications')
     liked_by = models.ForeignKey(AuthUser, null=True, blank=True, on_delete=models.CASCADE, related_name='liked_notifications')
     related_media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='related_notifications', null=True, blank=True)
+    related_audio = models.ForeignKey(Audio, on_delete=models.CASCADE, related_name='related_notifications', null=True, blank=True)  # New field for audio notifications
     related_notion = models.ForeignKey(Notion, on_delete=models.CASCADE, related_name='related_notifications', null=True, blank=True)
     related_comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='related_notifications', null=True, blank=True)
     related_user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='related_notifications', null=True, blank=True)
@@ -90,3 +98,5 @@ class Notification(models.Model):
 
     def __str__(self):
         return self.content
+        # return f'Notification from {self.related_user} to {self.user}'
+

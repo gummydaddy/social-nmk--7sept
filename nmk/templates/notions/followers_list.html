@@ -1,0 +1,76 @@
+{% extends 'landing_page.html' %}
+
+{% block main_content %}
+<style>
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .dropdown-content {
+        display: none;
+        position: absolute;
+        right: 0;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+    
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+    
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
+    
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+
+</style>
+<div class="followers">
+  <h2>{{ profile_user.username }}'s Followers</h2>
+  <ul>
+      {% for follow in followers %}
+      <li style="display: flex; justify-content: space-between; align-items: center;">
+          <a href="{% url 'user_profile:profile' follow.follower.id %}">
+              {{ follow.follower.username }}
+          </a>
+          
+          <!-- Dropdown Menu for Removing Follower -->
+          {%if profile_user == request.user%}
+          <div class="dropdown">
+              <span>⋮</span>
+              <div class="dropdown-content">
+                  <a href="{% url 'user_profile:remove_follower' follow.follower.id %}"
+                     onclick="return confirm('Are you sure you want to remove this follower?');">
+                      Remove Follower
+                  </a>
+              </div>
+          </div>
+          {% if not is_buddy %}
+              <form method="post" action="{% url 'user_profile:add_to_buddy' follow.follower.id %}">
+                  {% csrf_token %}
+                  <button type="submit" style="width: 100%; text-align: left;">Add to Buddy</button>
+              </form>
+          {% else %}
+              <form method="post" action="{% url 'user_profile:remove_from_buddy_list' follow.follower.id %}">
+                  {% csrf_token %}
+                  <button type="submit" style="width: 100%; text-align: left;">Remove from Buddy</button>
+              </form>
+          {% endif %}
+          {% endif %}
+      </li>
+      {% endfor %}
+  </ul>
+</div>
+{% endblock %}
+
+{%block buddy_script%}
+
+{%endblock%}

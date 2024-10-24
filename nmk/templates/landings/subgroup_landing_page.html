@@ -1,0 +1,70 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block Subgroup %}
+<section class="hero">
+    <div class="container">
+        <h1>Welcome, {{ association_name }}!</h1>
+        <p class="lead">Manage your subgroup and associated services.</p>
+    </div>
+</section> 
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Requests</h5>
+                    <ul class="list-group">
+                        {% for request in pending_requests %}
+                        <li class="list-group-item">
+                            {{ request.request_type }} - {{ request.user.username }} - {{ request.criteria }}
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item">No pending requests</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <ul>
+        {% for registration in subgroup.registrations.all %}
+            <li>{{ registration.user.username }} - {{ registration.criteria }}</li>
+        {% endfor %}
+        </ul>
+    
+        {% if user_admin_groups %}
+        <h2>Subgroups you are an admin of:</h2>
+        {% for group in user_admin_groups %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5 class="card-title">{{ group.name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">Subgroup Details</h6>
+                <p class="card-text">Subgroup Name: {{ group.name }}</p>
+                <p class="card-text">Parent Group: {{ group.parent_group.name }}</p>
+                <h6 class="card-subtitle mb-2 text-muted">Users in this Subgroup:</h6>
+                <ul class="list-group">
+                    {% for registration in group.registrationform_set.all %}
+                    <li class="list-group-item">{{ registration.user.username }} - {{ registration.criteria }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <p>You are not an admin of any subgroups.</p>
+        {% endif %}
+</div>
+{% endblock %}
+
+
+
+
+
+
+      
+
+            
+            
+
+           

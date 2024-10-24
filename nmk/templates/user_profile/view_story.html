@@ -1,0 +1,151 @@
+{% extends 'landing_page.html' %}
+
+{% load static %}
+{% load custom_filters %}
+
+{% block main_content %}
+<style>
+    .story-view-container {
+        position: relative;
+        text-align: center;
+    }
+    
+    .story-content img,
+    .story-content video {
+        max-width: 100%;
+        height: auto;
+        cursor: pointer;
+    }
+    
+    .story-content .nav-area {
+        position: absolute;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        cursor: pointer;
+    }
+    
+    .story-content .nav-left {
+        left: 0;
+    }
+    
+    .story-content .nav-right {
+        right: 0;
+    }
+    
+    .story-content .nav-left:active,
+    .story-content .nav-right:active {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .dropdown-content {
+        display: none;
+        position: relative;
+        right: 0;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+    }
+
+    .dropdown-content a {
+        color: black;
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+    }
+
+    .dropdown-content a:hover {
+        background-color: #ddd;
+    }
+
+    .dropdown:hover .dropdown-content {
+        display: block;
+    }
+</style>
+
+<div class="story-view-container">
+    <div class="story-content">
+        {% if story.media.media_type == 'image' %}
+            <img src="{{ story.media.file.url }}" alt="Story Image" class="img-fluid">
+        {% elif story.media.media_type == 'video' %}
+            <video id="storyVideo" autoplay class="video-fluid">
+                <source src="{{ story.media.file.url }}" type="{{ story.media.file.content_type }}">
+                Your browser does not support the video tag.
+            </video>
+        {% endif %}
+        <p>{{ story.media.description|make_clickable|safe }}</p>
+        <div class="nav-area nav-left" onclick="handleLeftNavigation()"></div>
+        <div class="nav-area nav-right" onclick="handleRightNavigation()"></div>
+    </div>
+
+    <!-- Modal for showing viewers -->
+    <div id="viewersModal" class="viewers-modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeViewers()">&times;</span>
+            <h2>Viewed by:</h2>
+            <ul>
+                {% for user in story.media.tags.all %}
+                    <li>{{ user.username }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="dropdown">
+    <span>⋮</span>
+    <div class="dropdown-content">  
+        {% if request.user == story.media.user %}
+            <form method="POST" action="{% url 'user_profile:delete_media' story.media.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% if request.user == story.media.user %}
+    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:add_story' %}'">Add Story</button>
+{% endif %}
+
+<button class="view-count-btn" onclick="showViewers()">👁‍🗨 {{ story.media.view_count }} Views</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showViewers() {
+        document.getElementById("viewersModal").style.display = "block";
+    }
+
+    function closeViewers() {
+        document.getElementById("viewersModal").style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        var modal = document.getElementById("viewersModal");
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+    function handleLeftNavigation() {
+        {% if prev_story %}
+            location.href = "{% url 'user_profile:view_story' prev_story.id %}";
+        {% else  %}
+            location.href = "{% url 'user_profile:profile' story.media.user.id %}";
+        {% endif %}
+    }
+    setTimeout(handleRightNavigation, {{ story_duration }} * 1000);
+    function handleRightNavigation() {
+        {% if next_story %}
+            location.href = "{% url 'user_profile:view_story' next_story.id %}";
+        {% else %}
+            location.href = "{% url 'user_profile:profile' story.media.user.id %}";
+        {% endif %}
+    }
+</script>
+{% endblock %}

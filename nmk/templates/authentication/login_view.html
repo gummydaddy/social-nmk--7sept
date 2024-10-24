@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+        {% comment %} <div>
+            <h1>OON_ly</h1>
+        </div> {% endcomment %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% {background-position: 0% 50%;}
+            50% {background-position: 100% 50%;}
+            100% {background-position: 0% 50%;}
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+        .containerB {
+            width: 100%;
+            max-width: 200px;
+            padding: 20px;
+            background-color: rgba(255, 205, 255, 0.8);
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            animation: fadeIn 1s ease-in-out;
+        }
+        .container h1 {
+            animation: slideInDown 1s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideInDown {
+            from { transform: translate3d(0, -100%, 0); }
+            to { transform: translate3d(0, 0, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="containerB">
+        <h1>Socyfie</h1>
+    </div>
+    </br>
+    {%load socialaccount %}
+    {% comment %} <h2> google login</h2>
+    </br>
+    <a href ="{% provider_login_url 'google' %}?next=/" class="btn btn-primary">Login with Google</a> {% endcomment %}
+    
+    <div class="container">
+        <h1 class="text-center">Login</h1>
+        {% if messages %}
+        <div class="alert alert-danger" role="alert">
+            {% for message in messages %}
+            {{ message }}
+            {% endfor %}
+        </div>
+        {% endif %}
+        <form class="row g-3 needs-validation" action="{% url 'only_card:login' %}" method="post" novalidate>
+            {% csrf_token %}
+            <div class="col-md-12">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" id="username" name="username" required>
+                <div class="valid-feedback">Looks good!</div>
+                <div class="invalid-feedback">Please provide a valid username.</div>
+            </div>
+            <div class="col-md-12">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="pass1" name="pass1" required>
+                <div class="valid-feedback">Looks good!</div>
+                <div class="invalid-feedback">Please provide a valid password.</div>
+            </div>
+            <div class="col-12">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="" id="rememberMe">
+                    <label class="form-check-label" for="rememberMe">Remember me</label>
+                </div>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-primary" type="submit">Login</button>
+                <a href="/" class="btn btn-secondary">Back</a>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/signup/" class="btn btn-primary">Sign Up</a>
+            </div>
+            <div class="text-center mt-4">
+                <a href="/password_reset/" class="btn btn-primary">Reset Password</a>
+            </div>
+            
+        </form>
+    </div>
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Form validation script -->
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script>
+        (function () {
+            'use strict'
+            // Fetch all the forms we want to apply custom Bootstrap validation styles to
+            var forms = document.querySelectorAll('.needs-validation')
+            // Loop over them and prevent submission
+            Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+                    form.classList.add('was-validated')
+                }, false)
+            })
+        })()
+    </script>
+    {% block password_reset %}
+    {% endblock %}
+
+</body>
+</html>
+
+
+
+<!-- Add Reset Password Button -->
+{% comment %} <div class="text-center mt-4">
+    <a href="{% url 'password_reset' %}" class="btn btn-primary">Reset Password</a>
+</div> {% endcomment %}

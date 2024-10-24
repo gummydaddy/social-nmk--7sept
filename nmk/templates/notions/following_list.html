@@ -1,0 +1,18 @@
+{% extends 'landing_page.html' %}
+
+{% block main_content %}
+<div class="following">
+  <h2>{{ profile_user.username }} is Following</h2>
+  <ul>
+      {% for follow in following %}
+      <li>
+          <a href="{% url 'user_profile:profile' follow.following.id %}">
+              {{ follow.following.username }}
+          </a>
+      </li>
+      {% endfor %}
+  </ul>
+</div>
+
+{% comment %} <a href="{% url 'notion:notion_home' %}">Back to Home</a> {% endcomment %}
+{% endblock %}

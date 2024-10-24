@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Post Notions</title>
+</head>
+<body>
+    <h1>Post Notions</h1>
+    <form id="notionForm" action="{% url 'notion:post_notion' %}" method="post" onsubmit="return validateForm()">
+        {% csrf_token %}
+        <textarea name="content" id="content" required></textarea>
+        <button type="submit">Notify</button>
+    </form>
+
+    <script>
+        function validateForm() {
+            var content = document.getElementById('content').value;
+            if (content.trim() === '') {
+                alert('Please input a notion.');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html>
