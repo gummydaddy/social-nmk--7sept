@@ -269,13 +269,14 @@ def upload_audio(request):
 
 
 # View function
+@login_required
 def voices(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
 
-    # Fetch all audio uploads, ordered by creation date
-    audio_files = Audio.objects.all().order_by('-created_at')
+    # Fetch all audio uploads, ordered by creation date, for visibility and ownership checks
+    audio_files = Audio.objects.filter(user=profile_user).order_by('-created_at')
 
-    # Filter audio based on privacy and relationship to the user
+    # Filter audio based on privacy and relationship to the requesting user
     filtered_audio = []
     for audio in audio_files:
         if audio.is_private and audio.user != request.user and not audio.tags.filter(id=request.user.id).exists():
@@ -286,7 +287,7 @@ def voices(request, user_id):
 
         filtered_audio.append(audio)
 
-    # Paginate the results, 100 audio files per page
+    # Paginate the results, showing 100 audio files per page
     paginator = Paginator(filtered_audio, 100)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -294,9 +295,10 @@ def voices(request, user_id):
     # Render the voices.html template and pass context
     return render(request, 'voices.html', {
         'page_obj': page_obj,
-        'audio_count': Audio.objects.count(),
+        'audio_count': Audio.objects.filter(user=profile_user).count(),
         'profile_user': profile_user,
     })
+
 
 
 
@@ -1107,6 +1109,7 @@ def delete_user_comment(request, comment_id):
     return redirect('user_profile:media_detail_view', media_id=media.id)
 
 
+
 @login_required
 def like_audio(request, audio_id):
     audio = get_object_or_404(Audio, id=audio_id)
@@ -1131,7 +1134,7 @@ def like_audio(request, audio_id):
         if request.user != audio.user:  # Avoid notifying the audio owner if they like their own audio
             Notification.objects.create(
                 user=audio.user,
-                content=f'{request.user.username} liked your audio: <a href="{reverse("user_profile:voices", args=[audio.id])}">View Audio</a>',
+                content=f'{request.user.username} liked your audio: <a href="{reverse("user_profile:voices", args=[audio.user.id])}">View Audio</a>',
                 type='like',
                 related_user=request.user,
                 related_audio=audio
@@ -1142,7 +1145,8 @@ def like_audio(request, audio_id):
         return JsonResponse({'liked': liked, 'like_count': audio.likes.count()})
 
     # Redirect back to the referring page or to the audio detail view
-    return redirect(request.META.get('HTTP_REFERER', reverse('user_profile:voices', args=[audio.id])))
+    return redirect(request.META.get('HTTP_REFERER', reverse('user_profile:voices', args=[audio.user.id])))
+
 
 
 @login_required
@@ -1174,7 +1178,7 @@ def comment_audio(request, audio_id):
                 # Create a clickable notification for the tagged user
                 Notification.objects.create(
                     user=tagged_user,
-                    content=f'{request.user.username} mentioned you in a comment: <a href="{reverse("user_profile:voices", args=[audio.id])}#{comment.id}">View Comment</a>',
+                    content=f'{request.user.username} mentioned you in a comment: <a href="{reverse("user_profile:voices", args=[audio.user.id])}#{comment.id}">View Comment</a>',
                     type='mention',
                     related_user=request.user,
                     related_audio=audio,
@@ -1187,28 +1191,46 @@ def comment_audio(request, audio_id):
         if request.user != audio.user:  # Avoid notifying the audio owner if they are commenting on their own audio
             Notification.objects.create(
                 user=audio.user,
-                content=f'{request.user.username} commented on your audio: <a href="{reverse("user_profile:voices", args=[audio.id])}#{comment.id}">View Comment</a>',
+                content=f'{request.user.username} commented on your audio: <a href="{reverse("user_profile:voices", args=[audio.user.id])}#{comment.id}">View Comment</a>',
                 type='comment',
                 related_user=request.user,
                 related_audio=audio,
                 comment=comment
             )
 
-        # Redirect to the audio detail view with the new comment's anchor (scroll to the comment)
-        return redirect(f"{reverse('user_profile:voices', args=[audio.id])}#{comment.id}")
+        # If AJAX request, return the comment details as JSON
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                'comment_id': comment.id,
+                'content': comment.content,
+                'user': request.user.username,
+                'created_at': comment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'like_count': audio.likes.count(),
+                'comment_count': audio.comments.count()
+            })
+
+        # Redirect to the audio page with the new comment's anchor
+        return redirect(f"{reverse('user_profile:voices', args=[audio.user.id])}#{comment.id}")
 
     # If not POST, fallback to redirecting to the audio detail page
-    return redirect(reverse('user_profile:voices', args=[audio.id]))
+    return redirect(reverse('user_profile:voices', args=[audio.user.id]))
 
 
 @login_required
 def delete_user_audio_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
+
+    # Ensure the comment is linked to audio
+    if not comment.audio:
+        return redirect('user_profile:voices', user_id=request.user.id)
+
     audio = comment.audio
     if request.user == comment.user or request.user == audio.user:
         comment.delete()
-        return redirect('user_profile:voices', audio_id=audio.id)
-    return redirect('user_profile:voices', audio_id=audio.id)
+
+    # Redirect back to the voices page for the user
+    return redirect(reverse('user_profile:voices', args=[audio.user.id]))
+
 
 
 
@@ -1370,6 +1392,27 @@ def delete_media(request, media_id):
 
     context = {'media': media}
     return render(request, 'user_profile/delete_media.html', context)
+
+
+@login_required
+def delete_audio(request, audio_id):
+    audio = get_object_or_404(Audio, id=audio_id)
+
+    # Ensure only the audio owner or an admin can delete the audio
+    if request.user != audio.user and not request.user.is_staff:
+        return redirect('user_profile:voices', user_id=audio.user.id)
+
+    if request.method == 'POST':
+        # Delete the audio file from storage and remove the audio instance
+        audio.file.delete(save=False)
+        audio.delete()
+
+        # Redirect to the user's profile or voices page after deletion
+        return redirect('user_profile:voices', user_id=audio.user.id)
+
+    # Render the confirmation page for deletion
+    context = {'audio': audio}
+    return render(request, 'user_profile/delete_audio.html', context)
 
 
 @login_required

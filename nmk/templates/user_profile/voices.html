@@ -128,7 +128,7 @@
           </div>
 
           <!-- Dropdown Menu for Additional Actions -->
-          {% comment %} <div class="dropdown">
+            <div class="dropdown">
               <span>⋮</span>
               <div class="dropdown-content">
                   <!-- Save/Unsave Button -->
@@ -140,12 +140,12 @@
                       {% csrf_token %}
                       <button type="submit" class="btn btn-danger">Delete</button>
                   </form>
-                  {% else %}
+                  {% comment %} {% else %}
                   <a href="{% url 'user_profile:not_interested_audio' audio.id %}">Not Interested</a>
-                  <a href="{% url 'user_profile:report_audio' audio.id %}">Report</a>
+                  <a href="{% url 'user_profile:report_audio' audio.id %}">Report</a> {% endcomment %}
                   {% endif %}
               </div>  
-          </div> {% endcomment %}
+            </div> 
         </div>
       </div>
     {% endfor %}
@@ -174,37 +174,68 @@
   const relatedContainer = document.getElementById('related-media-container');
     const loadingSpinner = document.getElementById('loading-spinner');
     let page = 1;
-    // Function to handle the like button click
-    function handleLikeButtonClick(event) {
-      event.preventDefault();
-      const likeLink = event.currentTarget;
-      const url = likeLink.getAttribute('data-url');
-      const csrfToken = likeLink.getAttribute('data-csrf-token');
+    // Handle Like Button Click with AJAX
+    document.querySelectorAll('.like-link').forEach(likeLink => {
+        likeLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            const url = this.getAttribute('data-url');
+            const likeCountElem = this.nextElementSibling;
 
-      fetch(url, {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken,
-              'X-Requested-With': 'XMLHttpRequest'
-          },
-          body: JSON.stringify({})
-      })
-      .then(response => response.json())
-      .then(data => {
-          const likeCount = likeLink.nextElementSibling;
-          likeCount.textContent = `${data.like_count} likes`;
-          if (data.liked) {
-              likeLink.classList.add('liked');
-              likeLink.textContent = '❤️';
-          } else {
-              likeLink.classList.remove('liked');
-              likeLink.textContent = '♡';
-          }
-      })
-      .catch(error => {
-          console.error('Error:', error);
-      });
-    }
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': this.getAttribute('data-csrf-token'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update like button and like count
+                if (data.liked) {
+                    this.innerHTML = '❤️';
+                    this.classList.add('liked');
+                } else {
+                    this.innerHTML = '♡';
+                    this.classList.remove('liked');
+                }
+                likeCountElem.textContent = `${data.like_count} likes`;
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+    // Handle Comment Form Submission with AJAX
+    document.querySelectorAll('.comment-form').forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const url = this.getAttribute('action');
+            const formData = new FormData(this);
+            const commentsContainer = document.querySelector(`#comments-${this.dataset.audioId}`);
+
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Create a new comment element and prepend it to the comments list
+                const newComment = document.createElement('div');
+                newComment.classList.add('comment');
+                newComment.innerHTML = `<strong>${data.user}</strong>: ${data.content} <br> ${data.created_at}`;
+                commentsContainer.prepend(newComment);
+
+                // Update the comment count
+                const commentCountBtn = document.querySelector(`#comment-count-${this.dataset.audioId}`);
+                commentCountBtn.textContent = `${data.comment_count} Comments`;
+
+                // Clear the input field
+                this.querySelector('input[name="content"]').value = '';
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    });
+
 </script>
 {% endblock %}
