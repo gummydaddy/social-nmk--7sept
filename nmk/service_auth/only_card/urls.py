@@ -23,8 +23,8 @@ app_name = "only_card"
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
-    path('', views.home, name="home"),
-    # path('', views.login_view, name="home"),
+    # path('', views.home, name="home"),
+    path('', views.login_view, name="home"),
     path("signup/", views.signup, name="signup"),
     # path("check_email_verification/<int:user_id>/", views.check_email_verification, name="check_email_verification"),
     # path('email_verification/<str:token>/<str:email>/', views.email_verification, name='email_verification'),

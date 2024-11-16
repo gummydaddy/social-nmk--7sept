@@ -24,6 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 
+# settings.py
+APP_NAME = "Socyfie"
 
 
 ALLOWED_HOSTS = ['127.0.0.1', "8080", "localhost", "www.socyfie.com"]
@@ -225,6 +227,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                'django.template.context_processors.request',
             ],
         },
     },

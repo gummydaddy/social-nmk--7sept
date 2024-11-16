@@ -1,11 +1,15 @@
 {% load media_filters %}
+{% load static %}
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Only</title>
+    <title>Socyfie</title>
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+
+
 
     <!-- Add this in the <head> of your base template or specific template  for upload search -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
@@ -452,6 +456,31 @@
             font-size: small;
             {% comment %} line-height: inherit; {% endcomment %}
           }
+          /* style.css */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff; /* Background color for splash screen */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 9999; /* Ensure it appears above other content */
+        }
+
+        .splash-logo {
+            width: 150px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        #splash-content {
+            display: none; /* Hide main content initially */
+        }
+
         
     </style>
     {% load static %}
@@ -466,255 +495,283 @@
     {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}
 </head>
 <body style="padding-bottom: 60px;">
-    <div class="content-container">
+    <!-- Splash Screen Container -->
+    <div id="splash-screen">
+        <img src="{% static 'images/logo.png' %}" alt="App Logo" class="splash-logo">
+        <h1>Welcome to Socyfie</h1>
+    </div>
 
-        <div id="mySidebar" class="sidebar">
-            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
-            <div>
-                <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
-                  <i class="fas fa-bell"></i>
-                </button>
-              </div>
-            <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a>
-            {% comment %} <a class="dropdown-toggle" href="#" id="servicesDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
-                Services
-                <div class="dropdown-menu" aria-labelledby="servicesDropdown">
-                    <a class="dropdown-item" href="{% url 'only_card:service1' %}">Service 1</a>
-                    <a class="dropdown-item" href="{% url 'only_card:service2' %}">Service 2</a>
-                    <a class="dropdown-item" href="{% url 'only_card:service3' %}">Service 3</a>
-                </div>
-            </a> {% endcomment %}
-            <a href="{% url 'only_card:upload_document' %}">Upload Documents</a>
-            <a>
-                {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
-                <button type="button" class="btn btn-primary" >ASSOCIATION SIGN UP<br>comming soon </button>
-                {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
-                <button type="button" class="btn btn-primary" >Register as Service Provider<br>comming soon </button>
+    <!-- Main Content -->
+    <div id="splash-content" style="display: none;">
+        {% block splash %}
+        <div class="content-container">
 
-                {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
-                {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
-                <button type="button" class="btn btn-primary" >Send File<br>comming soon </button>
-            </a>
-
-            
-            <a href="{% url 'only_card:create_card' %}">Create Card</a>
-            <a>
-                <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
-            </a>
-            <a href="{% url 'user_profile:blocked_user_list' %}">
-                <button type="button">View Blocked Users</button>
-            </a>
-            <a href="{% url 'user_profile:buddy_list' %}">
-              <button type="button">View Buddies</button>
-            </a>
-            <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
-        </div>
-
-        <header>
-            {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
-                
-                <nav class="navbar navbar-expand-lg navbar-dark bg-black">
-                    <div class="container">
-                        <a href="{% url 'only_message:message_list_view' %}" class="button-link">
-                            <button class="messagebtn"> 💬 </button>
-                        </a>
-
-                        <form method="GET" action="{% url 'user_profile:search_users' %}">
-                            <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
-                            <button type="submit">Search</button>
-                        </form>
-                        
-                        <button class="openbtn" onclick="openNav()">☰ </button>
+            <div id="mySidebar" class="sidebar">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+                <div>
+                    <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+                      <i class="fas fa-bell"></i>
+                    </button>
+                  </div>
+                <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a>
+                {% comment %} <a class="dropdown-toggle" href="#" id="servicesDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
+                    Services
+                    <div class="dropdown-menu" aria-labelledby="servicesDropdown">
+                        <a class="dropdown-item" href="{% url 'only_card:service1' %}">Service 1</a>
+                        <a class="dropdown-item" href="{% url 'only_card:service2' %}">Service 2</a>
+                        <a class="dropdown-item" href="{% url 'only_card:service3' %}">Service 3</a>
                     </div>
-                </nav>
+                </a> {% endcomment %}
+                <a href="{% url 'only_card:upload_document' %}">Upload Documents</a>
+                <a>
+                    {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
+                    <button type="button" class="btn btn-primary" >ASSOCIATION SIGN UP<br>comming soon </button>
+                    {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
+                    <button type="button" class="btn btn-primary" >Register as Service Provider<br>comming soon </button>
+    
+                    {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
+                    {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
+                    <button type="button" class="btn btn-primary" >Send File<br>comming soon </button>
+                </a>
+    
                 
-                
-            <!-- Profile Picture Section -->
-        </header>
-
-        <main id="main">
-            {% block main_content %}
-            <!-- card_snippet.html -->
-            <div class="card">
-                {% if user_card.card_image %}
-                    <img src="{{ user_card.card_image.url }}" alt="Card Image" style="width: 60px; height: 55px;">
-                {% else %}
-                    <img src="owner_image.jpg" alt="Owner Image" style="width: 60px; height: 55px; border-radius: 100%;">
-                {% endif %}
-                <p>{{ request.user.username }}</p>
-                <p> {{ user_card.card_number }}</p>
+                <a href="{% url 'only_card:create_card' %}">Create Card</a>
+                <a>
+                    <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
+                </a>
+                <a href="{% url 'user_profile:blocked_user_list' %}">
+                    <button type="button">View Blocked Users</button>
+                </a>
+                <a href="{% url 'user_profile:buddy_list' %}">
+                  <button type="button">View Buddies</button>
+                </a>
+                <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
-            
-            <div class="container my-5">
-                <div class="row">
-                    <div class="col-12 text-center">
-                        <!--<h1>Welcome, {{ user_username }}!</h1>-->
-                    </div>
+    
+            <header>
+                {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
+                    
+                    <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+                        <div class="container">
+                            <a href="{% url 'only_message:message_list_view' %}" class="button-link">
+                                <button class="messagebtn"> 💬 </button>
+                            </a>
+    
+                            <form method="GET" action="{% url 'user_profile:search_users' %}">
+                                <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                                <button type="submit">Search</button>
+                            </form>
+                            
+                            <button class="openbtn" onclick="openNav()">☰ </button>
+                        </div>
+                    </nav>
+                    
+                    
+                <!-- Profile Picture Section -->
+            </header>
+    
+            <main id="main">
+                {% block main_content %}
+                <!-- card_snippet.html -->
+                <div class="card">
+                    {% if user_card.card_image %}
+                        <img src="{{ user_card.card_image.url }}" alt="Card Image" style="width: 60px; height: 55px;">
+                    {% else %}
+                        <img src="owner_image.jpg" alt="Owner Image" style="width: 60px; height: 55px; border-radius: 100%;">
+                    {% endif %}
+                    <p>{{ request.user.username }}</p>
+                    <p> {{ user_card.card_number }}</p>
                 </div>
-                <div class="row my-3">
-                    {% if user_uploads %}
-                        {% for upload in user_uploads %}
-                            <div class="col-md-4 mb-4">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ upload.file_name }}</h5>
-                                        <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
-                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
-                                        <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-danger">Delete</button>
-                                        </form>
+                
+                <div class="container my-5">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <!--<h1>Welcome, {{ user_username }}!</h1>-->
+                        </div>
+                    </div>
+                    <div class="row my-3">
+                        {% if user_uploads %}
+                            {% for upload in user_uploads %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ upload.file_name }}</h5>
+                                            <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
+                                            <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if forloop.counter|divisibleby:3 %}
+                                    </div>
+                                    <div class="row">
+                                {% endif %}
+                            {% endfor %}
+                        {% comment %} {% else %} {% endcomment %}
+                            <div class="col-12 text-center">
+                                <p>we are still working on the display of videos and excel data appologies for the inconivience </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Modals for each file -->
+                    {% for upload in user_uploads %}
+                        <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="fileModal{{ upload.id }}Label">{{ upload.file_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Uploaded on: {{ upload.upload_date }}</p>
+                                        <p>Document Type: {{ upload.document_type }}</p>
+                                        <p>Country: {{ upload.country }}</p>
+                        
+                                        <!-- Display the uploaded file -->
+                                        {% if ".jpg" in upload.file.name or ".jpeg" in upload.file.name or ".png" in upload.file.name %}
+                                            <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        {% elif ".mp4" in upload.file.name or ".mov" in upload.file.name %}
+                                            <video controls class="img-fluid">
+                                                <source src="{% url 'only_card:view_file' upload.id %}" type="video/mp4">
+                                                Your browser does not support the video tag.
+                                            </video>
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
+                                        
+                                        {% elif ".pdf" in upload.file.name %}
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
+                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
+                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
+    
+                                        {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
+                                            <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
+    
+                                        {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
+                                            <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
+                                            <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
+                                            <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
+                                            <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                            <!-- Button to download the Excel file -->
+                                            <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
+    
+                                        
+                                        {% elif ".xml" in upload.file.name %}
+                                            <!-- XML files -->
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="600px" />
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        
+                                        {% elif ".zip" in upload.file.name or ".xlsx" in upload.file.name %}
+                                            <!-- ZIP and XLSX files (served as ZIP) -->
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        
+    
+                                        {% elif ".pptx" in upload.file.name %}
+                                            <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
+                                            {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
+    
+                                        {% elif ".txt" in upload.file.name or ".py" in upload.file.name or ".js" in upload.file.name %}
+                                            <!-- Handle .py, .js, and .txt files -->
+                                            <pre class="
+                                            {% if '.py' in upload.file.name %}
+                                                        language-python
+                                                    {% elif '.js' in upload.file.name %}
+                                                        language-javascript
+                                                    {% elif '.txt' in upload.file.name %}
+                                                        language-text
+                                                    {% endif %}
+                                                ">
+                                                    {{ upload.file.read|safe }}
+                                                    
+                                            </pre>
+                                            <!-- Download option for these files -->
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{ upload.file_name }}</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                        
+                                        {% else %}
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                            {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
+    
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
-                            {% if forloop.counter|divisibleby:3 %}
-                                </div>
-                                <div class="row">
-                            {% endif %}
-                        {% endfor %}
-                    {% comment %} {% else %} {% endcomment %}
-                        <div class="col-12 text-center">
-                            <p>we are still working on the display of videos and excel data appologies for the inconivience </p>
                         </div>
-                    {% endif %}
-                </div>
-                
-                <!-- Modals for each file -->
-                {% for upload in user_uploads %}
-                    <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="fileModal{{ upload.id }}Label">{{ upload.file_name }}</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>Uploaded on: {{ upload.upload_date }}</p>
-                                    <p>Document Type: {{ upload.document_type }}</p>
-                                    <p>Country: {{ upload.country }}</p>
+                    {% endfor %}
+    
                     
-                                    <!-- Display the uploaded file -->
-                                    {% if ".jpg" in upload.file.name or ".jpeg" in upload.file.name or ".png" in upload.file.name %}
-                                        <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                    {% elif ".mp4" in upload.file.name or ".mov" in upload.file.name %}
-                                        <video controls class="img-fluid">
-                                            <source src="{% url 'only_card:view_file' upload.id %}" type="video/mp4">
-                                            Your browser does not support the video tag.
-                                        </video>
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
-                                    
-                                    {% elif ".pdf" in upload.file.name %}
-                                        <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
-                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
-                                        <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
-
-                                    {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
-                                        <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
-
-                                    {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
-                                        <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
-                                        <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
-                                        <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
-                                        <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
-                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
-                                        <!-- Button to download the Excel file -->
-                                        <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
-
-                                    
-                                    {% elif ".xml" in upload.file.name %}
-                                        <!-- XML files -->
-                                        <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="600px" />
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                    
-                                    {% elif ".zip" in upload.file.name or ".xlsx" in upload.file.name %}
-                                        <!-- ZIP and XLSX files (served as ZIP) -->
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                    
-
-                                    {% elif ".pptx" in upload.file.name %}
-                                        <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
-                                        {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
-                                        <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
-
-                                    {% elif ".txt" in upload.file.name or ".py" in upload.file.name or ".js" in upload.file.name %}
-                                        <!-- Handle .py, .js, and .txt files -->
-                                        <pre class="
-                                        {% if '.py' in upload.file.name %}
-                                                    language-python
-                                                {% elif '.js' in upload.file.name %}
-                                                    language-javascript
-                                                {% elif '.txt' in upload.file.name %}
-                                                    language-text
-                                                {% endif %}
-                                            ">
-                                                {{ upload.file.read|safe }}
-                                                
-                                        </pre>
-                                        <!-- Download option for these files -->
-                                        <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{ upload.file_name }}</a>
-                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
-                                    
-                                    {% else %}
-                                        <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
-                                        <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
-                                        {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
-
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-
-                
-        <!-- Main content of landing_page.html goes here -->
-            {% endblock %}
-
-            {% comment %} subgroup {% endcomment %}
-            {% block Subgroup %}
-
-            {% endblock %}
-
-            {% comment %} messages {% endcomment %}
-            {% block content %}
-            
-            {% endblock %}
-
-            {% block media_detail_content%}
-            {% endblock %}
-            
-        </main>
-        {% block footer %}
-
-        <footer class="bg-primary text-white bg-black py-3">
-            <div class="bottom-strip d-flex justify-content-around">
-
-                <div class="home bg-white">
-                    <a href="{% url 'only_card:landing_page' %}">
-                        <i class="fas fa-home"></i>
-                    </a>
-                </div>
-
-                {% block new_notion %}
-
-                <div class="notion bg-white">
-                    <a href="{% url 'notion:notion_home' notion_id=request.user.id%}">notions</a>
-                </div>
-
+            <!-- Main content of landing_page.html goes here -->
                 {% endblock %}
-
-                <div class="profile bg-white">
-                    {% comment %} <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button"> {% endcomment %}
-                    <a href="{% url 'user_profile:following_media' %}" class="profile-button">
-                        <i class="fas fa-user-circle"></i>
-                    </a>
+    
+                {% comment %} subgroup {% endcomment %}
+                {% block Subgroup %}
+    
+                {% endblock %}
+    
+                {% comment %} messages {% endcomment %}
+                {% block content %}
+                
+                {% endblock %}
+    
+                {% block media_detail_content%}
+                {% endblock %}
+                
+            </main>
+    
+            {% block footer %}
+            <footer class="bg-primary text-white bg-black py-3">
+                <div class="bottom-strip d-flex justify-content-around">
+    
+                    <div class="home bg-white">
+                        <a href="{% url 'only_card:landing_page' %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+    
+                    {% block new_notion %}
+    
+                    <div class="notion bg-white">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id%}">notions</a>
+                    </div>
+    
+                    {% endblock %}
+    
+                    <div class="profile bg-white">
+                        {% comment %} <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button"> {% endcomment %}
+                        <a href="{% url 'user_profile:following_media' %}" class="profile-button">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </div>
                 </div>
-            </div>
-        </footer>
-        {%endblock%}
+            </footer>
+            {%endblock%}
+        {% endblock %}
+    </div>
+
+    {% comment %} <script src="{% static 'js/script.js' %}"></script> {% endcomment %}
+
+    <script>
+        window.addEventListener('load', function() {
+            const splashScreen = document.getElementById('splash-screen');
+            const mainContent = document.getElementById('splash-content');
         
+            // Hide splash screen after 1 seconds, then display main content
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+                mainContent.style.display = 'block';
+            }, 200); // Adjust timing as needed
+        });
+    </script>
+
+            
+
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
             {% comment %} navigation bar {% endcomment %}
             <script>

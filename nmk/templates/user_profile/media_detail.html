@@ -106,7 +106,7 @@
     </a>
     <div class="media-detail">
         {% if media.file.url|is_video %}
-            <video controls class="img-fluid autoplay-video" >
+            <video controls class="img-fluid autoplay-video" unmute>
                 <source src="{{ media.file.url }}" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
@@ -115,6 +115,7 @@
         {% endif %}
         <div class="description">
             <p>{{ description|safe }}</p>
+            <h8>{{ media.created_at }}</h8>
         </div>
         <div class="actions">
             <div>
