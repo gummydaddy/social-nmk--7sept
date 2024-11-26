@@ -170,12 +170,12 @@
 </div>
 
 <!-- Loading Spinner -->
-<div id="loading-spinner" style="display: none;">
+{% comment %} <div id="loading-spinner" style="display: none;">
     <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-</div>
+</div> {% endcomment %}
 
 <!-- Pagination controls -->
-<div class="pagination">
+{% comment %} <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
             <a href="?page=1">&laquo; first</a>
@@ -190,7 +190,24 @@
             <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
         {% endif %}
     </span>
+</div> {% endcomment %}
+
+<div class="pagination">
+    <span class="step-links">
+        {% if related_media.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ related_media.previous_page_number }}">previous</a>
+        {% endif %}
+        <span class="current">
+            Page {{ related_media.number }} of {{ related_media.paginator.num_pages }}.
+        </span>
+        {% if related_media.has_next %}
+            <a href="?page={{ related_media.next_page_number }}">next</a>
+            <a href="?page={{ related_media.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
 </div>
+
 {% endblock %}
 
 {% block explore_detail_script %}

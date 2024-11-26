@@ -22,7 +22,7 @@ from PIL import Image, ImageFilter, ImageOps
 import io
 import tempfile
 from moviepy.editor import VideoFileClip, AudioFileClip
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from .serializers import MediaSerializer
 from django.views.decorators.http import require_POST
@@ -751,7 +751,18 @@ def explore_detail(request, media_id):
 
     # Sort related media by score
     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
-    related_media = [m[0] for m in sorted_media][:100]
+    related_media = [m[0] for m in sorted_media]
+
+    # Pagination logic
+    paginator = Paginator(related_media, 10)  # Show 10 items per page
+    page = request.GET.get('page', 1)
+
+    try:
+        related_media_paginated = paginator.page(page)
+    except PageNotAnInteger:
+        related_media_paginated = paginator.page(1)
+    except EmptyPage:
+        related_media_paginated = paginator.page(paginator.num_pages)
 
     # Engagement tracking
     if not Engagement.objects.filter(user=request.user, media=media, engagement_type='view').exists():
@@ -780,18 +791,18 @@ def explore_detail(request, media_id):
                 'file_url': m.file.url,
                 'is_video': m.file.url.endswith('.mp4'),
                 'user_username': m.user.username
-            } for m in related_media
+            } for m in related_media_paginated
         ]
         return JsonResponse({'media': media_data, 'related_media': related_media_list})
 
     return render(request, 'explore_detail.html', {
         'media': media,
-        'related_media': related_media,
+        'related_media': related_media_paginated,
         'description': description,
         'is_buddy': is_buddy,
         'is_following': is_following,
         'has_blocked_media_owner': has_blocked_media_owner,
-        'is_blocked_by_media_owner': is_blocked_by_media_owner
+        'is_blocked_by_media_owner': is_blocked_by_media_owner,
     })
 
 
@@ -1529,7 +1540,8 @@ def add_story(request):
             user=request.user,
             file=file,
             description=description,
-            media_type=file.content_type.split('/')[0]
+            media_type=file.content_type.split('/')[0],
+            is_private = True
         )
         
         story = Story.objects.create(user=request.user, media=media)

@@ -24,4 +24,8 @@ app.conf.beat_schedule =  {
         'task': 'service_auth.notion.tasks.delete_old_notions',
         'schedule': crontab(minute='*'),
     },
+    'delete-expired-stories-every-hour': {
+        'task': 'service_auth.user_profile.tasks.delete_expired_stories',
+        'schedule': crontab(minute='*'),  # Runs hourly
+    },
 }

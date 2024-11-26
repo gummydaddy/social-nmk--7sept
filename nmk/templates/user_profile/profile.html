@@ -147,9 +147,10 @@
                 </form>
             </div>
         </div>
-        <div class="row row-cols-2 g-4">
+        <div class="row row-cols-3 g-4">
             <button type="button" class="btn btn-primary" onclick="location.href='{% url 'only_message:user_messages_view' username=profile_user %}'">💬  </button>
             <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=profile_user.id %}'">Tags 🔖</button>
+            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:voices' user_id=profile_user.id %}'">Voices</button>
         </div>
 
 

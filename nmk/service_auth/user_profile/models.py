@@ -44,6 +44,7 @@ class Media(models.Model):
     report_count = models.IntegerField(default=0)
     tags = models.ManyToManyField(AuthUser, related_name='tagged_media', blank=True)  # New field for tagging users
     is_private = models.BooleanField(default=False)  # New field to track privacy
+    is_story = models.BooleanField(default=False)  # New field to differentiate story media
     
     def __str__(self):
         return self.description
