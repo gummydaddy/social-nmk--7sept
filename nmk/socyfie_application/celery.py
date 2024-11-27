@@ -28,4 +28,8 @@ app.conf.beat_schedule =  {
         'task': 'service_auth.user_profile.tasks.delete_expired_stories',
         'schedule': crontab(minute='*'),  # Runs hourly
     },
+    'delete-old-notifications-every-day': {
+        'task': 'service_auth.notion.tasks.delete_old_notifications',
+        'schedule': crontab(minute='*'),  # Runs daily at midnight
+    },
 }
