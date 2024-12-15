@@ -19,7 +19,7 @@ urlpatterns = [
     
     path('upload-audio/', views.upload_audio, name='upload_audio'),
     path('delete_audio/delete/<int:audio_id>/', views.delete_audio, name='delete_audio'),
-    path('voices/<int:user_id>/', views.voices, name='voices'),  # Ensure this line is correct
+    path('voices/<int:user_id>/', views.voices, name='voices'),  #
     path('like_audio/<int:audio_id>/', views.like_audio, name='like_audio'),
     path('comment_audio/<int:audio_id>/', views.comment_audio, name='comment_audio'),
     path('delete_user_audio_comment/<int:comment_id>/', views.delete_user_audio_comment, name='delete_user_audio_comment'),

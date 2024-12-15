@@ -106,6 +106,18 @@
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger">Delete</button>
             </form>
+
+            <button type="button" class="btn btn-primary" id="media-privacy-button" data-media-id="{{ media.id }}">
+                {% if media.is_private or user.profile.is_private %}
+                    {% if not is_following and request.user != user %}
+                        Private (Follow {{ user.username }} to access)
+                    {% else %}
+                        {{ media.is_private|yesno:'Private,Public' }}{{ user.profile.is_private|yesno:', Private' }}
+                    {% endif %}
+                {% else %}
+                    Public
+                {% endif %}
+            </button> 
         {% endif %}
     </div>
 </div>

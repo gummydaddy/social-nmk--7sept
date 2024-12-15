@@ -1531,17 +1531,41 @@ def saved_uploads(request):
 
 
 @login_required
+# def add_story(request):
+#     if request.method == 'POST':
+#         file = request.FILES.get('file')
+#         description = request.POST.get('description')
+        
+#         media = Media.objects.create(
+#             user=request.user,
+#             file=file,
+#             description=description,
+#             media_type=file.content_type.split('/')[0],
+#             is_private = True
+#         )
+        
+#         story = Story.objects.create(user=request.user, media=media)
+        
+#         # Redirect to the `view_story` page with the new story's id
+#         return redirect('user_profile:view_story', story_id=story.id)
+
+#     return render(request, 'add_story.html')
+
+
 def add_story(request):
     if request.method == 'POST':
         file = request.FILES.get('file')
-        description = request.POST.get('description')
-        
+        user_description = request.POST.get('description', '')
+
+        # Prepend "story " to the description provided by the user
+        description = f"story {user_description.strip()}" if user_description else "story "
+
         media = Media.objects.create(
             user=request.user,
             file=file,
             description=description,
             media_type=file.content_type.split('/')[0],
-            is_private = True
+            is_private=True
         )
         
         story = Story.objects.create(user=request.user, media=media)
@@ -1550,6 +1574,7 @@ def add_story(request):
         return redirect('user_profile:view_story', story_id=story.id)
 
     return render(request, 'add_story.html')
+
 
 
 @login_required

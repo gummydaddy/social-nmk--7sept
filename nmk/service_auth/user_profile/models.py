@@ -79,9 +79,11 @@ class Audio(models.Model):
 
 
 
+
 class Story(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='stories')
-    media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='stories')
+    # media = models.ForeignKey(Media, on_delete=models.CASCADE, related_name='stories')
+    media = models.OneToOneField(Media, on_delete=models.CASCADE)  # Ensure cascade delete
     created_at = models.DateTimeField(auto_now_add=True)
     viewers = models.ManyToManyField(AuthUser, related_name='viewed_stories', blank=True)
     
