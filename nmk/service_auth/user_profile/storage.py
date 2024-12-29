@@ -57,51 +57,51 @@ class CompressedMediaStorage(FileSystemStorage):
         return super()._save(name, content)
 
 
-    # def compress_image(self, content, ext, name):
-    #     logger.info(f"Compressing image: {name}")
-    #     logger.info(f"Original image size: {os.path.getsize(content.temporary_file_path())} bytes")
-    #     try:
-    #         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
-    #             with Image.open(content) as img:
-    #                 img = self.resize_image(img)
-    #                 img.save(tmp_file.name, optimize=True, quality=self.image_quality)
-    #             tmp_file.seek(0)
-    #             file_size = os.path.getsize(tmp_file.name)
-    #             logger.info(f"Compressed image {name}, size: {file_size} bytes")
-    #             return InMemoryUploadedFile(
-    #                 open(tmp_file.name, 'rb'), None, name, f'image/{ext[1:]}', file_size, None
-    #             )
-    #     except Exception as e:
-    #         logger.error(f"Error compressing image {name}: {e}")
-    #         return content  # Return original content if compression fails
-
     def compress_image(self, content, ext, name):
         logger.info(f"Compressing image: {name}")
-
-        # Ensure the file is on disk and has a temporary_file_path
-        content = self.ensure_file_on_disk(content)
-
-        try:
-            # Log the original file size using the temporary file path
-            original_size = os.path.getsize(content.temporary_file_path)
-            logger.info(f"Original image size: {original_size} bytes")
-        except Exception as e:
-            logger.warning(f"Unable to retrieve original image size: {e}")
-
+        # logger.info(f"Original image size: {os.path.getsize(content.temporary_file_path())} bytes")
         try:
             with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
-                with Image.open(content.temporary_file_path) as img:
+                with Image.open(content) as img:
                     img = self.resize_image(img)
                     img.save(tmp_file.name, optimize=True, quality=self.image_quality)
                 tmp_file.seek(0)
-                compressed_size = os.path.getsize(tmp_file.name)
-                logger.info(f"Compressed image {name}, size: {compressed_size} bytes")
+                file_size = os.path.getsize(tmp_file.name)
+                logger.info(f"Compressed image {name}, size: {file_size} bytes")
                 return InMemoryUploadedFile(
-                    open(tmp_file.name, 'rb'), None, name, f'image/{ext[1:]}', compressed_size, None
+                    open(tmp_file.name, 'rb'), None, name, f'image/{ext[1:]}', file_size, None
                 )
         except Exception as e:
             logger.error(f"Error compressing image {name}: {e}")
             return content  # Return original content if compression fails
+
+    # def compress_image(self, content, ext, name):
+    #     logger.info(f"Compressing image: {name}")
+
+    #     # Ensure the file is on disk and has a temporary_file_path
+    #     content = self.ensure_file_on_disk(content)
+
+    #     try:
+    #         # Log the original file size using the temporary file path
+    #         original_size = os.path.getsize(content.temporary_file_path)
+    #         logger.info(f"Original image size: {original_size} bytes")
+    #     except Exception as e:
+    #         logger.warning(f"Unable to retrieve original image size: {e}")
+
+    #     try:
+    #         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
+    #             with Image.open(content.temporary_file_path) as img:
+    #                 img = self.resize_image(img)
+    #                 img.save(tmp_file.name, optimize=True, quality=self.image_quality)
+    #             tmp_file.seek(0)
+    #             compressed_size = os.path.getsize(tmp_file.name)
+    #             logger.info(f"Compressed image {name}, size: {compressed_size} bytes")
+    #             return InMemoryUploadedFile(
+    #                 open(tmp_file.name, 'rb'), None, name, f'image/{ext[1:]}', compressed_size, None
+    #             )
+    #     except Exception as e:
+    #         logger.error(f"Error compressing image {name}: {e}")
+    #         return content  # Return original content if compression fails
         finally:
             if hasattr(content, 'temporary_file_path'):
                 try:
@@ -119,7 +119,7 @@ class CompressedMediaStorage(FileSystemStorage):
 
     def compress_video(self, content, ext, name):
         logger.info(f"Compressing video: {name} with ffmpeg")
-        logger.debug(f"Running ffmpeg command: {' '.join(self.get_ffmpeg_command(content, ext, name))}")
+        # logger.debug(f"Running ffmpeg command: {' '.join(self.get_ffmpeg_command(content, ext, name))}")
         try:
             with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
                 tmp_file.write(content.read())

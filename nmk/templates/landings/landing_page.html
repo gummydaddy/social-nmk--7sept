@@ -513,6 +513,10 @@
                       <i class="fas fa-bell"></i>
                     </button>
                   </div>
+                <form method="GET" action="{% url 'user_profile:search_users' %}">
+                    <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                    <button type="submit">Search</button>
+                </form>
                 <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a>
                 {% comment %} <a class="dropdown-toggle" href="#" id="servicesDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
                     Services
@@ -557,10 +561,10 @@
                                 <button class="messagebtn"> 💬 </button>
                             </a>
     
-                            <form method="GET" action="{% url 'user_profile:search_users' %}">
+                            {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
                                 <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
                                 <button type="submit">Search</button>
-                            </form>
+                            </form> {% endcomment %}
                             
                             <button class="openbtn" onclick="openNav()">☰ </button>
                         </div>

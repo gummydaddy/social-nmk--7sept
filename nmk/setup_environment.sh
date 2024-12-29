@@ -59,7 +59,7 @@ python3 manage.py runsslserver &
 # Start Celery (worker and beat services)
 echo "Starting Celery worker and beat services..."
 
-# Run Celery worker
+# Run Celery workerc
 celery -A socyfie_application worker --loglevel=info -n worker1@%h &
 
 

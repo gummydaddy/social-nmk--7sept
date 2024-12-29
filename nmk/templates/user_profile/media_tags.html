@@ -4,7 +4,8 @@
 
 
 {% block main_content %}
-<h2>{{ profile_user.username }}'s Tagged Media</h2>
+{% comment %} <h2>{{ profile_user.username }}'s Tagged Media</h2> {% endcomment %}
+<h2> Tagged Media</h2>
 <div class="row row-cols-3 g-4" id="media-container">
     {% for media in page_obj %}
         <div class="col media-item">
@@ -26,7 +27,7 @@
         </div>
     {% endfor %}
 </div>
-
+<br>
 <!-- Pagination -->
 <div class="pagination">
     <span class="step-links">

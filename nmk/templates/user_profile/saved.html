@@ -3,9 +3,9 @@
 {% load custom_filters %}
 
 {% block main_content %}
-<button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
+{% comment %} <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
     <i class="fas fa-globe"></i>
-</button>
+</button> {% endcomment %}
 <div>
     <form method="GET" action=".">
         <input type="text" name="hashtag" placeholder="Search by hashtag" value="{{ hashtag_filter }}">
@@ -39,6 +39,7 @@
 <div id="loading-spinner" style="display: none;">
     <img src="{% static 'img/loading_spinner.gif' %}" alt="Loading...">
 </div>
+<br>
 
 <!-- Pagination controls -->
 <div class="pagination">

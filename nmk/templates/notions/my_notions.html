@@ -2,15 +2,15 @@
 {% load static %}
 
 {% block main_content %}
-<button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id%}'">
+{% comment %} <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id%}'">
   <i class="fas fa-globe"></i>
-</button>
+</button> {% endcomment %}
 <!-- Profile info -->
 <h2>{{ user.username }}</h2>
 
-<button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+{% comment %} <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
   <i class="fas fa-bell"></i>
-</button>
+</button> {% endcomment %}
 
 <style>
 
@@ -65,6 +65,32 @@
     background-color: #f9f9f9;
   }
 </style>
+
+<header>
+  {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
+      
+      <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+          <div class="container">
+              <a href="{% url 'only_message:message_list_view' %}" class="button-link">
+                  <button class="messagebtn"> 💬 </button>
+              </a>
+
+              {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
+                  <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                  <button type="submit">Search</button>
+              </form> {% endcomment %}
+              <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
+                <i class="fas fa-globe"></i>
+              </button>
+              
+              <button class="openbtn" onclick="openNav()">☰ </button>
+          </div>
+      </nav>
+      
+      
+  <!-- Profile Picture Section -->
+</header>
+
 <form method="GET" action="{% url 'notion:search_users' %}">
   <input type="text" name="q" placeholder="Search users">
   <button type="submit">Search</button>

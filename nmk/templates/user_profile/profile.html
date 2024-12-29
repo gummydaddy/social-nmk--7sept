@@ -57,12 +57,36 @@
     }
 
 </style>
+<header>
+    {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
+        
+        <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+            <div class="container">
+                <a href="{% url 'only_message:message_list_view' %}" class="button-link">
+                    <button class="messagebtn"> 💬 </button>
+                </a>
+
+                {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
+                    <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                    <button type="submit">Search</button>
+                </form> {% endcomment %}
+                <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
+                    <i class="fas fa-globe"></i>
+                </button>
+                
+                <button class="openbtn" onclick="openNav()">☰ </button>
+            </div>
+        </nav>
+        
+        
+    <!-- Profile Picture Section -->
+</header>
 <div class="profile-container">
     {% block profile_header_content %}
     <div class="profile-section">
-        <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
+        {% comment %} <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
             <i class="fas fa-globe"></i>
-        </button>
+        </button> {% endcomment %}
         <div class="profile-info">
             {% comment %} <h2>{{ profile_user.username }}</h2> {% endcomment %}
             <p>
