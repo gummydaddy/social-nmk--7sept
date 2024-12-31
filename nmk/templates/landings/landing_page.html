@@ -162,7 +162,7 @@
         .card {
             width: 60.8mm;
             height: 53.98mm;
-            background: linear-gradient(to right, #ffa500, #0000ff, #ff0000);
+            background: linear-gradient(to right, #4169E1, #1e90ff, #4169E1, #1e90ff, #4169E1);
             border: 1px solid #ccc;
             border-radius: 5px;
             position: relative;
@@ -366,44 +366,6 @@
             color: black;
             border: 1px;
         }
-
-        {% comment %} .message-container {
-            width: 100%;
-            height: 60vh;
-            border: 1px solid #ccc;
-            background-color: #fff0ff;
-            overflow-y: scroll;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-          
-        .message-container ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-          
-        .message-container ul li {
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            max-width: 60%;
-            font-size: 12px; /* Set the text size for all messages */
-        }
-          
-        .sender-message {
-            background-color: #e1ffc7;
-            text-align: right;
-            margin-left: auto;
-            font-size: 12px; /* Optional: Customize text size specifically for sender messages */
-        }
-          
-        .recipient-message {
-            background-color: #f1f1f1;
-            text-align: left;
-            margin-right: auto;
-            font-size: 12px; /* Optional: Customize text size specifically for recipient messages */
-        }{% endcomment %}
           
         form {
             width: auto;
@@ -508,16 +470,20 @@
 
             <div id="mySidebar" class="sidebar">
                 <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
-                <div>
-                    <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
-                      <i class="fas fa-bell"></i>
-                    </button>
-                  </div>
-                <form method="GET" action="{% url 'user_profile:search_users' %}">
-                    <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
-                    <button type="submit">Search</button>
-                </form>
-                <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a>
+                <a>
+                    <div>
+                        <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+                        <i class="fas fa-bell"></i>
+                        </button>
+                    </div>
+                </a>
+                <a>
+                    <form method="GET" action="{% url 'user_profile:search_users' %}">
+                        <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                        <button type="submit">Search</button>
+                    </form>
+                </a>
+
                 {% comment %} <a class="dropdown-toggle" href="#" id="servicesDropdown" role="button" data-toggle="dropdown" aria-expanded="false">
                     Services
                     <div class="dropdown-menu" aria-labelledby="servicesDropdown">
@@ -526,29 +492,39 @@
                         <a class="dropdown-item" href="{% url 'only_card:service3' %}">Service 3</a>
                     </div>
                 </a> {% endcomment %}
-                <a href="{% url 'only_card:upload_document' %}">Upload Documents</a>
-                <a>
-                    {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
-                    <button type="button" class="btn btn-primary" >ASSOCIATION SIGN UP<br>comming soon </button>
-                    {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
-                    <button type="button" class="btn btn-primary" >Register as Service Provider<br>comming soon </button>
-    
-                    {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
-                    {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
-                    <button type="button" class="btn btn-primary" >Send File<br>comming soon </button>
-                </a>
-    
-                
-                <a href="{% url 'only_card:create_card' %}">Create Card</a>
-                <a>
-                    <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
+                <a href="{% url 'only_card:upload_document' %}" >Upload Documents</a>
+                <a href="{% url 'user_profile:buddy_list' %}">
+                    <button type="button">View Buddies</button>
                 </a>
                 <a href="{% url 'user_profile:blocked_user_list' %}">
                     <button type="button">View Blocked Users</button>
                 </a>
-                <a href="{% url 'user_profile:buddy_list' %}">
-                  <button type="button">View Buddies</button>
+                <a>
+                    <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
                 </a>
+                <a>
+                    {% comment %} <a href="{% url 'only_card:upload_folder' %}">Upload folders</a> {% endcomment %}
+                    <button type="button" >Upload folders<br>comming soon </button>
+
+                    {% comment %} <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a> {% endcomment %}
+                    <button type="button" >Submit kyc<br>comming soon </button>
+
+                    {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
+                    <button type="button" >ASSOCIATION SIGN UP<br>comming soon </button>
+                    {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
+                    <button type="button"  >Register as Service Provider<br>comming soon </button>
+    
+                    {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
+                    {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
+                    <button type="button"  >Send File<br>comming soon </button>
+                    {% comment %} <a href="{% url 'only_card:create_card' %}">Create Card</a> {% endcomment %}
+                    <button type="button" >Create Card<br>comming soon </button><br>
+                </a>
+    
+                
+                
+                
+                
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
     
@@ -577,7 +553,8 @@
             <main id="main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
-                <div class="card">
+        
+                {% comment %} <div class="card">
                     {% if user_card.card_image %}
                         <img src="{{ user_card.card_image.url }}" alt="Card Image" style="width: 60px; height: 55px;">
                     {% else %}
@@ -585,7 +562,7 @@
                     {% endif %}
                     <p>{{ request.user.username }}</p>
                     <p> {{ user_card.card_number }}</p>
-                </div>
+                </div> {% endcomment %}
                 
                 <div class="container my-5">
                     <div class="row">
@@ -616,7 +593,7 @@
                             {% endfor %}
                         {% comment %} {% else %} {% endcomment %}
                             <div class="col-12 text-center">
-                                <p>we are still working on the display of videos and excel data appologies for the inconivience </p>
+                                <p>we are still working on the display of excel data appologies for the inconivience </p>
                             </div>
                         {% endif %}
                     </div>
@@ -636,22 +613,28 @@
                                         <p>Country: {{ upload.country }}</p>
                         
                                         <!-- Display the uploaded file -->
-                                        {% if ".jpg" in upload.file.name or ".jpeg" in upload.file.name or ".png" in upload.file.name %}
+                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower %}
                                             <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
                                             <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                        {% elif ".mp4" in upload.file.name or ".mov" in upload.file.name %}
+                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".quicktime" in upload.file.name|lower or ".mpeg" in upload.file.name|lower %}
                                             <video controls class="img-fluid">
-                                                <source src="{% url 'only_card:view_file' upload.id %}" type="video/mp4">
+                                                <source src="{% url 'only_card:view_video_file' upload.id %}" type="video/mp4" >
                                                 Your browser does not support the video tag.
                                             </video>
+                                            <a href="{% url 'only_card:view_video_file' upload.id %}" class="btn btn-primary">Preview video </a>
                                             <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
                                         
-                                        {% elif ".pdf" in upload.file.name %}
-                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="600px" />
+                                        {% elif upload.is_folder %}
+                                            <a href="{% url 'only_card:view_folder' upload.id %}">
+                                                <i class="fa fa-folder"></i> {{ upload.file_name }}
+                                            </a>
+                                        
+                                        {% elif ".pdf" in upload.file.name|lower %}
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="500px" />
                                             <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
                                             <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
     
-                                        {% elif ".docx" in upload.file.name or ".doc" in upload.file.name %}
+                                        {% elif ".docx" in upload.file.name|lower or ".doc" in upload.file.name|lower %}
                                             <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
                                             <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
     
@@ -665,29 +648,29 @@
                                             <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
     
                                         
-                                        {% elif ".xml" in upload.file.name %}
+                                        {% elif ".xml" in upload.file.name|lower %}
                                             <!-- XML files -->
-                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="600px" />
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="500px" />
                                             <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
                                         
-                                        {% elif ".zip" in upload.file.name or ".xlsx" in upload.file.name %}
+                                        {% elif ".zip" in upload.file.name|lower or ".xlsx" in upload.file.name|lower %}
                                             <!-- ZIP and XLSX files (served as ZIP) -->
                                             <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
                                         
     
-                                        {% elif ".pptx" in upload.file.name %}
+                                        {% elif ".pptx" in upload.file.name|lower %}
                                             <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
                                             {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
                                             <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
     
-                                        {% elif ".txt" in upload.file.name or ".py" in upload.file.name or ".js" in upload.file.name %}
+                                        {% elif ".txt" in upload.file.name|lower or ".py" in upload.file.name|lower or ".js" in upload.file.name|lower %}
                                             <!-- Handle .py, .js, and .txt files -->
                                             <pre class="
-                                            {% if '.py' in upload.file.name %}
+                                            {% if '.py' in upload.file.name|lower %}
                                                         language-python
-                                                    {% elif '.js' in upload.file.name %}
+                                                    {% elif '.js' in upload.file.name|lower %}
                                                         language-javascript
-                                                    {% elif '.txt' in upload.file.name %}
+                                                    {% elif '.txt' in upload.file.name|lower %}
                                                         language-text
                                                     {% endif %}
                                                 ">

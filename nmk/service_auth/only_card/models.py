@@ -60,6 +60,7 @@ class UserUpload(models.Model):
     file = models.FileField(upload_to='uploads/')
     country = CountryField()
     encryption_key = models.CharField(max_length=44, blank=True, null=True)
+    is_folder = models.BooleanField(default=False)  # New field to identify folders
 
     def save(self, *args, **kwargs):
         file_size = self.file.size  # Get the size of the uploaded file

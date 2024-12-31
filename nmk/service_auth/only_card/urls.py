@@ -35,6 +35,7 @@ urlpatterns = [
     path('password_reset/', views.password_reset, name='password_reset'),
 
     path('upload_documents/', views.upload_document, name='upload_document'),
+    path('upload_folder/', views.upload_folder, name='upload_folder'),
     path('view_file/<int:upload_id>/', views.view_file, name='view_file'),
     path('view_docx_file/<int:upload_id>/', views.view_docx_file, name='view_docx_file'),
     path('view_xml_file/<int:upload_id>/', views.view_xml_file, name='view_xml_file'),
@@ -42,7 +43,8 @@ urlpatterns = [
     path('view_text_file/<int:upload_id>/', views.view_text_file, name='view_text_file'),
     path('view_pdf_file/<int:upload_id>/', views.view_pdf_file, name='view_pdf_file'),
     # path('handle_xml_or_xlsx_file/<int:upload_id>/', views.handle_xml_or_xlsx_file, name='handle_xml_or_xlsx_file'),
-    # path('view_video/<int:upload_id>/', views.view_video, name='view_video'),
+    path('view_video_file/<int:upload_id>/', views.view_video_file, name='view_video_file'),
+    path('view_folder/<int:upload_id>/', views.view_folder, name='view_folder'),
 
     path('delete_upload/<int:upload_id>/', views.delete_upload, name='delete_upload'),
     path('RegistrationForm/', views.registration_form_view, name='RegistrationForm'),

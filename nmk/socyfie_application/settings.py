@@ -28,8 +28,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 APP_NAME = "Socyfie"
 
 
-ALLOWED_HOSTS = ['127.0.0.1', "8080", "localhost", "www.socyfie.com"]
-
 SITE_ID = 2
 
 APPEND_SLASH = True
@@ -43,17 +41,17 @@ APPEND_SLASH = True
 
 # ..-----...-------...
 
-# Convert it to bytes if it's not already
-# new look ENCRYPTION_KEY = ENCRYPTION_KEY.encode()
 
 # # new
-# env = environ.Env()
-# environ.Env.read_env()  # Reads the .env file
+env = environ.Env()
+env_path = os.path.join(BASE_DIR, '.env')
+environ.Env.read_env(env_path)  # Reads the .env file
+
 
 # # Read the encryption key from the environment
-# ENCRYPTION_KEY = env('ENCRYPTION_KEY').encode()
-
-
+ENCRYPTION_KEY = env('ENCRYPTION_KEY')
+SECRET_KEY = env('SECRET_KEY')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 # Application definition
 INSTALLED_APPS = [
@@ -71,8 +69,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # 'django-select2',
     "rest_framework",
-    
-    # 'user_profile.apps.UserProfileConfig',
     'channels',
     'social_django',
     'sslserver',
@@ -185,7 +181,7 @@ MIDDLEWARE = [
 ]
 
 # new29
-SECURE_HSTS_SECONDS = 3600
+SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
@@ -216,8 +212,6 @@ TEMPLATES = [
             os.path.join(BASE_DIR, "templates/notions"),
             os.path.join(BASE_DIR, "templates/user_profile"),
             os.path.join(BASE_DIR, "templates/only_message"),
-            
-
             ],
         #'DIRS': [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
@@ -244,8 +238,6 @@ COMPRESSED_MEDIA_STORAGE = {
     },
 }
 
-MEDIA_URL = 'nmk/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
 LOGGING = {
@@ -265,15 +257,6 @@ LOGGING = {
 }
 
 
-# # Celery settings notion deletion
-# CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Adjust based on your Redis setup
-# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: only needed if you need task results
-# CELERY_ACCEPT_CONTENT = ['json']
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_TIMEZONE = 'UTC'  # Adjust to your timezone
-
-
 # Celery Configuration Options
 CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis is the broker for task queue
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: Used to store task results
@@ -285,31 +268,23 @@ CELERY_TIMEZONE = 'UTC'  # Set timezone, adjust according to your project requir
 # Retry broker connection during startup (to retain behavior in Celery 6.x+)
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-# Celery task time limits (Optional - can add to avoid long-running tasks)
-# CELERY_TASK_TIME_LIMIT = 300  # Task timeout in seconds
-# CELERY_TASK_SOFT_TIME_LIMIT = 150  # Warning before task timeout
-
-# Other optional Celery settings can be added here
-
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 # *
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-enqdbn^j&gt@ei5+q&#q+t8k4rhyle1j&$c!y%t7&z7e#)_k!h"
-#ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY') or '<your_generated_encryption_key>'
-ENCRYPTION_KEY = 't77yaXGqyj4S82d8G1N1Svj2TmMEB_YSGlbz7lW4284='
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = False
+DEBUG = env.bool('DEBUG', default=False)
 # DEBUG = os.getenv("DEBUG", "False") == "True"
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": "database_setup/db.sqlite3",
     }
 }
+# DATABASE_URL = env('DATABASE_URL', default='')
 
 
 # Password validation
@@ -345,9 +320,11 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'nmkfinancialservices@gmail.com'
+# EMAIL_HOST_USER = 'nmkfinancialservices@gmail.com'
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = 'zakh htez cvyq pgmr' #yadavvaibhav
-EMAIL_HOST_PASSWORD = 'qbms zhou gdpm ludo' #nmkfinincial
+# EMAIL_HOST_PASSWORD = 'qbms zhou gdpm ludo' #nmkfinincial
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'no-reply@socyfie.com'  # Optional, sets the default sender address for emails
 
 
@@ -368,17 +345,19 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+
+MEDIA_URL = 'nmk/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-#STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-]
 
 
 AUTHENTICATION_BACKENDS = [
@@ -388,5 +367,6 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '57767563513-oieitul20quq9550mnhgeeqhom940rgm.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+

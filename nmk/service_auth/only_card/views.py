@@ -1,13 +1,14 @@
 # from datetime import timedelta, timezone
 from urllib import request
 import uuid
+import zipfile
 import pyrebase
 from django import forms
 from django.forms import CharField, EmailField
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User  # Import the User model at the top
-from django.http import HttpResponse, StreamingHttpResponse, HttpResponseNotFound, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseBadRequest, JsonResponse, StreamingHttpResponse, HttpResponseNotFound, HttpResponseServerError
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
@@ -29,6 +30,8 @@ import mimetypes
 from docx import Document
 from pptx import Presentation
 import xml.etree.ElementTree as ET
+from django.template.response import TemplateResponse
+from django.core.files.base import ContentFile
 import openpyxl  # To handle .xlsx files
 import xlrd  # To handle .xls files
 # import base64
@@ -38,6 +41,7 @@ from django.utils.html import escape
 from pdf2image import convert_from_path
 from PIL import Image
 import io
+import shutil
 
 
 
@@ -164,7 +168,8 @@ def login_view(request):
                     elif user.is_staff:
                         return redirect('/super_user_landing_page')
                     else:
-                        return redirect('/landing_page')
+                        # return redirect('/landing_page')
+                        return redirect('/following_media')
 
             except Exception as firebase_error:
                 # Handle Firebase authentication errors
@@ -496,70 +501,6 @@ def view_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
-# @login_required
-# def view_pdf_file(request, upload_id):
-#     try:
-#         # Fetch the uploaded file record for the authenticated user
-#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-#         # Ensure the file has an encryption key
-#         if not upload.encryption_key:
-#             logger.error(f"Encryption key not found for file with ID {upload_id}")
-#             return HttpResponseServerError("Encryption key not found for this file.")
-
-#         try:
-#             # Initialize the Fernet cipher for decryption using the encryption key
-#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
-#         except Exception as e:
-#             logger.error(f"Error initializing Fernet cipher: {e}")
-#             return HttpResponseServerError("Failed to initialize decryption.")
-
-#         # Check if the file exists on the server
-#         file_path = upload.file.path
-#         if not os.path.exists(file_path):
-#             logger.error(f"File not found: {file_path}")
-#             return HttpResponseNotFound("File not found")
-
-#         # Check if the file is a .pdf file
-#         if not file_path.endswith('.pdf'):
-#             logger.error(f"Unsupported file type: {file_path}")
-#             return HttpResponseServerError("Unsupported file type.")
-
-#         # Read and decrypt the entire .pdf file
-#         try:
-#             with open(file_path, 'rb') as encrypted_file:
-#                 encrypted_file_data = encrypted_file.read()
-
-#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
-
-#             # Save the decrypted data to a temporary file to be read by PyPDF2
-#             temp_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
-#             with open(temp_file_path, 'wb') as temp_file:
-#                 temp_file.write(decrypted_file_data)
-
-#             # Extract text from the PDF file using PyPDF2
-#             pdf_content = ""
-#             with open(temp_file_path, 'rb') as pdf_file:
-#                 reader = PyPDF2.PdfReader(pdf_file)
-#                 for page_num in range(len(reader.pages)):
-#                     page = reader.pages[page_num]
-#                     pdf_content += f"<h3>Page {page_num + 1}</h3>"
-#                     pdf_content += f"<p>{page.extract_text()}</p>"
-
-#             # Clean up: remove the temporary file after processing
-#             os.remove(temp_file_path)
-
-#             # Render the content in an HTML template
-#             return render(request, 'view_docx.html', {'pdf_content': pdf_content, 'file_name': upload.file_name})
-
-#         except Exception as e:
-#             logger.error(f"Error reading .pdf file: {e}")
-#             return HttpResponseServerError("Error reading .pdf file.")
-
-#     except Exception as e:
-#         logger.error(f"Unhandled exception in view_pdf_file: {e}")
-#         return HttpResponseServerError("An error occurred while processing your request.")
-
 
 @login_required
 def view_pdf_file(request, upload_id):
@@ -685,57 +626,6 @@ def view_docx_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
-# @login_required
-# def view_pdf_file(request, upload_id):
-#     try:
-#         # Fetch the uploaded file record for the authenticated user
-#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-#         # Ensure the file has an encryption key
-#         if not upload.encryption_key:
-#             logger.error(f"Encryption key not found for file with ID {upload_id}")
-#             return HttpResponseServerError("Encryption key not found for this file.")
-
-#         try:
-#             # Initialize the Fernet cipher for decryption using the encryption key
-#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
-#         except Exception as e:
-#             logger.error(f"Error initializing Fernet cipher: {e}")
-#             return HttpResponseServerError("Failed to initialize decryption.")
-
-#         # Check if the file exists on the server
-#         file_path = upload.file.path
-#         if not os.path.exists(file_path):
-#             logger.error(f"File not found: {file_path}")
-#             return HttpResponseNotFound("File not found")
-
-#         # Check if the file is a .pdf file
-#         if not file_path.endswith('.pdf'):
-#             logger.error(f"Unsupported file type: {file_path}")
-#             return HttpResponseServerError("Unsupported file type.")
-
-#         # Read and decrypt the entire .pdf file
-#         try:
-#             with open(file_path, 'rb') as encrypted_file:
-#                 encrypted_file_data = encrypted_file.read()
-
-#             decrypted_file_data = fernet.decrypt(encrypted_file_data)
-
-#             # Encode the decrypted data as base64
-#             pdf_content_base64 = base64.b64encode(decrypted_file_data).decode('utf-8')
-
-#             # Render the content in an HTML template
-#             return render(request, 'view_docx.html', {'pdf_content_base64': pdf_content_base64, 'file_name': upload.file_name})
-
-#         except Exception as e:
-#             logger.error(f"Error reading .pdf file: {e}")
-#             return HttpResponseServerError("Error reading .pdf file.")
-
-#     except Exception as e:
-#         logger.error(f"Unhandled exception in view_pdf_file: {e}")
-#         return HttpResponseServerError("An error occurred while processing your request.")
-
-
 @login_required
 def view_pptx_file(request, upload_id):
     try:
@@ -815,120 +705,6 @@ def is_valid_excel_file(file_path):
     mime_type, _ = mimetypes.guess_type(file_path)
     return mime_type in excel_mime_types
 
-
-# @login_required
-# def view_xml_file(request, upload_id):
-#     try:
-#         # Fetch the uploaded file record for the authenticated user
-#         upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-#         # Ensure the file has an encryption key
-#         if not upload.encryption_key:
-#             logger.error(f"Encryption key not found for file with ID {upload_id}")
-#             return HttpResponseServerError("Encryption key not found for this file.")
-
-#         try:
-#             # Initialize the Fernet cipher for decryption using the encryption key
-#             fernet = Fernet(upload.encryption_key.encode('utf-8'))
-#         except Exception as e:
-#             logger.error(f"Error initializing Fernet cipher: {e}")
-#             return HttpResponseServerError("Failed to initialize decryption.")
-
-#         # Check if the file exists on the server
-#         file_path = upload.file.path
-#         if not os.path.exists(file_path):
-#             logger.error(f"File not found: {file_path}")
-#             return HttpResponseNotFound("File not found")
-
-#         # Get the file extension and handle accordingly
-#         file_extension = os.path.splitext(file_path)[1].lower()
-
-#         # Decrypt and handle the file based on its extension
-#         if file_extension == '.xml':
-#             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xml')
-#         elif file_extension == '.xlsx':
-#             return handle_xml_or_xlsx_file(file_path, fernet, upload, file_type='xlsx')
-#         else:
-#             logger.error(f"Unsupported file type: {file_path}")
-#             return HttpResponseServerError("Unsupported file type.")
-
-#     except Exception as e:
-#         logger.error(f"Unhandled exception in view_xml_file: {e}")
-#         return HttpResponseServerError("An error occurred while processing your request.")
-
-    
-# def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
-#     """Handles both XML and XLSX file decryption and rendering."""
-#     try:
-#         # Read and decrypt the entire file
-#         with open(file_path, 'rb') as encrypted_file:
-#             encrypted_file_data = encrypted_file.read()
-
-#         # Write the decrypted content to a temporary file for processing
-#         decrypted_file_path = os.path.join('/tmp', f"decrypted_{upload.file_name}")
-#         with open(decrypted_file_path, 'wb') as decrypted_file:
-#             decrypted_file.write(fernet.decrypt(encrypted_file_data))
-
-#         # Validate file type if it's an Excel file
-#         if file_type == 'xlsx' and not is_valid_excel_file(decrypted_file_path):
-#             logger.error(f"Unsupported Excel file format: {decrypted_file_path}")
-#             return HttpResponseServerError("Unsupported Excel file format. Please upload a valid .xlsx or .xlsm file.")
-
-#         # Process based on file type
-#         if file_type == 'xml':
-#             # Handle XML file
-#             try:
-#                 # Parse the XML content
-#                 with open(decrypted_file_path, 'r', encoding='utf-8') as decrypted_file:
-#                     xml_data = decrypted_file.read()
-
-#                 root = ET.fromstring(xml_data)
-
-#                 # Convert XML content to a string for display
-#                 xml_content = ET.tostring(root, encoding='unicode', method='xml')
-
-#                 # Render the content in an HTML template
-#                 return render(request, 'view_docx.html', {
-#                     'xml_content': xml_content,
-#                     'file_name': upload.file_name
-#                 })
-
-#             except ET.ParseError as e:
-#                 logger.error(f"Error parsing XML file: {e}")
-#                 return HttpResponseServerError("Error parsing the XML file.")
-
-#         elif file_type == 'xlsx':
-#             # Handle XLSX file
-#             try:
-#                 # Open the decrypted Excel file using openpyxl
-#                 workbook = openpyxl.load_workbook(decrypted_file_path)
-#                 sheet = workbook.active
-
-#                 # Collect data from the first sheet
-#                 excel_data = []
-#                 for row in sheet.iter_rows(values_only=True):
-#                     excel_data.append(row)
-
-#                 # Render the content in an HTML template
-#                 return render(request, 'view_docx.html', {
-#                     'excel_data': excel_data,
-#                     'file_name': upload.file_name
-#                 })
-
-#             except Exception as e:
-#                 logger.error(f"Error reading Excel file: {e}")
-#                 return HttpResponseServerError("Error reading Excel file.")
-#         else:
-#             logger.error("Unsupported file type provided.")
-#             return HttpResponseServerError("Unsupported file type.")
-
-#     except Exception as e:
-#         logger.error(f"Error decrypting {file_type} file: {e}")
-#         return HttpResponseServerError(f"Error decrypting {file_type} file.")
-#     finally:
-#         # Clean up the temporary decrypted file if it exists
-#         if os.path.exists(decrypted_file_path):
-#             os.remove(decrypted_file_path)
 
 
 def view_xml_file(request, upload_id):
@@ -1146,12 +922,158 @@ def view_text_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
-# def view_video(request, upload_id):
-#     # Get the video upload object
-#     upload = get_object_or_404(UserUpload, id=upload_id)
+@login_required
+def view_video_file(request, upload_id):
+    try:
+        # Fetch the uploaded file record for the authenticated user
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
 
-#     # Render the video on a dedicated page
-#     return render(request, 'view_video.html', {'upload': upload})
+        # Ensure the file has an encryption key
+        if not upload.encryption_key:
+            logger.error(f"Encryption key not found for file with ID {upload_id}")
+            return HttpResponseServerError("Encryption key not found for this file.")
+
+        try:
+            # Initialize the Fernet cipher for decryption using the encryption key
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+        except Exception as e:
+            logger.error(f"Error initializing Fernet cipher: {e}")
+            return HttpResponseServerError("Failed to initialize decryption.")
+
+        # Check if the file exists on the server
+        file_path = upload.file.path
+        if not os.path.exists(file_path):
+            logger.error(f"File not found: {file_path}")
+            return HttpResponseNotFound("File not found")
+
+        # Get MIME type of the file
+        mime_type, _ = mimetypes.guess_type(file_path)
+        supported_video_formats = ['video/mp4', 'video/mov', 'video/quicktime', 'video/mpeg']
+        if mime_type and mime_type.lower() not in [fmt.lower() for fmt in supported_video_formats]:
+            logger.error(f"Unsupported video file type: {mime_type}")
+            return HttpResponseServerError("Unsupported video file type.")
+
+        # Read and decrypt the video file
+        try:
+            with open(file_path, 'rb') as encrypted_file:
+                encrypted_file_data = encrypted_file.read()
+
+            decrypted_file_data = fernet.decrypt(encrypted_file_data)
+
+            # Serve the decrypted file directly as a response
+            response = HttpResponse(decrypted_file_data, content_type=mime_type)
+            response['Content-Disposition'] = f'inline; filename="{upload.file_name}"'
+            return response
+
+        except Exception as e:
+            logger.error(f"Error reading or decrypting video file: {e}")
+            return HttpResponseServerError("Error reading or decrypting video file.")
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_video_file: {e}")
+        return HttpResponseServerError("An error occurred while processing your request.")
+    
+
+@login_required
+def upload_folder(request):
+    if request.method == 'POST':
+        form = UserUploadForm(request.POST, request.FILES)
+        folder_files = request.FILES.getlist('folder_files')  # Expecting multiple files
+        folder_name = request.POST.get('folder_name', 'uploaded_folder')
+
+        if folder_files and form.is_valid():
+            form.instance.user = request.user
+
+            # Step 1: Create a zip archive from the files
+            temp_zip_path = f'/tmp/{folder_name}.zip'
+            with zipfile.ZipFile(temp_zip_path, 'w') as zipf:
+                for file in folder_files:
+                    zipf.writestr(file.name, file.read())
+
+            # Step 2: Generate an encryption key and encrypt the archive
+            encryption_key = Fernet.generate_key()
+            fernet = Fernet(encryption_key)
+
+            with open(temp_zip_path, 'rb') as zip_file:
+                encrypted_data = fernet.encrypt(zip_file.read())
+
+            # Step 3: Save the encrypted archive to the model
+            form.instance.file = ContentFile(encrypted_data, f'{folder_name}.zip')
+            form.instance.file_name = f'{folder_name}.zip'
+            form.instance.encryption_key = encryption_key.decode('utf-8')
+            form.instance.is_folder = True
+
+            try:
+                form.save()
+            except ValueError:
+                messages.error(request, "Storage full. Please buy more storage.")
+                return redirect('/buy_storage')
+
+            # Step 4: Clean up temporary files
+            os.remove(temp_zip_path)
+
+            # Redirect after successful upload
+            if CustomGroupAdmin.objects.filter(user=request.user).exists():
+                return redirect('/subgroup_landing_page')
+            else:
+                return redirect('/landing_page')
+    else:
+        form = UserUploadForm()
+
+    return render(request, 'upload_folder.html', {'form': form})
+
+
+
+@login_required
+def view_folder(request, upload_id):
+    try:
+        # Fetch the folder record
+        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user, is_folder=True)
+
+        if not upload.encryption_key:
+            logger.error(f"Encryption key missing for upload ID {upload_id}")
+            return HttpResponseServerError("Encryption key missing.")
+
+        # Decrypt the folder archive
+        try:
+            fernet = Fernet(upload.encryption_key.encode('utf-8'))
+            encrypted_data = upload.file.read()
+            decrypted_data = fernet.decrypt(encrypted_data)
+        except Exception as e:
+            logger.error(f"Decryption failed for upload ID {upload_id}: {e}")
+            return HttpResponseServerError("Decryption failed.")
+
+        # Extract the archive to a temporary location
+        temp_extract_path = f'/tmp/{upload.file_name.replace(".zip", "")}'
+        os.makedirs(temp_extract_path, exist_ok=True)
+
+        temp_zip_path = f'{temp_extract_path}.zip'
+        with open(temp_zip_path, 'wb') as temp_zip:
+            temp_zip.write(decrypted_data)
+
+        with zipfile.ZipFile(temp_zip_path, 'r') as zipf:
+            zipf.extractall(temp_extract_path)
+
+        os.remove(temp_zip_path)
+
+        # List extracted files and provide links to view/download
+        file_links = []
+        for root, _, files in os.walk(temp_extract_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                file_links.append(file_path.replace('/tmp/', '/tmp/'))
+
+        return render(request, 'view_folder.html', {'files': file_links, 'upload': upload})
+
+    except Exception as e:
+        logger.error(f"Unhandled exception in view_folder: {e}")
+        return HttpResponseServerError("An error occurred while processing the folder.")
+    finally:
+        # Clean up extracted files after serving the response
+        if 'temp_extract_path' in locals():
+            shutil.rmtree(temp_extract_path, ignore_errors=True)
+
+
 
 
 @login_required

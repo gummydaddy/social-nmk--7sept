@@ -61,23 +61,6 @@ class PasswordResetForm(forms.Form):
     username_or_email = forms.CharField(max_length=200, help_text='Required', label="Username or Email")
 
 
-
-# class UserUploadForm(forms.ModelForm):
-#     country = CountryField().formfield(label='Country of Origin')
-#     document_type = forms.ChoiceField(choices=[
-#         ('aadhar_card', 'Aadhar Card'),
-#         ('pan_card', 'PAN Card'),
-#         ('driving_license', 'Driving License'),
-#         ('voter_id', 'Voter ID'),
-#         ('passport', 'Passport'),
-#         ('others', 'Others')
-#     ])
-
-#     class Meta:
-#         model = UserUpload
-#         fields = ['file_name', 'file', 'document_type', 'country']
-
-
 class UserUploadForm(forms.ModelForm):
     country = CountryField().formfield(label='Country of Origin')
     document_type = forms.ChoiceField(choices=[
@@ -100,7 +83,10 @@ class UserUploadForm(forms.ModelForm):
         valid_mime_types = [
             'image/jpeg', 
             'image/png', 
-            'video/mp4', 
+            'video/mp4',
+            'video/mov',
+            'video/quicktime',
+            'video/mpeg',
             'application/pdf', 
             'text/plain',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # docx
@@ -118,10 +104,25 @@ class UserUploadForm(forms.ModelForm):
         mime_type, encoding = mimetypes.guess_type(file.name)
         
         # Validate the file type against supported MIME types
-        if mime_type not in valid_mime_types:
-            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, pdf, txt, docx, xlsx, xls, pptx, py, xml, json.")
+        if mime_type and mime_type.lower() not in [fmt.lower() for fmt in valid_mime_types]:
+        # if mime_type not in valid_mime_types:
+            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, mov, quicktime, mpeg, pdf, txt, docx, xlsx, xls, pptx, py, xml, json, zip.")
+        
+        # Additional validation for .zip (folders)
+        if mime_type == 'application/zip':
+            from zipfile import ZipFile
+            import io
+
+            try:
+                # Ensure the uploaded file is a valid zip archive
+                with ZipFile(io.BytesIO(file.read())) as zf:
+                    if not zf.namelist():
+                        raise ValidationError("The uploaded folder is empty.")
+            except Exception:
+                raise ValidationError("The uploaded folder is not a valid zip file.")
         
         return file
+
         
 
 #document existance 

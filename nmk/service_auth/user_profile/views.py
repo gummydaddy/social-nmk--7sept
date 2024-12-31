@@ -1245,6 +1245,74 @@ def delete_user_audio_comment(request, comment_id):
 
 
 
+# @login_required
+# def media_detail_view(request, media_id):
+#     media = get_object_or_404(Media, id=media_id)
+#     user = media.user  # The owner of the media
+
+#     # Check if the current user is blocked by the media owner
+#     is_blocked_by_media_owner = BlockedUser.objects.filter(blocker=user, blocked=request.user).exists()
+
+#     # Check if the current user has blocked the media owner
+#     has_blocked_media_owner = BlockedUser.objects.filter(blocker=request.user, blocked=user).exists()
+
+#     # If the current user is blocked by the media owner, return a 'user_not_found' page
+#     if is_blocked_by_media_owner:
+#         return render(request, 'user_not_found.html')
+
+#     # Check if the current user is following the media owner
+#     is_following = Follow.objects.filter(follower=request.user, following=user).exists()
+
+#     # Check if the current user is in the media owner's buddy list
+#     is_buddy = Buddy.objects.filter(user=user, buddy=request.user).exists()
+
+#     # Check if the media is private and only buddies or the owner can view it
+#     if media.is_private and not is_buddy and request.user != user:
+#         return render(request, 'private_upload.html')
+
+#     # Check if the media is private, the user's profile is private, the current user is not a follower, and the current user is not the owner
+#     if (media.is_private or user.profile.is_private) and not is_following and request.user != user:
+#         return render(request, 'private_upload.html')
+
+#     # Fetch all media uploads of the media owner (user), excluding private media unless the current user has access
+#     buddies = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
+#     following_users = request.user.follower_set.all().values_list('following', flat=True)
+#     user_uploads = Media.objects.filter(user=user).filter(
+#         Q(is_private=False) | 
+#         Q(user=request.user) | 
+#         Q(user__in=buddies) | 
+#         Q(user__in=following_users)
+#     ).order_by('-created_at')
+
+#     # Paginate the user's uploads
+#     paginator = Paginator(user_uploads, 12)  # Display 12 uploads per page
+#     page_number = request.GET.get('page')
+#     page_obj = paginator.get_page(page_number)
+
+#     # Engagement tracking (view count)
+#     if not Engagement.objects.filter(user=request.user, media=media, engagement_type='view').exists():
+#         media.view_count = F('view_count') + 1
+#         media.save(update_fields=['view_count'])
+#         Engagement.objects.create(media=media, user=request.user, engagement_type='view')
+
+#     # Making usernames clickable in the description
+#     description = make_usernames_clickable(media.description)
+
+#     # Context for rendering the media detail page
+#     context = {
+#         'media': media,
+#         'description': description,
+#         'is_following': is_following,
+#         'is_buddy': is_buddy,  # Passed is_buddy to template
+#         'has_blocked_media_owner': has_blocked_media_owner,  # Passed for template
+#         'is_blocked_by_media_owner': is_blocked_by_media_owner,  # Passed for template
+#         'page_obj': page_obj,  # Paginated user uploads
+#         'user_uploads': user_uploads,  # All uploads by the user
+#     }
+
+#     return render(request, 'media_detail.html', context)
+
+
 @login_required
 def media_detail_view(request, media_id):
     media = get_object_or_404(Media, id=media_id)
@@ -1274,18 +1342,18 @@ def media_detail_view(request, media_id):
     if (media.is_private or user.profile.is_private) and not is_following and request.user != user:
         return render(request, 'private_upload.html')
 
-    # Fetch all media uploads of the media owner (user), excluding private media unless the current user has access
+    # Fetch all media uploads of the media owner (user) older than the current media
     buddies = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
     following_users = request.user.follower_set.all().values_list('following', flat=True)
-    user_uploads = Media.objects.filter(user=user).filter(
+    older_uploads = Media.objects.filter(user=user, created_at__lt=media.created_at).filter(
         Q(is_private=False) | 
         Q(user=request.user) | 
         Q(user__in=buddies) | 
         Q(user__in=following_users)
     ).order_by('-created_at')
 
-    # Paginate the user's uploads
-    paginator = Paginator(user_uploads, 12)  # Display 12 uploads per page
+    # Paginate the user's older uploads
+    paginator = Paginator(older_uploads, 12)  # Display 12 uploads per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1303,11 +1371,10 @@ def media_detail_view(request, media_id):
         'media': media,
         'description': description,
         'is_following': is_following,
-        'is_buddy': is_buddy,  # Passed is_buddy to template
-        'has_blocked_media_owner': has_blocked_media_owner,  # Passed for template
-        'is_blocked_by_media_owner': is_blocked_by_media_owner,  # Passed for template
-        'page_obj': page_obj,  # Paginated user uploads
-        'user_uploads': user_uploads,  # All uploads by the user
+        'is_buddy': is_buddy,
+        'has_blocked_media_owner': has_blocked_media_owner,
+        'is_blocked_by_media_owner': is_blocked_by_media_owner,
+        'page_obj': page_obj,  # Paginated older uploads
     }
 
     return render(request, 'media_detail.html', context)

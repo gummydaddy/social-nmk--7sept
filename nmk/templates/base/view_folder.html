@@ -1,0 +1,18 @@
+{% extends 'landing_page.html' %}
+
+{% block title %}
+    View Folder - {{ upload.file_name }}
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1>Contents of {{ upload.file_name }}</h1>
+        <ul>
+            {% for file in files %}
+                <li>
+                    <a href="{{ file }}" download>{{ file|basename }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

@@ -8,9 +8,11 @@
     <div class="container">
         <h1>{{ upload.file_name }}</h1>
         <video controls class="img-fluid">
-            <source src="{{ upload.file.url }}" type="video/mp4">
+            <source src="{{ temp_file_url }}" type="{{ mime_type }}">
             Your browser does not support the video tag.
         </video>
-        <a href="{{ upload.file.url }}" download>{{ upload.file_name }}" class="btn btn-secondary mt-3">Download</a>
+        <a href="{{ temp_file_url }}" download="{{ upload.file_name }}" class="btn btn-secondary mt-3">
+            Download {{ upload.file_name }}
+        </a>
     </div>
 {% endblock %}
