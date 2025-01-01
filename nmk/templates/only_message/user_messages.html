@@ -1,5 +1,6 @@
 {% extends 'landing_page.html' %}
 {% load static%}
+{% load custom_filters_message %}
 {% load media_filters %}
 
 {% block main_content %}
@@ -80,7 +81,7 @@
         <!-- Messages are rendered starting from the bottom -->
         {% for message in messages %}
         <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
-            
+
             <!-- Check if the message has an attached file -->
             {% if message.file_url %}
                 {% if message.file_url|is_video %}
@@ -95,7 +96,7 @@
                 {% endif %}
             {% else %}
                 <!-- Display message content if no file is attached -->
-                {{ message.content }}<br>
+                {{ message.content|make_clickable }}<br>
             {% endif %}
 
             <em>{{ message.timestamp }}</em>
