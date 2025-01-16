@@ -53,6 +53,7 @@ class UserStorage(models.Model):
 
 
 class UserUpload(models.Model):
+    user_storage = models.ForeignKey(UserStorage, on_delete=models.CASCADE, null=True, blank=True)  # New ForeignKey
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     document_type = models.CharField(max_length=50)
     file_name = models.CharField(max_length=255)

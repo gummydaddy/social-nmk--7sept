@@ -91,10 +91,10 @@
   <!-- Profile Picture Section -->
 </header>
 
-<form method="GET" action="{% url 'notion:search_users' %}">
+{% comment %} <form method="GET" action="{% url 'notion:search_users' %}">
   <input type="text" name="q" placeholder="Search users">
   <button type="submit">Search</button>
-</form>
+</form> {% endcomment %}
 
 {% comment %} <div id="notions-container"> {% endcomment %}
   <div class="notions-container">

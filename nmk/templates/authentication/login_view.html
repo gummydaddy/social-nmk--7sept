@@ -64,17 +64,17 @@
     </style>
 </head>
 <body>
-    <div class="containerB">
+    {% comment %} <div class="containerB">
         <h1>Socyfie</h1>
-    </div>
-    </br>
+    </div> {% endcomment %}
+    {% comment %} </br> {% endcomment %}
     {%load socialaccount %}
     {% comment %} <h2> google login</h2>
     </br>
     <a href ="{% provider_login_url 'google' %}?next=/" class="btn btn-primary">Login with Google</a> {% endcomment %}
     
     <div class="container">
-        <h1 class="text-center">Login</h1>
+        <h1 class="text-center">Socyfie Login</h1>
         {% if messages %}
         <div class="alert alert-danger" role="alert">
             {% for message in messages %}
@@ -112,6 +112,10 @@
             <div class="text-center mt-4">
                 <a href="/password_reset/" class="btn btn-primary">Reset Password</a>
             </div>
+            <div>
+                {% block password_reset %}
+                {% endblock %}
+            </div>
             
         </form>
     </div>
@@ -137,8 +141,7 @@
             })
         })()
     </script>
-    {% block password_reset %}
-    {% endblock %}
+    
 
 </body>
 </html>
