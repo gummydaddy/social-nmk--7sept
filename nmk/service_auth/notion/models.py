@@ -18,7 +18,7 @@ class Hashtag(models.Model):
     
 
 def get_deletion_date():
-    return now() + timedelta(days=1)
+    return now() + timedelta(days=2)
 
 
 class Notion(models.Model):

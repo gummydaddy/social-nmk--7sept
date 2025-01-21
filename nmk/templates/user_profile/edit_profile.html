@@ -1,26 +1,11 @@
 {% extends 'landing_page.html' %}
 {% load static %}
 
-{% comment %} {% block main_content %}
-<div class="container">
-    <h2>Edit Profile</h2>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save changes</button>
-        <button type="button" class="btn btn-primary" id="privacy-button" data-private="{{ request.user.profile.is_private|yesno:'Private,Public' }}">
-            {{ request.user.profile.is_private|yesno:'Private,Public' }}
-        </button>
-        <div class="text-center mt-4">
-            <a href="/password_reset/" class="btn btn-primary">Reset Password</a>
-        </div>
-    </form>
-</div>
-{% endblock %} {% endcomment %}
 {% block main_content %}
 <div class="container">
     <h4>Edit Profile</h4>
 
+    <!-- Privacy Toggle Button -->
     <button type="button" class="btn btn-primary" id="privacy-button" data-private="{{ request.user.profile.is_private|yesno:'Private,Public' }}">
         {{ request.user.profile.is_private|yesno:'Private,Public' }}
     </button>
@@ -30,17 +15,6 @@
     <form method="post" enctype="multipart/form-data" action="{% url 'user_profile:edit_profile' user_id=profile_user.id %}">
         {% csrf_token %}
         
-        <!-- Profile Form -->
-        {% comment %} <h3>Profile Information</h3>
-        {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
-        {{ form.cover_photo.label_tag }} {{ form.cover_photo }}
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" name="save_changes">Save Changes</button>
-        </form> {% endcomment %}
-        
-        <!-- Profile Form -->
         <h4>Profile Information</h4>
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
@@ -53,34 +27,42 @@
             </div> 
         </form>
         </br>
-    <!-- Username Form -->
+
+        <!-- Username Form -->
         <form method="post">
             {% csrf_token %}
             {{ username_form.as_p }}
             <button type="submit" class="btn btn-primary" name="update_username">Update Username</button>
         </form>
-
-        <!-- Submit Button for Profile and Username -->
-        {% comment %} 
-            <button type="submit" class="btn btn-primary">Save changes</button>
-       {% endcomment %}
     </form>
 
     <hr>
 
-    <!-- Separate Form for Bio -->
+    <!-- Bio Update Form -->
     <form method="post" action="{% url 'user_profile:save_bio' %}">
         {% csrf_token %}
-
-        <!-- Bio Section -->
         <h3 class="mt-4">Update Bio</h3>
         {{ form.bio.label_tag }} {{ form.bio }}
-
-        <!-- Submit Button for Bio -->
         <div class="mt-4">
             <button type="submit" class="btn btn-primary">Save Bio</button>
         </div>
     </form>
+
+    <hr>
+
+   <!-- Category Selection Dropdown -->
+    <h4>Select Your Category</h4>
+    <form id="category-form" method="post" action="">
+        {% csrf_token %}
+        <div class="form-group">
+            {{ category_form.category.label_tag }} <!-- Label for the dropdown -->
+            <br>
+            {{ category_form.category }} <!-- Dropdown menu -->
+        </div>
+        <button type="submit" class="btn btn-primary mt-2" name="update_category">Update Category</button>
+    </form>
+
+
 
     <!-- Password Reset Link -->
     <div class="text-center mt-4">
@@ -98,17 +80,16 @@
 </div>
 {% endblock %}
 
-
-{%block edit_profile_script%}
+{% block edit_profile_script %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Privacy Toggle
         const privacyButton = document.getElementById('privacy-button');
-    
         if (privacyButton) {
             privacyButton.addEventListener('click', function() {
                 const url = "{% url 'user_profile:toggle_privacy' %}";
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -127,7 +108,115 @@
                 .catch(error => console.error('Error:', error));
             });
         }
+
+       // JavaScript to handle form submission with AJAX
+        document.getElementById('category-form').addEventListener('submit', function(e) {
+            e.preventDefault();  // Prevent the default form submission
+            var formData = new FormData(this);
+
+            fetch("{% url 'user_profile:update_category' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Optionally update the page with the new category text
+                    alert('Category updated: ' + data.category);
+                } else {
+                    alert('Error updating category');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating category');
+            });
+        });
     });
-    
 </script>
-{%endblock%}
+{% endblock %}
+
+
+
+
+
+{% comment %} // Reference to the category form
+        const categoryForm = document.getElementById('category-form');
+
+        // Function to populate the dropdown dynamically
+        function populateDropdown(categories) {
+            const selectElement = categoryForm.querySelector('select[name="category"]');
+
+            // Clear existing options
+            selectElement.innerHTML = '';
+
+            // Add a placeholder option
+            const placeholderOption = document.createElement('option');
+            placeholderOption.value = '';
+            placeholderOption.textContent = 'Select a category';
+            selectElement.appendChild(placeholderOption);
+
+            // Add new category options
+            categories.forEach(([value, label]) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = label;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Fetch category choices dynamically (optional)
+        function fetchCategories() {
+            const url = "{% url 'user_profile:fetch_categories' %}"; // Endpoint to get category options
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success' && data.categories) {
+                    populateDropdown(data.categories); // Populate dropdown with fetched data
+                } else {
+                    console.error('Failed to fetch categories.');
+                }
+            })
+            .catch(error => console.error('Error fetching categories:', error));
+        }
+
+        // Fetch categories on page load (if needed)
+        if (categoryForm) {
+            fetchCategories(); // Call this only if categories are not hardcoded in the template
+
+            // Handle form submission for category updates
+            categoryForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                const url = "{% url 'user_profile:update_category' %}";
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const formData = new FormData(categoryForm);
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert(`Category updated to: ${data.category}`);
+                    } else {
+                        alert('Failed to update category.');
+                    }
+                })
+                .catch(error => console.error('Error updating category:', error));
+            });
+        }
+    }); {% endcomment %}

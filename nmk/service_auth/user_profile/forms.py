@@ -120,8 +120,6 @@ class ProfileForm(forms.ModelForm):
         model = Profile
         fields = ['profile_picture', 'cover_photo', 'bio']
 
-
-
     def save(self, commit=True):
         profile = super().save(commit=False)
         if self.cleaned_data['profile_picture']:
@@ -141,7 +139,34 @@ class ProfileForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
-    
+
+
+class CategorySelectionForm(forms.ModelForm):
+    category = forms.ChoiceField(choices=[
+            ('media_journalism', 'Media and Journalism'),
+            ('entertainment', 'Entertainment'),
+            ('sports_fitness', 'Sports and Fitness'),
+            ('creators_influencers', 'Creators and Influencers'),
+            ('education_learning', 'Education and Learning'),
+            ('business_entrepreneurship', 'Business and Entrepreneurship'),
+            ('art_design', 'Art and Design'),
+            ('social_causes', 'Social Causes and Activism'),
+            ('tech_science', 'Technology and Science'),
+            ('health_wellness', 'Health and Wellness'),
+            ('hobbies_interests', 'Hobbies and Interests'),
+            ('government_politics', 'Government and Politics'),
+            ('religious_spiritual', 'Religious and Spiritual'),
+            ('travel_adventure', 'Travel and Adventure'),
+            ('comedy_memes', 'Comedy and Memes'),
+        ], 
+        widget=forms.Select(attrs={'class': 'form-control', 'aria-label': 'Category'}),
+        label="Select Your Category"  # You can also add a label here if needed
+    )
+
+    class Meta:
+        model = Profile
+        fields = ['category']
+
 
 class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True

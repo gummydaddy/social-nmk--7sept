@@ -13,7 +13,7 @@ from django.contrib import messages
 from service_auth.notion.models import Follow, Notification, Comment, Hashtag, BlockedUser
 from django.views.generic import ListView
 from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Buddy, Audio#, Comment
-from .forms import MediaForm, ProfileForm, CommentForm, AudioForm
+from .forms import MediaForm, ProfileForm, CommentForm, AudioForm, CategorySelectionForm
 from django.core.files.storage import get_storage_class
 from .storage import CompressedMediaStorage
 
@@ -52,8 +52,10 @@ VIEWED_HASHTAG_WEIGHT = 1
 SEARCH_HASHTAG_WEIGHT = 2
 ACTIVE_USER_WEIGHT = 2
 HIGH_ENGAGEMENT_WEIGHT = 2
+CATEGORY_ENGAGEMENT_WEIGHT = 5
 
-def calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed_hashtags, search_hashtags):
+
+def calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed_hashtags, search_hashtags, user_category_preferences):
     score = 0
     media_hashtags = [h.name for h in media.hashtags.all()]
 
@@ -78,6 +80,28 @@ def calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed
     if hasattr(media, 'likes_count') and media.likes_count > 50:
         score += HIGH_ENGAGEMENT_WEIGHT
 
+    # New: Check for likes or views by users with more than 100,000 followers
+    high_follower_users = set()
+
+    # Get users who liked the media
+    if hasattr(media, 'likes'):
+        high_follower_users.update(
+            user for user in media.likes.all() if user.follower_set.count() > 100_000
+        )
+
+    # Get users who viewed the media (assuming a MediaView model tracks views)
+    if hasattr(media, 'views'):
+        high_follower_users.update(
+            view.user for view in media.views.all() if view.user.follower_set.count() > 100_000
+        )
+
+    if high_follower_users:
+        score += 15
+
+    # Category engagement weight
+    if media.category in user_category_preferences:
+        score += CATEGORY_ENGAGEMENT_WEIGHT
+
     return score
 
 
@@ -94,6 +118,13 @@ def upload_media(request):
             logger.info("MediaForm is valid.")
             media = form.save(commit=False)
             media.user = request.user
+
+            # Assign the user's category to the media
+            if request.user.profile.category:
+                media.category = request.user.profile.category
+                logger.info(f"Category '{media.category}' assigned to media by user {request.user.username}")
+            else:
+                logger.warning(f"User {request.user.username} has no category assigned in their profile")
 
             # Process description to make usernames clickable
             media.description = escape(media.description)
@@ -189,6 +220,7 @@ def upload_media(request):
 
 
 
+
 @login_required
 def upload_audio(request):
     logger.info(f"User {request.user.username} is uploading audio")
@@ -200,6 +232,13 @@ def upload_audio(request):
             logger.info("AudioForm is valid.")
             audio = form.save(commit=False)
             audio.user = request.user
+
+            # Assign the user's category to the media
+            if request.user.profile.category:
+                audio.category = request.user.profile.category
+                logger.info(f"Category '{audio.category}' assigned to media by user {request.user.username}")
+            else:
+                logger.warning(f"User {request.user.username} has no category assigned in their profile")
 
             # Process description to escape HTML tags
             audio.description = escape(audio.description)
@@ -488,6 +527,7 @@ def explore(request):
     search_hashtags = user_hashtag_pref.search_hashtags
     viewed_media = user_hashtag_pref.viewed_media
     not_interested_media = user_hashtag_pref.not_interested_media  # Media IDs the user marked as not interested
+    liked_categories = user_hashtag_pref.liked_categories
 
     hashtag_filter = request.GET.get('hashtag', '')
 
@@ -530,7 +570,7 @@ def explore(request):
     # Calculate scores for media
     media_scores = []
     for media in new_media + old_media:
-        score = calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed_hashtags, search_hashtags)
+        score = calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed_hashtags, search_hashtags, liked_categories)
         media_scores.append((media, score))
 
     # Sort media by score (highest first)
@@ -583,6 +623,7 @@ def search_uploads(request):
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
     search_hashtags = user_hashtag_pref.search_hashtags  # Include search hashtags
     viewed_media = user_hashtag_pref.viewed_media
+    liked_categories = user_hashtag_pref.liked_categories
 
     # If there is a search query, add it to the search_hashtags list
     if query:
@@ -620,7 +661,8 @@ def search_uploads(request):
             liked_hashtags,
             not_interested_hashtags,
             viewed_hashtags,
-            search_hashtags  # Pass search hashtags to the scoring function
+            search_hashtags,  # Pass search hashtags to the scoring function
+            liked_categories
         )
         media_scores.append((media, score))
 
@@ -695,6 +737,7 @@ def explore_detail(request, media_id):
     search_hashtags = user_hashtag_pref.search_hashtags
     viewed_media = user_hashtag_pref.viewed_media
     not_interested_media = user_hashtag_pref.not_interested_media  # Media IDs the user marked as not interested
+    liked_categories = user_hashtag_pref.liked_categories
 
     # Update viewed media and hashtags
     if media.id not in viewed_media:
@@ -745,7 +788,8 @@ def explore_detail(request, media_id):
             liked_hashtags,
             not_interested_hashtags,
             viewed_hashtags,
-            search_hashtags
+            search_hashtags,
+            liked_categories
         )
         media_scores.append((related, score))
 
@@ -817,6 +861,7 @@ def following_media(request):
     not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
     viewed_hashtags = user_hashtag_pref.viewed_hashtags
     search_hashtags = user_hashtag_pref.search_hashtags  # Include search hashtags
+    liked_categories = user_hashtag_pref.liked_categories
     
     # Get users who have blocked the current user
     users_blocked_me = BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True)
@@ -876,7 +921,8 @@ def following_media(request):
             liked_hashtags,
             not_interested_hashtags,
             viewed_hashtags,
-            search_hashtags  # Pass search hashtags to the scoring function
+            search_hashtags, # Pass search hashtags to the scoring function
+            liked_categories
         )
         media_scores.append((m, score))
 
@@ -1027,6 +1073,7 @@ def like_media(request, media_id):
     else:
         media.likes.add(request.user)
         liked = True
+        user_hashtag_pref.add_liked_category(media.category)  # Track engagement with the media's category
 
         # Update the liked hashtags list based on the media description
         hashtags_in_description = re.findall(r'#(\w+)', media.description)
@@ -1243,76 +1290,6 @@ def delete_user_audio_comment(request, comment_id):
     return redirect(reverse('user_profile:voices', args=[audio.user.id]))
 
 
-
-
-# @login_required
-# def media_detail_view(request, media_id):
-#     media = get_object_or_404(Media, id=media_id)
-#     user = media.user  # The owner of the media
-
-#     # Check if the current user is blocked by the media owner
-#     is_blocked_by_media_owner = BlockedUser.objects.filter(blocker=user, blocked=request.user).exists()
-
-#     # Check if the current user has blocked the media owner
-#     has_blocked_media_owner = BlockedUser.objects.filter(blocker=request.user, blocked=user).exists()
-
-#     # If the current user is blocked by the media owner, return a 'user_not_found' page
-#     if is_blocked_by_media_owner:
-#         return render(request, 'user_not_found.html')
-
-#     # Check if the current user is following the media owner
-#     is_following = Follow.objects.filter(follower=request.user, following=user).exists()
-
-#     # Check if the current user is in the media owner's buddy list
-#     is_buddy = Buddy.objects.filter(user=user, buddy=request.user).exists()
-
-#     # Check if the media is private and only buddies or the owner can view it
-#     if media.is_private and not is_buddy and request.user != user:
-#         return render(request, 'private_upload.html')
-
-#     # Check if the media is private, the user's profile is private, the current user is not a follower, and the current user is not the owner
-#     if (media.is_private or user.profile.is_private) and not is_following and request.user != user:
-#         return render(request, 'private_upload.html')
-
-#     # Fetch all media uploads of the media owner (user), excluding private media unless the current user has access
-#     buddies = Buddy.objects.filter(user=request.user).values_list('buddy', flat=True)
-#     following_users = request.user.follower_set.all().values_list('following', flat=True)
-#     user_uploads = Media.objects.filter(user=user).filter(
-#         Q(is_private=False) | 
-#         Q(user=request.user) | 
-#         Q(user__in=buddies) | 
-#         Q(user__in=following_users)
-#     ).order_by('-created_at')
-
-#     # Paginate the user's uploads
-#     paginator = Paginator(user_uploads, 12)  # Display 12 uploads per page
-#     page_number = request.GET.get('page')
-#     page_obj = paginator.get_page(page_number)
-
-#     # Engagement tracking (view count)
-#     if not Engagement.objects.filter(user=request.user, media=media, engagement_type='view').exists():
-#         media.view_count = F('view_count') + 1
-#         media.save(update_fields=['view_count'])
-#         Engagement.objects.create(media=media, user=request.user, engagement_type='view')
-
-#     # Making usernames clickable in the description
-#     description = make_usernames_clickable(media.description)
-
-#     # Context for rendering the media detail page
-#     context = {
-#         'media': media,
-#         'description': description,
-#         'is_following': is_following,
-#         'is_buddy': is_buddy,  # Passed is_buddy to template
-#         'has_blocked_media_owner': has_blocked_media_owner,  # Passed for template
-#         'is_blocked_by_media_owner': is_blocked_by_media_owner,  # Passed for template
-#         'page_obj': page_obj,  # Paginated user uploads
-#         'user_uploads': user_uploads,  # All uploads by the user
-#     }
-
-#     return render(request, 'media_detail.html', context)
-
-
 @login_required
 def media_detail_view(request, media_id):
     media = get_object_or_404(Media, id=media_id)
@@ -1395,13 +1372,54 @@ def profile_notifications(request):
 
 
 
+# @login_required
+# def edit_profile(request, user_id):
+#     profile_user = get_object_or_404(AuthUser, id=user_id)
+#     profile, created = Profile.objects.get_or_create(user=profile_user)
+
+#     profile_form = ProfileForm(instance=profile)
+#     username_form = UsernameUpdateForm(initial={'new_username': profile_user.username})
+
+#     if request.method == 'POST':
+#         if 'save_changes' in request.POST:  # Handle profile updates
+#             profile_form = ProfileForm(request.POST, request.FILES, instance=profile)
+
+#             if profile_form.is_valid():
+#                 profile_form.save()
+#                 messages.success(request, 'Profile updated successfully!')
+#                 return redirect('user_profile:profile', user_id=user_id)
+#             else:
+#                 messages.error(request, 'Error updating your profile')
+
+#         elif 'update_username' in request.POST:  # Handle username updates
+#             username_form = UsernameUpdateForm(request.POST)
+
+#             if username_form.is_valid():
+#                 new_username = username_form.cleaned_data['new_username']
+#                 if new_username != profile_user.username:  # Only update if the username changed
+#                     profile_user.username = new_username
+#                     profile_user.save()
+#                 messages.success(request, 'Username updated successfully!')
+#                 return redirect('user_profile:profile', user_id=user_id)
+#             else:
+#                 messages.error(request, 'Error updating your username')
+
+#     return render(request, 'edit_profile.html', {
+#         'form': profile_form,
+#         'username_form': username_form,
+#         'profile_user': profile_user
+#     })
+
+
 @login_required
 def edit_profile(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
     profile, created = Profile.objects.get_or_create(user=profile_user)
 
+    # Initialize forms
     profile_form = ProfileForm(instance=profile)
     username_form = UsernameUpdateForm(initial={'new_username': profile_user.username})
+    category_form = CategorySelectionForm(instance=profile)  # Category selection form
 
     if request.method == 'POST':
         if 'save_changes' in request.POST:  # Handle profile updates
@@ -1427,11 +1445,83 @@ def edit_profile(request, user_id):
             else:
                 messages.error(request, 'Error updating your username')
 
+        elif 'update_category' in request.POST:  # Handle category selection updates
+            category_form = CategorySelectionForm(request.POST, instance=profile)
+
+            if category_form.is_valid():
+                category_form.save()
+                messages.success(request, 'Category updated successfully!')
+                return redirect('user_profile:profile', user_id=user_id)
+            else:
+                messages.error(request, 'Error updating your category')
+
     return render(request, 'edit_profile.html', {
         'form': profile_form,
         'username_form': username_form,
+        'category_form': category_form,  # Include the category form
         'profile_user': profile_user
     })
+
+
+
+CATEGORY_CHOICES = [
+    ('media_journalism', 'Media and Journalism'),
+    ('entertainment', 'Entertainment'),
+    ('sports_fitness', 'Sports and Fitness'),
+    ('creators_influencers', 'Creators and Influencers'),
+    ('education_learning', 'Education and Learning'),
+    ('business_entrepreneurship', 'Business and Entrepreneurship'),
+    ('art_design', 'Art and Design'),
+    ('social_causes', 'Social Causes and Activism'),
+    ('tech_science', 'Technology and Science'),
+    ('health_wellness', 'Health and Wellness'),
+    ('hobbies_interests', 'Hobbies and Interests'),
+    ('government_politics', 'Government and Politics'),
+    ('religious_spiritual', 'Religious and Spiritual'),
+    ('travel_adventure', 'Travel and Adventure'),
+    ('comedy_memes', 'Comedy and Memes'),
+]
+
+@login_required
+def update_category(request):
+    profile = request.user.profile  # Access the Profile instance for the logged-in user
+
+    if request.method == 'POST':
+        form = CategorySelectionForm(request.POST, instance=profile)  # Bind the form to the Profile model
+        if form.is_valid():
+            form.save()  # Save the updated category to the Profile instance
+
+            # Handle AJAX requests
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'category': form.cleaned_data['category']  # Return the readable category name
+                })
+
+            messages.success(request, "Your category has been updated.")
+            return redirect('user_profile:profile', user_id=request.user.id)  # Non-AJAX redirect
+
+    else:
+        form = CategorySelectionForm(instance=profile)  # Populate the form with the current profile data
+
+    # Handle GET requests for AJAX
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'category': profile.category
+        })
+
+    return render(request, 'edit_profile.html', {'form': form})
+
+
+@login_required
+def fetch_categories(request):
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'categories': CATEGORY_CHOICES  # Return the choices as a list
+        })
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
 
 
 @login_required

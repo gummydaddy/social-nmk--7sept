@@ -38,6 +38,8 @@ urlpatterns = [
     path('followers_list/<int:user_id>', notion_views.followers_list, name='followers_list'),
     path('remove-follower/<int:user_id>/', views.remove_follower, name='remove_follower'),
     path('toggle_privacy/', views.toggle_privacy, name='toggle_privacy'),
+    path('update_category/', views.update_category, name='update_category'),
+    path('fetch_categories/', views.fetch_categories, name='fetch_categories'),
     path('media/<int:media_id>/toggle_privacy/', views.toggle_media_privacy, name='toggle_media_privacy'),
     path('password_reset/', only_card_views.password_reset, name='password_reset'),
     

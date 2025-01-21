@@ -8,6 +8,9 @@ from django.core.files.storage import FileSystemStorage
 from .storage import CompressedMediaStorage
 from django.utils import timezone
 from django.db.models import JSONField
+from django_countries.fields import CountryField
+from django.utils import timezone
+
 
 
 
@@ -18,6 +21,8 @@ class Profile(models.Model):
     bio = models.TextField(blank=True, null=True)
     saved_uploads = models.ManyToManyField('Media', related_name='saved_by_users', blank=True)
     is_private = models.BooleanField(default=False)  # New field to track privacy
+    country = CountryField(blank=True, null=True)
+    category = models.CharField(max_length=50, blank=True, null=True, help_text="Select the category that best describes your content.")
     email_confirmed = models.BooleanField(default=False)  # New field to track email confirmation
     firebase_uid = models.CharField(max_length=255, blank=True, null=True)  # Field to store Firebase UID
 
@@ -36,8 +41,10 @@ class Media(models.Model):
     description = models.TextField(blank=True, null=True)
     media_type = models.CharField(max_length=10, choices=MEDIA_TYPES, null=True)
     hashtags = models.ManyToManyField('Hashtag', related_name='media', blank=True)
+    category = models.CharField(max_length=50, blank=True, null=True, help_text="Category of the media.")
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    country = CountryField(blank=True, null=True)
     likes = models.ManyToManyField(AuthUser, related_name='liked_uploads', blank=True)
     view_count = models.PositiveIntegerField(default=0)  # To keep track of views
     reported_by = models.ManyToManyField(AuthUser, related_name='reported_media', blank=True)  #report
@@ -58,8 +65,10 @@ class Audio(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='audio')
     file = models.FileField(upload_to='media/', storage=CompressedMediaStorage())
     description = models.TextField(blank=True, null=True)
+    category = models.CharField(max_length=50, blank=True, null=True, help_text="Category of the audio.")
     is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    country = CountryField(blank=True, null=True)
     likes = models.ManyToManyField(AuthUser, related_name='liked_audio', blank=True)
     view_count = models.PositiveIntegerField(default=0)  # To keep track of views
     reported_by = models.ManyToManyField(AuthUser, related_name='reported_audio', blank=True)  # report
@@ -108,6 +117,9 @@ class UserHashtagPreference(models.Model):
     viewed_hashtags = models.JSONField(default=list)  # Store the last 50 unique hashtags viewed by the user
     viewed_media = models.JSONField(default=list)  # Store the last viewed media IDs
     not_interested_media = models.JSONField(default=list)  # Store the last 50 unique media IDs that the user is not interested in
+    
+    #new catogery
+    liked_categories = models.JSONField(default=list)  # Store the last 10 categories engaged with
 
     # New field to store the last 35 unique search keywords
     search_hashtags = models.JSONField(default=list)
@@ -126,6 +138,13 @@ class UserHashtagPreference(models.Model):
         self.not_interested_media = [media_id] + self.not_interested_media
         self.not_interested_media = list(dict.fromkeys(self.not_interested_media))[:50]
         self.save(update_fields=['not_interested_media'])
+    
+    # New method to add search keywords to the add_liked_category list
+    def add_liked_category(self, category):
+        if category:  # Check if category is valid
+            self.liked_categories = [category] + self.liked_categories
+            self.liked_categories = list(dict.fromkeys(self.liked_categories))[:10]
+            self.save(update_fields=['liked_categories'])
 
     # New method to add search keywords to the search_hashtags list
     def add_search_hashtag(self, search_keyword):
