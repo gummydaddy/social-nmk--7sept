@@ -33,7 +33,8 @@ export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
 # export SECRET_KEY="your-secret-key"
 export DEBUG=True  # Set to False in production
 # export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL
-export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL
+# export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL
+export DATABASE_URL="postgres://postgres:090399Akash$@localhost:5432/socyfiedev"
 export REDIS_URL="redis://localhost:6379/0"  # Example Redis URL if you use Redis
 
 # Add Celery-related environment variables (if needed)

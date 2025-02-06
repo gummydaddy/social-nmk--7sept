@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="userupload",
             name="country",
-            field=django_countries.fields.CountryField(default="INDIA", max_length=2),
+            field=django_countries.fields.CountryField(default="INDIA", max_length=30),
             preserve_default=False,
         ),
     ]

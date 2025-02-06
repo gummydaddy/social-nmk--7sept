@@ -280,10 +280,20 @@ DEBUG = env.bool('DEBUG', default=False)
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "database_setup/db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        "NAME": "socyfiedev",
+        "USER": "postgres",
+        "PASSWORD": "090399Akash$",
+        "HOST": "localhost",
+        "PORT": "5432",
     }
 }
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": "database_setup/db.sqlite3",
+#     }
+# }
 # DATABASE_URL = env('DATABASE_URL', default='')
 
 

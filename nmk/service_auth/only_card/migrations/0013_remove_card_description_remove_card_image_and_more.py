@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
             model_name="card",
             name="card_number",
             field=models.CharField(
-                default="NMK 0000000000000000", max_length=16, unique=True
+                default="NMK 0000000000000000", max_length=30, unique=True
             ),
             preserve_default=False,
         ),

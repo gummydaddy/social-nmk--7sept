@@ -494,7 +494,7 @@
                         <a class="dropdown-item" href="{% url 'only_card:service3' %}">Service 3</a>
                     </div>
                 </a> {% endcomment %}
-                <a href="{% url 'only_card:upload_document' %}" >Upload Documents</a>
+
                 <a href="{% url 'user_profile:buddy_list' %}">
                     <button type="button">View Buddies</button>
                 </a>
@@ -565,7 +565,9 @@
                     <p>{{ request.user.username }}</p>
                     <p> {{ user_card.card_number }}</p>
                 </div> {% endcomment %}
-                
+                <a href="{% url 'only_card:upload_document' %}" >
+                    <button type="button">Upload Documents</button>
+                </a>
                 <div class="container my-5">
                     <div class="row">
                         <div class="col-12 text-center">
