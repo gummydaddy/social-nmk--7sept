@@ -283,7 +283,7 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "socyfiedev",
         "USER": "postgres",
-        "PASSWORD": "090399Akash$",
+        "PASSWORD": env('DATABASE_HOST_PASSWORD'),
         "HOST": "localhost",
         "PORT": "5432",
     }
@@ -368,6 +368,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CSRF_TRUSTED_ORIGINS = [
+    # 'https://localhost:8000', 
+    'https://socyfie.com', 
+    'https://www.socyfie.com'
+    ]
 
 
 AUTHENTICATION_BACKENDS = [

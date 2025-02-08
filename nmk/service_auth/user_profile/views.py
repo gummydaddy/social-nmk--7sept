@@ -327,7 +327,7 @@ def voices(request, user_id):
         filtered_audio.append(audio)
 
     # Paginate the results, showing 100 audio files per page
-    paginator = Paginator(filtered_audio, 100)
+    paginator = Paginator(filtered_audio, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -345,7 +345,7 @@ def voices(request, user_id):
 def media_tags(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
     tagged_media = Media.objects.filter(tags=profile_user).order_by('-created_at')
-    paginator = Paginator(tagged_media, 100)  # Paginate the results
+    paginator = Paginator(tagged_media, 30)  # Paginate the results
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -404,7 +404,7 @@ def profile(request, user_id):
     # Filter private media for users not in buddy list
     private_media = [item for item in media if item.is_private and not is_buddy and request.user != profile_user]
 
-    paginator = Paginator(filtered_media, 100)
+    paginator = Paginator(filtered_media, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -578,7 +578,7 @@ def explore(request):
     sorted_media = [m[0] for m in sorted_media]
 
     # Paginate media results
-    paginator = Paginator(sorted_media, 100)
+    paginator = Paginator(sorted_media, 18)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -670,7 +670,7 @@ def search_uploads(request):
     sorted_media = sorted(media_scores, key=lambda x: x[1], reverse=True)
     sorted_media = [m[0] for m in sorted_media]
 
-    paginator = Paginator(sorted_media, 100)
+    paginator = Paginator(sorted_media, 30)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -949,7 +949,7 @@ def following_media(request):
     for media in sorted_media:
         media.description = make_usernames_clickable(media.description)
 
-    paginator = Paginator(sorted_media, 8)
+    paginator = Paginator(sorted_media, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1048,7 +1048,7 @@ def search_users(request, user_id):
     
 
     # Set up pagination with 100 users per page
-    paginator = Paginator(users, 100)
+    paginator = Paginator(users, 30)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
