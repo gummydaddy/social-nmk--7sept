@@ -10,6 +10,14 @@ from django.utils import timezone
 from django.db.models import JSONField
 from django_countries.fields import CountryField
 from django.utils import timezone
+# import ffmpeg
+from io import BytesIO
+from PIL import Image
+from django.core.files.base import ContentFile
+import os
+import subprocess
+
+
 
 
 
@@ -22,7 +30,7 @@ class Profile(models.Model):
     saved_uploads = models.ManyToManyField('Media', related_name='saved_by_users', blank=True)
     is_private = models.BooleanField(default=False)  # New field to track privacy
     country = CountryField(blank=True, null=True)
-    category = models.CharField(max_length=50, blank=True, null=True, help_text="Select the category that best describes your content.")
+    category = models.CharField(max_length=45, blank=True, null=True, help_text="Select the category that best describes your content.")
     email_confirmed = models.BooleanField(default=False)  # New field to track email confirmation
     firebase_uid = models.CharField(max_length=255, blank=True, null=True)  # Field to store Firebase UID
 
@@ -43,6 +51,7 @@ class Media(models.Model):
     hashtags = models.ManyToManyField('Hashtag', related_name='media', blank=True)
     category = models.CharField(max_length=50, blank=True, null=True, help_text="Category of the media.")
     is_paid = models.BooleanField(default=False)
+    thumbnail = models.ImageField(upload_to="thumbnails/", blank=True, null=True)  # Add this field
     created_at = models.DateTimeField(auto_now_add=True)
     country = CountryField(blank=True, null=True)
     likes = models.ManyToManyField(AuthUser, related_name='liked_uploads', blank=True)
@@ -59,6 +68,61 @@ class Media(models.Model):
     def delete_file(self):
         if self.file:
             self.file.delete(save=False)
+
+    def save(self, *args, **kwargs):
+        if not self.thumbnail:  # Generate only if not already created
+            self.generate_thumbnail()
+        super().save(*args, **kwargs)
+
+    def generate_thumbnail(self):
+        """Generate a thumbnail for images or videos."""
+        if self.file.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            self.create_image_thumbnail()
+        elif self.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
+            self.create_video_thumbnail()
+
+    def create_image_thumbnail(self):
+        """Generate a compressed thumbnail for images."""
+        try:
+            img = Image.open(self.file)
+            img.thumbnail((250, 150))  # Resize to 150x150 pixels
+
+            # Convert to JPEG if needed
+            thumb_io = BytesIO()
+            img_format = img.format if img.format else "JPEG"
+            img.save(thumb_io, format=img_format, quality=85)  # Adjust quality for compression
+
+            # Save thumbnail
+            thumb_name = f"thumb_{os.path.basename(self.file.name)}"
+            self.thumbnail.save(thumb_name, ContentFile(thumb_io.getvalue()), save=False)
+        except Exception as e:
+            print(f"Error creating image thumbnail: {e}")
+
+    def create_video_thumbnail(self):
+        """Generate a thumbnail for videos using FFmpeg."""
+        if not self.file:
+            return  # Skip if file is missing
+
+        video_path = self.file.path
+        thumb_name = f"thumb_{os.path.splitext(os.path.basename(self.file.name))[0]}.jpg"
+        output_path = os.path.join(os.path.dirname(video_path), thumb_name)
+
+        try:
+            # Use FFmpeg via subprocess
+            subprocess.run([
+                'ffmpeg', '-i', video_path, '-ss', '00:00:01', '-vframes', '1', output_path
+            ], check=True, capture_output=True)
+
+            # Save thumbnail to Django model
+            with open(output_path, "rb") as f:
+                self.thumbnail.save(thumb_name, ContentFile(f.read()), save=False)
+
+            # Clean up temporary files
+            os.remove(output_path)
+        except subprocess.CalledProcessError as e:
+            print(f"FFmpeg error: {e.stderr.decode()}")
+        except Exception as e:
+            print(f"Error generating video thumbnail: {e}")
 
 
 class Audio(models.Model):
@@ -119,7 +183,7 @@ class UserHashtagPreference(models.Model):
     not_interested_media = models.JSONField(default=list)  # Store the last 50 unique media IDs that the user is not interested in
     
     #new catogery
-    liked_categories = models.JSONField(default=list)  # Store the last 10 categories engaged with
+    liked_categories = models.JSONField(default=list) # Store the last 10 categories engaged with
 
     # New field to store the last 35 unique search keywords
     search_hashtags = models.JSONField(default=list)

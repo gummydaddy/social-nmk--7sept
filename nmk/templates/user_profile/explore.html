@@ -34,7 +34,7 @@
 
 
 <br>
-
+<!--
 <div class="row row-cols-3 g-4" id="media-container">
     {% for media in page_obj %}
         <div class="col media-item">
@@ -48,11 +48,21 @@
                     <img src="{{ media.file.url }}" alt="media" class="img-fluid">
                 {% endif %}
             </a>
-            {% comment %} <p>
-                <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-                    {{ media.user.username }}
-                </a>
-            </p> {% endcomment %}
+        </div>
+    {% endfor %}
+</div>
+-->
+
+<div class="row row-cols-3 g-4" id="media-container">
+    {% for media in page_obj %}
+        <div class="col media-item">
+            <a href="{% url 'user_profile:explore_detail' media.id %}">
+                {% if media.thumbnail %}
+                    <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid">
+                {% else %}
+                    <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+                {% endif %}
+            </a>
         </div>
     {% endfor %}
 </div>
@@ -191,4 +201,6 @@
 
     window.addEventListener('scroll', handleScroll);
 </script>
+
+    
 {% endblock %}

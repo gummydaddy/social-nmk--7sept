@@ -32,9 +32,9 @@ echo "Packages installed successfully in ${PYTHON_PATH}"
 export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
 # export SECRET_KEY="your-secret-key"
 export DEBUG=True  # Set to False in production
-# export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL
+export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL
 # export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL
-export DATABASE_URL="postgres://postgres:090399Akash$@localhost:5432/socyfiedev"
+# export DATABASE_URL="postgres://postgres:090399Akash$@localhost:5432/socyfiedev"
 export REDIS_URL="redis://localhost:6379/0"  # Example Redis URL if you use Redis
 
 # Add Celery-related environment variables (if needed)
@@ -69,3 +69,73 @@ celery -A socyfie_application beat --loglevel=info &
 
 # Print a message indicating Celery services are started
 echo "Celery worker and beat are running."
+
+
+
+# #!/bin/bash
+# # Exit on error
+# set -e
+
+# # Define the virtual environment path
+# VENV_PATH="/home/ubuntu/social-nmk--7sept/venv"
+
+# # Define the path to your requirements.txt file
+# REQUIREMENTS_FILE="/home/ubuntu/social-nmk--7sept/nmk/requirements.txt"
+
+# # Create the virtual environment if it doesn't exist
+# if [ ! -d "$VENV_PATH" ]; then
+#     echo "Creating virtual environment at $VENV_PATH..."
+#     python3 -m venv "$VENV_PATH"
+# fi
+
+# # Activate the virtual environment
+# source "$VENV_PATH/bin/activate"
+
+# # Upgrade pip and six in the virtual environment
+# pip install --upgrade pip
+# pip install --upgrade six
+
+# # Install the packages from requirements.txt
+# if [ -f "$REQUIREMENTS_FILE" ]; then
+#     pip install -r "$REQUIREMENTS_FILE"
+# else
+#     echo "requirements.txt not found at $REQUIREMENTS_FILE."
+#     exit 1
+# fi
+
+# # Export environment variables
+# export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
+# export DEBUG=True
+# #export DATABASE_URL="testadmin://postgres:090399Akash$@13.235.125.150:5432/socyfiedev" #use for deploymenty 
+# #export REDIS_URL="redis://:090399Akash$@13.235.125.150:6379/0"
+
+# export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL use for local
+# export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL use for local
+
+# #export DATABASE_URL="postgres://postgres:090399Akash$@localhost:5432/socyfiedev"
+# #export REDIS_URL="redis://localhost:6379/0"  # Example Redis URL if you use Redis
+
+# export CELERY_BROKER_URL="$REDIS_URL"
+
+# # (Optional) Adjust PYTHONPATH if needed for additional modules
+# export PYTHONPATH="$VENV_PATH/lib/$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')/site-packages/"
+
+# echo "Packages installed successfully in virtual environment at ${VENV_PATH}"
+# echo "PYTHONPATH set to: $PYTHONPATH"
+
+# # Run Django's SSL server in the background
+# # python3 manage.py runserver 0.0.0.0:8000 &   #use for development
+# python3 manage.py runserver &   #use for local
+
+# # Start Celery worker and beat services in the background
+# echo "Starting Celery worker and beat services..."
+# celery -A socyfie_application worker --loglevel=info -n worker1@%h &
+
+# #celery -A socyfie_application worker --loglevel=info -Q media_worker -n media_worker@%h &
+
+
+# #celery -A socyfie_application worker --loglevel=info -Q media_worker &
+
+# celery -A socyfie_application beat --loglevel=info &
+
+# echo "Celery worker and beat are running."

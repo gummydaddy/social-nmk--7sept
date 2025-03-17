@@ -195,7 +195,7 @@
 </div>
 
 <!-- Uploaded media with pagination -->
-<div class="row row-cols-3 g-4">
+{% comment %} <div class="row row-cols-3 g-4">
     {% for upload in page_obj %}
     <div class="col">
         <div id="media-container-{{ upload.id }}" class="upload-item">
@@ -217,14 +217,43 @@
                 <p>Views: {{ upload.view_count }}</p>
                 
             </div>
-            {% comment %} <!-- Description with clickable links -->
-            <div class="description">
-                <p>{{ upload.description|safe }}</p>
-            </div> {% endcomment %}
+        </div>
+    </div>
+    {% endfor %}
+</div> {% endcomment %}
+
+<div class="row row-cols-3 g-4">
+    {% for upload in page_obj %}
+    <div class="col">
+        <div id="media-container-{{ upload.id }}" class="upload-item">
+            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+                {% if upload.file.url|is_video %}
+                <!-- Video Thumbnail -->
+                <video class="img-fluid lazyload" 
+                       data-src="{{ upload.file.url }}" 
+                       {% if upload.thumbnail %} poster="{{ upload.thumbnail.url }}" {% endif %} muted>
+                    Your browser does not support the video tag.
+                </video>
+                {% else %}
+                <!-- Image Thumbnail -->
+                {% if upload.thumbnail %}
+                    <img src="{{ upload.thumbnail.url }}" data-src="{{ upload.file.url }}" alt="Image" class="img-fluid lazyload">
+                {% else %}
+                    <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
+                {% endif %}
+                {% endif %}
+            </a>
+
+            <!-- View Count -->
+            <div class="view-count">
+                <p>Views: {{ upload.view_count }}</p>
+            </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
+
 
 <!-- Pagination controls -->
 <div class="pagination">
@@ -334,6 +363,32 @@
                 .catch(error => console.error('Error:', error));
             });
         }
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let lazyMedia = document.querySelectorAll(".lazyload");
+    
+        const lazyLoad = () => {
+            lazyMedia.forEach(media => {
+                if (media.getBoundingClientRect().top < window.innerHeight && media.dataset.src) {
+                    if (media.tagName === "IMG") {
+                        media.src = media.dataset.src;  // Replace thumbnail with full image
+                    } else if (media.tagName === "VIDEO") {
+                        let source = document.createElement("source");
+                        source.src = media.dataset.src;
+                        source.type = "video/mp4";
+                        media.appendChild(source);
+                        media.load();  // Load video
+                    }
+                    media.classList.remove("lazyload");
+                }
+            });
+        };
+    
+        window.addEventListener("scroll", lazyLoad);
+        window.addEventListener("resize", lazyLoad);
+        lazyLoad();  // Load visible media immediately
     });
 </script>
 

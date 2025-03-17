@@ -219,7 +219,7 @@
 {% endif %}
 
 <h2>{{ media.user.username }}'s Other Uploads</h2>
-<div class="row row-cols-2 g-4">
+{% comment %} <div class="row row-cols-2 g-4">
     {% for upload in page_obj %}
         <div class="col">
             <div id="media-container-{{ upload.id }}" class="upload-item">
@@ -229,6 +229,34 @@
                             <source src="{{ upload.file.url }}" type="video/mp4">
                             Your browser does not support the video tag.
                         </video>
+                    {% else %}
+                        <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
+                    {% endif %}
+                </a>
+
+                <!-- View Count -->
+                <div class="view-count">
+                    <p>Views: {{ upload.view_count }}</p>
+                </div>
+
+                <!-- Description with clickable links -->
+                <div class="description">
+                    <p>{{ upload.description|safe }}</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div> {% endcomment %}
+
+<div class="row row-cols-2 g-4">
+    {% for upload in page_obj %}
+        <div class="col">
+            <div id="media-container-{{ upload.id }}" class="upload-item">
+                <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+                    {% if upload.file.url|is_video %}
+                        <img src="{{ upload.thumbnail.url }}" alt="video thumbnail" 
+                             class="img-fluid video-thumbnail" 
+                             data-video="{{ upload.file.url }}">
                     {% else %}
                         <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
                     {% endif %}
@@ -413,79 +441,22 @@
         });
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".video-thumbnail").forEach(function(img) {
+            img.addEventListener("click", function(event) {
+                event.preventDefault();  // Prevent navigation if inside <a>
+                let videoUrl = this.getAttribute("data-video");
+                let videoTag = `<video controls class="img-fluid autoplay-video" autoplay muted>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>`;
+                this.outerHTML = videoTag;
+            });
+        });
+    });
+</script>
+
 {% endblock %}
 
 
-{% comment %} let page = 1;
-    const mediaDetailUrl = "{% url 'user_profile:media_detail_view' media.id %}";
-    const otherUploadsContainer = document.getElementById('other-uploads');
-    const loadingSpinner = document.getElementById('loading-spinner');
-
-    function fetchMoreUploads() {
-        page += 1;
-        loadingSpinner.style.display = 'block';
-
-        fetch(`${mediaDetailUrl}?page=${page}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            loadingSpinner.style.display = 'none';
-
-            if (data.related_media.length > 0) {
-                data.related_media.forEach(upload => {
-                    const uploadItem = document.createElement('div');
-                    uploadItem.classList.add('upload-item');
-                    uploadItem.onclick = function() {
-                        // Correctly generate the URL using the media ID from the response
-                        const url = "{% url 'user_profile:media_detail_view' '0' %}".replace('0', upload.id);
-                        window.location.href = url;
-                    };
-
-                    if (upload.is_video) {
-                        const video = document.createElement('video');
-                        video.controls = true;
-                        video.style.maxWidth = '100%';
-                        video.style.height = 'auto';
-
-                        const source = document.createElement('source');
-                        source.src = upload.file_url;
-                        source.type = 'video/mp4';
-
-                        video.appendChild(source);
-                        uploadItem.appendChild(video);
-                    } else {
-                        const img = document.createElement('img');
-                        img.src = upload.file_url;
-                        img.alt = 'Image';
-                        img.style.maxWidth = '100%';
-                        img.style.height = 'auto';
-
-                        uploadItem.appendChild(img);
-                    }
-
-                    otherUploadsContainer.appendChild(uploadItem);
-                });
-            } else {
-                window.removeEventListener('scroll', handleScroll);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching more uploads:', error);
-            loadingSpinner.style.display = 'none';
-        });
-    }
-
-    function handleScroll() {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-
-        if (scrollTop + clientHeight >= scrollHeight - 5) {
-            fetchMoreUploads();
-        }
-    }
-
-    window.addEventListener('scroll', handleScroll);
-
-    fetchMoreUploads(); {% endcomment %}
