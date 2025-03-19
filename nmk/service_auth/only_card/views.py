@@ -324,8 +324,8 @@ def logout_view(request):
     user = request.user
     if user.is_authenticated:
         cache.delete(f'user_{user.id}')
-    logout(request)
     request.session.flush()
+    logout(request)
     return redirect('/')
 
 

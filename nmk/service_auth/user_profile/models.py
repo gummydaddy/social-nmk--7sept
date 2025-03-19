@@ -16,6 +16,9 @@ from PIL import Image
 from django.core.files.base import ContentFile
 import os
 import subprocess
+# import cv2
+# from moviepy.editor import VideoFileClip
+from django.conf import settings
 
 
 
@@ -37,6 +40,8 @@ class Profile(models.Model):
     def __str__(self):
         return self.user.username
 
+
+#from .tasks import generate_thumbnail_task
 
 class Media(models.Model):
     MEDIA_TYPES = (
@@ -63,12 +68,18 @@ class Media(models.Model):
     is_story = models.BooleanField(default=False)  # New field to differentiate story media
     
     def __str__(self):
-        return self.description
+        return self.description if self.description else "Media"
 
     def delete_file(self):
         if self.file:
             self.file.delete(save=False)
-
+    '''
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None  # Check if it's a new object
+        super().save(*args, **kwargs)
+        if is_new:  # Run the Celery task only for new media
+            generate_thumbnail_task.delay(self.id)
+    '''
     def save(self, *args, **kwargs):
         if not self.thumbnail:  # Generate only if not already created
             self.generate_thumbnail()
@@ -78,8 +89,8 @@ class Media(models.Model):
         """Generate a thumbnail for images or videos."""
         if self.file.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
             self.create_image_thumbnail()
-        elif self.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
-            self.create_video_thumbnail()
+        # elif self.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
+        #     self.create_video_thumbnail()
 
     def create_image_thumbnail(self):
         """Generate a compressed thumbnail for images."""
@@ -98,32 +109,62 @@ class Media(models.Model):
         except Exception as e:
             print(f"Error creating image thumbnail: {e}")
 
+    # def create_video_thumbnail(self):
+    #     """Generate a thumbnail for videos using FFmpeg."""
+    #     if not self.file:
+    #         return  # Skip if file is missing
+
+    #     video_path = self.file.path
+    #     thumb_name = f"thumb_{os.path.splitext(os.path.basename(self.file.name))[0]}.jpg"
+    #     output_path = os.path.join(os.path.dirname(video_path), thumb_name)
+
+    #     try:
+    #         # Use FFmpeg via subprocess
+    #         subprocess.run([
+    #             'ffmpeg', '-i', video_path, '-ss', '00:00:01', '-vframes', '1', output_path
+    #         ], check=True, capture_output=True)
+
+    #         # Save thumbnail to Django model
+    #         with open(output_path, "rb") as f:
+    #             self.thumbnail.save(thumb_name, ContentFile(f.read()), save=False)
+
+    #         # Clean up temporary files
+    #         os.remove(output_path)
+    #     except subprocess.CalledProcessError as e:
+    #         print(f"FFmpeg error: {e.stderr.decode()}")
+    #     except Exception as e:
+    #         print(f"Error generating video thumbnail: {e}")
+    '''
     def create_video_thumbnail(self):
-        """Generate a thumbnail for videos using FFmpeg."""
+        """Generate a thumbnail for videos without FFmpeg."""
         if not self.file:
             return  # Skip if file is missing
 
-        video_path = self.file.path
-        thumb_name = f"thumb_{os.path.splitext(os.path.basename(self.file.name))[0]}.jpg"
-        output_path = os.path.join(os.path.dirname(video_path), thumb_name)
+        video_path = self.file.path  # This ensures an absolute path
+        if not os.path.exists(video_path):
+            print(f"File not found: {video_path}")
+            return  # Prevent errors
 
         try:
-            # Use FFmpeg via subprocess
-            subprocess.run([
-                'ffmpeg', '-i', video_path, '-ss', '00:00:01', '-vframes', '1', output_path
-            ], check=True, capture_output=True)
+            clip = VideoFileClip(video_path)
+            frame = clip.get_frame(1)  # Capture a frame at 1 second
 
-            # Save thumbnail to Django model
-            with open(output_path, "rb") as f:
-                self.thumbnail.save(thumb_name, ContentFile(f.read()), save=False)
+            # Save frame as thumbnail
+            thumb_name = f"thumb_{os.path.splitext(os.path.basename(self.file.name))[0]}.jpg"
+            thumb_path = os.path.join(settings.MEDIA_ROOT, "thumbnails", thumb_name)
 
-            # Clean up temporary files
-            os.remove(output_path)
-        except subprocess.CalledProcessError as e:
-            print(f"FFmpeg error: {e.stderr.decode()}")
+            from PIL import Image
+            import numpy as np
+
+            img = Image.fromarray(np.uint8(frame))
+            img.thumbnail((250, 150))
+            img.save(thumb_path, format="JPEG", quality=85)
+
+            # Save to model field
+            self.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
         except Exception as e:
             print(f"Error generating video thumbnail: {e}")
-
+    '''
 
 class Audio(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='audio')

@@ -537,7 +537,7 @@ def profile(request, user_id):
     # Filter media based on privacy
     filtered_media = [item for item in media if not item.is_private or is_buddy or request.user == profile_user]
 
-    paginator = Paginator(filtered_media, 12)
+    paginator = Paginator(filtered_media, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -804,7 +804,7 @@ def explore(request):
     sorted_media = [m[0] for m in sorted_media]
 
     # Paginate media results
-    paginator = Paginator(sorted_media, 18)
+    paginator = Paginator(sorted_media, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1025,7 +1025,7 @@ def explore_detail(request, media_id):
     related_media = [m[0] for m in sorted_media]
 
     # Pagination logic
-    paginator = Paginator(related_media, 10)  # Show 10 items per page
+    paginator = Paginator(related_media, 8)  # Show 10 items per page
     page = request.GET.get('page', 1)
 
     try:
@@ -1176,7 +1176,7 @@ def following_media(request):
     for media in sorted_media:
         media.description = make_usernames_clickable(media.description)
 
-    paginator = Paginator(sorted_media, 9)
+    paginator = Paginator(sorted_media, 7)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1275,7 +1275,7 @@ def search_users(request, user_id):
     
 
     # Set up pagination with 100 users per page
-    paginator = Paginator(users, 30)
+    paginator = Paginator(users, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1557,7 +1557,7 @@ def media_detail_view(request, media_id):
     ).order_by('-created_at')
 
     # Paginate the user's older uploads
-    paginator = Paginator(older_uploads, 12)  # Display 12 uploads per page
+    paginator = Paginator(older_uploads, 6)  # Display 12 uploads per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1591,7 +1591,7 @@ def media_detail_view(request, media_id):
 def profile_notifications(request):
     notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
 
-    paginator = Paginator(notifications, 100)
+    paginator = Paginator(notifications, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1871,7 +1871,7 @@ def report_media(request, media_id):
         user_hashtag_pref.save()
 
         # Create admin notification if report count exceeds 500
-        if media.report_count > 500:
+        if media.report_count > 50:
             AdminNotification.objects.create(media=media)
 
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -1905,7 +1905,7 @@ def saved_uploads(request):
     profile = get_object_or_404(Profile, user=request.user)
     saved_media = profile.saved_uploads.all().order_by('-created_at')
 
-    paginator = Paginator(saved_media, 100)
+    paginator = Paginator(saved_media, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 

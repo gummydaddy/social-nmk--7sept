@@ -222,7 +222,7 @@
     {% endfor %}
 </div> {% endcomment %}
 
-<div class="row row-cols-3 g-4">
+{% comment %} <div class="row row-cols-3 g-4">
     {% for upload in page_obj %}
     <div class="col">
         <div id="media-container-{{ upload.id }}" class="upload-item">
@@ -241,6 +241,40 @@
                 {% else %}
                     <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
                 {% endif %}
+                {% endif %}
+            </a>
+
+            <!-- View Count -->
+            <div class="view-count">
+                <p>Views: {{ upload.view_count }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div> {% endcomment %}
+
+<div class="row row-cols-3 g-4">
+    {% for upload in page_obj %}
+    <div class="col">
+        <div id="media-container-{{ upload.id }}" class="upload-item">
+            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+                {% if upload.file.url|is_video %}
+                <!-- Video Thumbnail -->
+                <video class="img-fluid lazyload" 
+                       data-src="{{ upload.file.url }}" 
+                       {% if upload.thumbnail %}
+                           poster="{{ upload.thumbnail.url }}"
+                       {% else %}
+                           poster="{{ upload.file.url }}"
+                       {% endif %} muted>
+                    Your browser does not support the video tag.
+                </video>
+                {% else %}
+                <!-- Image Thumbnail -->
+                <img src="{% if upload.thumbnail %}{{ upload.thumbnail.url }}{% else %}{{ upload.file.url }}{% endif %}" 
+                     data-src="{{ upload.file.url }}" 
+                     alt="Image" 
+                     class="img-fluid lazyload">
                 {% endif %}
             </a>
 

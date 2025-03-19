@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 
 class CompressedMediaStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
-        self.image_quality = kwargs.pop('image_quality', 65)
-        self.video_crf = kwargs.pop('video_crf', 28)
+        self.image_quality = kwargs.pop('image_quality', 85)
+        # self.video_crf = kwargs.pop('video_crf', 28)
         self.max_image_dimension = kwargs.pop('max_image_dimension', 1920)
         self.audio_bitrate = kwargs.pop('audio_bitrate', '128k')
         super().__init__(*args, **kwargs)
         logger.info(f"CompressedMediaStorage initialized with image_quality={self.image_quality}, "
-                    f"video_crf={self.video_crf}, max_image_dimension={self.max_image_dimension},"
+                    # f"video_crf={self.video_crf}, max_image_dimension={self.max_image_dimension},"
                     f"audio_bitrate={self.audio_bitrate}")
         
         
@@ -50,8 +50,8 @@ class CompressedMediaStorage(FileSystemStorage):
         if isinstance(content, (InMemoryUploadedFile, TemporaryUploadedFile)):
             if ext in ['.jpg', '.jpeg', '.png']:
                 content = self.compress_image(content, ext, name)
-            elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
-                content = self.compress_video(content, ext, name)
+            # elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
+                # content = self.compress_video(content, ext, name)
             elif ext in ['.mp3', '.wav', '.ogg']:
                 content = self.compress_audio(content, ext, name)
         return super()._save(name, content)
@@ -116,63 +116,63 @@ class CompressedMediaStorage(FileSystemStorage):
             img.thumbnail((self.max_image_dimension, self.max_image_dimension))
         return img
 
-
-    def compress_video(self, content, ext, name):
-        logger.info(f"Compressing video: {name} with ffmpeg")
-        # logger.debug(f"Running ffmpeg command: {' '.join(self.get_ffmpeg_command(content, ext, name))}")
-        try:
-            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
-                tmp_file.write(content.read())
-                tmp_file.flush()
-                output_path = tmp_file.name + "_compressed" + ext
-                command = self.get_ffmpeg_command(content, ext, name)
-                subprocess.run(command, check=True, capture_output=True)
-                logger.info(f"Compressed video {name}, size: {os.path.getsize(output_path)} bytes")
-                return InMemoryUploadedFile(
-                    open(output_path, 'rb'), None, name, f'video/{ext[1:]}',
-                    os.path.getsize(output_path), None
-                )
-        except subprocess.CalledProcessError as e:
-            logger.error(f"ffmpeg error compressing video {name}: {e.stderr.decode()}")
-            return content  # Return original content if compression fails
-        except Exception as e:
-            logger.error(f"Error compressing video {name}: {e}")
-            return content  # Return original content if compression fails
+    '''
+    # def compress_video(self, content, ext, name):
+    #     logger.info(f"Compressing video: {name} with ffmpeg")
+    #     # logger.debug(f"Running ffmpeg command: {' '.join(self.get_ffmpeg_command(content, ext, name))}")
+    #     try:
+    #         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
+    #             tmp_file.write(content.read())
+    #             tmp_file.flush()
+    #             output_path = tmp_file.name + "_compressed" + ext
+    #             command = self.get_ffmpeg_command(content, ext, name)
+    #             subprocess.run(command, check=True, capture_output=True)
+    #             logger.info(f"Compressed video {name}, size: {os.path.getsize(output_path)} bytes")
+    #             return InMemoryUploadedFile(
+    #                 open(output_path, 'rb'), None, name, f'video/{ext[1:]}',
+    #                 os.path.getsize(output_path), None
+    #             )
+    #     except subprocess.CalledProcessError as e:
+    #         logger.error(f"ffmpeg error compressing video {name}: {e.stderr.decode()}")
+    #         return content  # Return original content if compression fails
+    #     except Exception as e:
+    #         logger.error(f"Error compressing video {name}: {e}")
+    #         return content  # Return original content if compression fails
         
-        finally:
-            # Clean up any temporary files created
-            if isinstance(content, InMemoryUploadedFile):
-                try:
-                    os.remove(content.temporary_file_path)
-                    logger.info(f"Temporary file {content.temporary_file_path} deleted after processing.")
-                except Exception as cleanup_error:
-                    logger.error(f"Failed to delete temporary file: {cleanup_error}")
+    #     finally:
+    #         # Clean up any temporary files created
+    #         if isinstance(content, InMemoryUploadedFile):
+    #             try:
+    #                 os.remove(content.temporary_file_path)
+    #                 logger.info(f"Temporary file {content.temporary_file_path} deleted after processing.")
+    #             except Exception as cleanup_error:
+    #                 logger.error(f"Failed to delete temporary file: {cleanup_error}")
 
    
     
-    def get_ffmpeg_command(self, content, ext, name):
-        # Handle both InMemoryUploadedFile and TemporaryUploadedFile
-        if isinstance(content, TemporaryUploadedFile):
-            input_path = content.temporary_file_path
-        elif isinstance(content, InMemoryUploadedFile):
-            # Write InMemoryUploadedFile to a temporary file
-            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                tmp_file.write(content.read())
-                tmp_file.flush()
-                input_path = tmp_file.name
-            # Rewind the content to enable re-reading if needed later
-            content.seek(0)
-        else:
-            raise ValueError("Unsupported file type for ffmpeg command.")
+    # def get_ffmpeg_command(self, content, ext, name):
+    #     # Handle both InMemoryUploadedFile and TemporaryUploadedFile
+    #     if isinstance(content, TemporaryUploadedFile):
+    #         input_path = content.temporary_file_path
+    #     elif isinstance(content, InMemoryUploadedFile):
+    #         # Write InMemoryUploadedFile to a temporary file
+    #         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+    #             tmp_file.write(content.read())
+    #             tmp_file.flush()
+    #             input_path = tmp_file.name
+    #         # Rewind the content to enable re-reading if needed later
+    #         content.seek(0)
+    #     else:
+    #         raise ValueError("Unsupported file type for ffmpeg command.")
 
-        # Return the ffmpeg command using the appropriate input path
-        return [
-            'ffmpeg', '-i', input_path,
-            '-vcodec', 'libx264', '-crf', str(self.video_crf),
-            '-acodec', 'aac', '-strict', 'experimental',
-            f"{name}_compressed{ext}"
-        ]
-
+    #     # Return the ffmpeg command using the appropriate input path
+    #     return [
+    #         'ffmpeg', '-i', input_path,
+    #         '-vcodec', 'libx264', '-crf', str(self.video_crf),
+    #         '-acodec', 'aac', '-strict', 'experimental',
+    #         f"{name}_compressed{ext}"
+    #     ]
+    '''
     def compress_audio(self, content, ext, name):
         logger.info(f"Compressing audio: {name} with ffmpeg")
         logger.debug(f"Running ffmpeg command: {' '.join(self.get_ffmpeg_audio_command(content, ext, name))}")

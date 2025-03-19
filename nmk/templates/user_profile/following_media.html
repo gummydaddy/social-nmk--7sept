@@ -88,28 +88,74 @@
             <p>No media available from followed users. Showing recommended content based on your preferences, if you are new click on the green gloab at the top.</p>
         {% endif %}
     </div>
+</div>
+<!--
+<div class="media-wrapper">
+    <div class="row row-cols-1 g-4" id="media-container">
+        {% if page_obj %}
+            {% for media in page_obj %}
+                <div class="col media-item" data-id="{{ media.id }}" data-url="{% url 'user_profile:media_detail_view' media.id %}">
+                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
+                        {{ media.user.username }}
+                    </a>
+                    <div class="media-content">
+                        {% if media.file.url|is_video %}
+                            <video class="img-fluid autoplay-video" 
+                                   {% if media.thumbnail %} poster="{{ media.thumbnail.url }}" {% else %} poster="{{ media.file.url }}" {% endif %} 
+                                   muted autoplay loop playsinline>
+                                <source src="{{ media.file.url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}" 
+                                 alt="media" class="img-fluid lazyload">
+                        {% endif %}
+                        <div class="description">
+                            <a href="{% url 'user_profile:like_media' media.id %}" 
+                               class="like-link {% if request.user in media.likes.all %}liked{% endif %}" 
+                               data-url="{% url 'user_profile:like_media' media.id %}" 
+                               data-media-id="{{ media.id }}" 
+                               data-csrf-token="{{ csrf_token }}">
+                                {% if request.user in media.likes.all %}
+                                    ❤️
+                                {% else %}
+                                    ♡
+                                {% endif %}
+                            </a> 
+                            <span class="like-count">{{ media.likes.count }}</span> likes
+                            <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
+                            <p>{{ media.description|safe }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No media available from followed users. Showing recommended content based on your preferences. If you are new, click on the green globe at the top.</p>
+        {% endif %}
+    </div>
+</div>
+-->
 
-     <!-- Pagination controls -->
-     <div class="pagination" >
-        <span class="step-links">
-            {% if page_obj.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ page_obj.previous_page_number }}">previous</a>
-            {% endif %}
-            <span class="current">
-                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
-            </span>
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}">next</a>
-                <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
+<!-- Pagination controls -->
+<div class="pagination" >
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="?page=1">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+        <span class="current">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
         </span>
-    </div>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
 
-    <!-- Loading Spinner -->
-    <div id="loading-spinner" style="display: none; text-align: center;">
-        <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
-    </div>
+<!-- Loading Spinner -->
+<div id="loading-spinner" style="display: none; text-align: center;">
+    <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
 </div>
 
 {% endblock %}

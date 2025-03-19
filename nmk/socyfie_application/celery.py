@@ -41,7 +41,7 @@ app.conf.beat_schedule =  {
     },
 #    'service_auth.user_profile.tasks.process_media_upload': {
 #        'queue': 'media_worker',
-#    },
+#        },
 
 }
 

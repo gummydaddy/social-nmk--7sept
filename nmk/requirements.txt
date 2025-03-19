@@ -1,15 +1,155 @@
+# aiohappyeyeballs==2.4.3
+# aiohttp==3.10.10
+# aiohttp-retry==2.8.3
+# aiosignal==1.3.1
+# altgraph 
+# # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/altgraph-0.17.2-py2.py3-none-any.whl
+# amqp==5.2.0
+# appmap==2.1.8
+# asgiref==3.8.1
+# async-timeout==4.0.3
+# attrs==24.2.0
+# backports.zoneinfo==0.2.1
+# billiard==4.2.1
+# bleach==6.1.0
+# blessed==1.20.0
+# blinker==1.8.2
+# Brotli==1.1.0
+# catalogue==2.0.10
+# celery==5.4.0
+# certifi==2024.8.30
+# cffi==1.17.1
+# channels==4.1.0
+# charset-normalizer==3.4.0
+# click==8.1.7
+# click-didyoumean==0.3.1
+# click-plugins==1.1.1
+# click-repl==0.3.0
+# ConfigArgParse==1.7
+# contexttimer==0.3.3
+# cryptography==43.0.3
+# decorator==4.4.2
+# defusedxml==0.8.0rc2
+# Django==4.2.16
+# django-allauth==65.0.2
+# django-appconf==1.0.6
+# django-countries==7.6.1
+# django-crispy-forms==2.3
+# django-environ==0.11.2
+# django-select2==8.2.1
+# django-sslserver==0.22
+# djangorestframework==3.15.2
+# et-xmlfile==1.1.0
+# Flask==3.0.3
+# Flask-Cors==5.0.0
+# Flask-Login==0.6.3
+# frozenlist==1.4.1
+# future 
+# # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/future-0.18.2-py3-none-any.whl
+# gcloud==0.17.0
+# gevent==24.10.3
+# geventhttpclient==2.3.1
+# gitdb==4.0.12
+# GitPython==3.1.44
+# googleapis-common-protos==1.65.0
+# greenlet==3.1.1
+# httplib2==0.22.0
+# humanfriendly==10.0
+# idna==3.10
+# imageio==2.36.0
+# imageio-ffmpeg==0.5.1
+# importlib-resources==5.13.0
+# importlib_metadata==8.5.0
+# inflection==0.5.1
+# itsdangerous==2.2.0
+# Jinja2==3.1.4
+# joblib==1.4.2
+# jws==0.1.3
+# kombu==5.4.2
+# lxml==5.3.0
+# macholib 
+# # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/macholib-1.15.2-py2.py3-none-any.whl
+# MarkupSafe==3.0.2
+# moviepy==1.0.3
+# msgpack==1.1.0
+# multidict==6.1.0
+# numpy==2.0.2
+# oauth2client==3.0.0
+# oauthlib==3.2.2
+# openpyxl==3.1.5
+# packaging==24.2
+# pandas==2.2.3
+# pdf2image==1.17.0
+# pillow==11.0.0
+# proglog==0.1.10
+# prompt_toolkit==3.0.48
+# propcache==0.2.0
+# protobuf==5.29.0rc1
+# psutil==6.1.0
+# psycopg2-binary==2.9.3
+# pyasn1==0.6.1
+# pyasn1_modules==0.4.1
+# pycparser==2.22
+# pycryptodome==3.4.3
+# PyJWT==2.9.0
+# pyparsing==3.2.0
+# PyPDF2==3.0.1
+# Pyrebase==3.0.27
+# python-dateutil==2.9.0.post0
+# python-docx==1.1.2
+# python-jwt==2.0.1
+# python-pptx==1.0.2
+# python3-openid==3.2.0
+# pytz==2025.1
+# PyYAML==6.0.2
+# pyzmq==26.2.0
+# redis==5.1.1
+# requests==2.11.1
+# requests-oauthlib==2.0.0
+# requests-toolbelt==0.7.0
+# rsa==4.9
+# scikit-learn==1.5.2
+# scipy==1.13.1
+# six 
+# # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/six-1.15.0-py2.py3-none-any.whl
+# sklearn==0.0
+# smmap==5.0.2
+# social-auth-app-django==5.4.2
+# social-auth-core==4.5.4
+# sqlparse==0.5.1
+# srsly==2.5.1
+# threadpoolctl==3.5.0
+# tomli==2.0.2
+# tqdm==4.66.5
+# twilio==9.3.4
+# typing_extensions==4.12.2
+# tzdata==2024.2
+# tzlocal==5.2
+# urllib3==2.2.3
+# vine==5.1.0
+# wcwidth==0.2.13
+# webencodings==0.5.1
+# Werkzeug==3.0.4
+# xlrd==2.0.1
+# XlsxWriter==3.2.0
+# yarl==1.15.5
+# zipp==3.20.2
+# zope.event==5.0
+# zope.interface==7.1.1
+
+
 aiohappyeyeballs==2.4.3
 aiohttp==3.10.10
 aiohttp-retry==2.8.3
 aiosignal==1.3.1
-altgraph 
+altgraph==0.17.2
 # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/altgraph-0.17.2-py2.py3-none-any.whl
 amqp==5.2.0
 appmap==2.1.8
 asgiref==3.8.1
 async-timeout==4.0.3
 attrs==24.2.0
-backports.zoneinfo==0.2.1
+#backports.zoneinfo==0.2.1
 billiard==4.2.1
 bleach==6.1.0
 blessed==1.20.0
@@ -36,6 +176,7 @@ django-appconf==1.0.6
 django-countries==7.6.1
 django-crispy-forms==2.3
 django-environ==0.11.2
+django-redis
 django-select2==8.2.1
 django-sslserver==0.22
 djangorestframework==3.15.2
@@ -44,15 +185,16 @@ Flask==3.0.3
 Flask-Cors==5.0.0
 Flask-Login==0.6.3
 frozenlist==1.4.1
-future 
+future==0.18.2
 # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/future-0.18.2-py3-none-any.whl
-gcloud==0.17.0
+gcloud==0.18.3
 gevent==24.10.3
 geventhttpclient==2.3.1
 gitdb==4.0.12
 GitPython==3.1.44
 googleapis-common-protos==1.65.0
 greenlet==3.1.1
+gunicorn
 httplib2==0.22.0
 humanfriendly==10.0
 idna==3.10
@@ -67,14 +209,14 @@ joblib==1.4.2
 jws==0.1.3
 kombu==5.4.2
 lxml==5.3.0
-macholib 
+macholib==1.15.2
 # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/macholib-1.15.2-py2.py3-none-any.whl
 MarkupSafe==3.0.2
 moviepy==1.0.3
 msgpack==1.1.0
 multidict==6.1.0
 numpy==2.0.2
-oauth2client==3.0.0
+oauth2client
 oauthlib==3.2.2
 openpyxl==3.1.5
 packaging==24.2
@@ -90,11 +232,11 @@ psycopg2-binary==2.9.3
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
-pycryptodome==3.4.3
+pycryptodome
 PyJWT==2.9.0
 pyparsing==3.2.0
 PyPDF2==3.0.1
-Pyrebase==3.0.27
+Pyrebase4
 python-dateutil==2.9.0.post0
 python-docx==1.1.2
 python-jwt==2.0.1
@@ -104,17 +246,17 @@ pytz==2025.1
 PyYAML==6.0.2
 pyzmq==26.2.0
 redis==5.1.1
-requests==2.11.1
+requests
 requests-oauthlib==2.0.0
-requests-toolbelt==0.7.0
+requests-toolbelt
 rsa==4.9
 scikit-learn==1.5.2
 scipy==1.13.1
-six 
+six
 # @ file:///AppleInternal/Library/BuildRoots/2c89a47b-9dd5-11ef-938f-6e654a286000/Library/Caches/com.apple.xbs/Sources/python3/six-1.15.0-py2.py3-none-any.whl
 sklearn==0.0
 smmap==5.0.2
-social-auth-app-django==5.4.2
+social-auth-app-django
 social-auth-core==4.5.4
 sqlparse==0.5.1
 srsly==2.5.1
@@ -125,11 +267,12 @@ twilio==9.3.4
 typing_extensions==4.12.2
 tzdata==2024.2
 tzlocal==5.2
-urllib3==2.2.3
+urllib3==1.26.18
 vine==5.1.0
 wcwidth==0.2.13
 webencodings==0.5.1
 Werkzeug==3.0.4
+whitenoise
 xlrd==2.0.1
 XlsxWriter==3.2.0
 yarl==1.15.5
