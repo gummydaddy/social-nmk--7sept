@@ -111,117 +111,8 @@ def calculate_media_score(media, liked_hashtags, not_interested_hashtags, viewed
 import logging
 logger = logging.getLogger(__name__)
 
+
 '''
-@login_required
-def upload_media(request):
-    logger.info(f"User {request.user.username} is uploading media")
-    if request.method == 'POST':
-        form = MediaForm(request.POST, request.FILES)
-        if form.is_valid():
-            logger.info("MediaForm is valid.")
-            media = form.save(commit=False)
-            media.user = request.user
-
-            # Assign the user's category to the media
-            if request.user.profile.category:
-                media.category = request.user.profile.category
-                logger.info(f"Category '{media.category}' assigned to media by user {request.user.username}")
-            else:
-                logger.warning(f"User {request.user.username} has no category assigned in their profile")
-
-            # Process description to make usernames clickable
-            media.description = escape(media.description)
-
-            # Use CompressedMediaStorage for saving the file
-            storage = CompressedMediaStorage()
-
-            # Handle image uploads
-            if media.file.name.lower().endswith(('.jpg', '.jpeg', '.png')):
-                logger.info(f"Image file detected: {media.file.name}")
-                media.media_type = 'image'
-                image = Image.open(media.file)
-                filter_name = request.POST.get('filter')
-                if filter_name:
-                    logger.info(f"Applying filter: {filter_name} to image: {media.file.name}")
-                    filter_map = {
-                        'clarendon': ImageFilter.EMBOSS,
-                        'sepia': 'sepia',  # Custom filter
-                        'grayscale': 'grayscale',  # Custom filter
-                        'invert': ImageOps.invert,
-                    }
-                    if filter_name == 'sepia':
-                        sepia_image = ImageOps.colorize(image.convert("L"), "#704214", "#C0C090")
-                        image = sepia_image
-                    elif filter_name == 'grayscale':
-                        grayscale_image = ImageOps.grayscale(image)
-                        image = grayscale_image
-                    else:
-                        image = image.filter(filter_map.get(filter_name, ImageFilter.BLUR))
-
-                byte_io = io.BytesIO()
-                if image.mode == 'RGBA':
-                    image = image.convert('RGB')
-                image.save(byte_io, format='JPEG')
-                media.file = ContentFile(byte_io.getvalue(), media.file.name)
-
-            # Handle video uploads
-            elif media.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
-                logger.info(f"Video file detected: {media.file.name}")
-                media.media_type = 'video'
-
-                # Save the uploaded file to a temporary location
-                with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-                    for chunk in media.file.chunks():
-                        temp_file.write(chunk)
-                    temp_file_path = temp_file.name
-
-                # Load the video clip
-                clip = VideoFileClip(temp_file_path)
-
-                # Get start time and duration from the form
-                start_time = form.cleaned_data.get('start_time', 0)
-                duration = form.cleaned_data.get('duration', clip.duration)
-
-                # Validate and adjust start time and duration
-                start_time = max(0, min(start_time, clip.duration))
-                duration = max(0, min(duration, clip.duration - start_time))
-
-                logger.info(f"Processing video: {media.file.name} with start_time={start_time} and duration={duration}")
-
-                # Process video clip based on start_time and duration
-                subclip = clip.subclip(start_time, start_time + duration)
-
-                # Ensure the video is no longer than 90 seconds
-                if subclip.duration > 90:
-                    subclip = subclip.subclip(0, 90)
-
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_output_file:
-                    output_file_path = temp_output_file.name
-
-                subclip.write_videofile(output_file_path, codec='libx264', audio_codec='aac')
-                subclip.close()
-
-                with open(output_file_path, 'rb') as file:
-                    media.file = ContentFile(file.read(), media.file.name)
-
-            else:
-                logger.warning(f"Unknown file type uploaded: {media.file.name}")
-
-            try:
-                media.file.name = storage.save(media.file.name, media.file)
-                media.save()
-                logger.info(f"Media file {media.file.name} saved successfully for user {request.user.username}")
-                form.save_m2m()  # Save tags
-                return redirect('user_profile:profile', request.user.id)
-            except Exception as e:
-                logger.error(f"Error saving media file {media.file.name}: {e}")
-        else:
-            logger.warning("MediaForm is invalid.")
-    else:
-        form = MediaForm()
-    return render(request, 'upload.html', {'form': form})
-'''
-
 @login_required
 def upload_media(request):
     logger.info(f"User {request.user.username} is uploading media")
@@ -281,6 +172,61 @@ def upload_media(request):
         form = MediaForm()
 
     return render(request, 'upload.html', {'form': form})
+'''
+
+@login_required
+def upload_media(request):
+    logger.info(f"User {request.user.username} is uploading media")
+    
+    if request.method == 'POST':
+        form = MediaForm(request.POST, request.FILES)
+        if form.is_valid():
+            logger.info("MediaForm is valid.")
+            media = form.save(commit=False)
+            media.user = request.user
+
+            # Assign the user's category to the media
+            if request.user.profile.category:
+                media.category = request.user.profile.category
+                logger.info(f"Category '{media.category}' assigned to media by user {request.user.username}")
+            else:
+                logger.warning(f"User {request.user.username} has no category assigned in their profile")
+
+            # Escape the description to prevent XSS attacks
+            media.description = escape(media.description)
+
+            # Determine if it's an image or video based on extension
+            file_name = media.file.name.lower()
+            if file_name.endswith(('.jpg', '.jpeg', '.png')):
+                logger.info(f"Image file detected: {file_name}")
+                media.media_type = 'image'
+                filter_name = request.POST.get('filter')  # Optional filter for image
+                media.save()  # Save the media instance
+                # Send to Celery for image processing
+                process_media_upload.delay(
+                    media.id,
+                    media.file.name,
+                    'image',
+                    filter_name
+                )
+                return redirect('user_profile:profile', request.user.id)
+
+            elif file_name.endswith(('.mp4', '.mov', '.avi', '.mkv')):
+                logger.info(f"Video file detected: {file_name}")
+                messages.error(request, "Video uploads are not available yet.")
+                return redirect('user_profile:upload_media')
+            
+            else:
+                logger.warning(f"Unknown file type uploaded: {file_name}")
+                media.save()
+                return redirect('user_profile:profile', request.user.id)
+        else:
+            logger.warning("MediaForm is invalid.")
+    else:
+        form = MediaForm()
+
+    return render(request, 'upload.html', {'form': form})
+
 
 
 @login_required
@@ -1936,6 +1882,30 @@ def saved_uploads(request):
 #     return render(request, 'add_story.html')
 
 
+# def add_story(request):
+#     if request.method == 'POST':
+#         file = request.FILES.get('file')
+#         user_description = request.POST.get('description', '')
+
+#         # Prepend "story " to the description provided by the user
+#         description = f"story {user_description.strip()}" if user_description else "story "
+
+#         media = Media.objects.create(
+#             user=request.user,
+#             file=file,
+#             description=description,
+#             media_type=file.content_type.split('/')[0],
+#             is_private=True
+#         )
+        
+#         story = Story.objects.create(user=request.user, media=media)
+        
+#         # Redirect to the `view_story` page with the new story's id
+#         return redirect('user_profile:view_story', story_id=story.id)
+
+#     return render(request, 'add_story.html')
+
+
 def add_story(request):
     if request.method == 'POST':
         file = request.FILES.get('file')
@@ -1944,21 +1914,33 @@ def add_story(request):
         # Prepend "story " to the description provided by the user
         description = f"story {user_description.strip()}" if user_description else "story "
 
-        media = Media.objects.create(
-            user=request.user,
-            file=file,
-            description=description,
-            media_type=file.content_type.split('/')[0],
-            is_private=True
-        )
-        
-        story = Story.objects.create(user=request.user, media=media)
-        
-        # Redirect to the `view_story` page with the new story's id
-        return redirect('user_profile:view_story', story_id=story.id)
+        if file:
+            content_type = file.content_type
 
+            # Allow only image uploads
+            if content_type.startswith('image/'):
+                media = Media.objects.create(
+                    user=request.user,
+                    file=file,
+                    description=description,
+                    media_type='image',
+                    is_private=True
+                )
+                
+                story = Story.objects.create(user=request.user, media=media)
+                
+                # Redirect to the `view_story` page with the new story's id
+                return redirect('user_profile:view_story', story_id=story.id)
+
+            elif content_type.startswith('video/'):
+                # Display a message if a video is uploaded
+                messages.error(request, "Video uploads are not available yet.")
+                return redirect('user_profile:add_story')
+
+        # If no file was uploaded or an unsupported file type was used
+        messages.error(request, "Invalid or missing file. Please upload an image.")
+    
     return render(request, 'add_story.html')
-
 
 
 @login_required

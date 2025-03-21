@@ -83,10 +83,10 @@ class UserUploadForm(forms.ModelForm):
         valid_mime_types = [
             'image/jpeg', 
             'image/png', 
-            'video/mp4',
-            'video/mov',
-            'video/quicktime',
-            'video/mpeg',
+            # 'video/mp4',
+            # 'video/mov',
+            # 'video/quicktime',
+            # 'video/mpeg',
             'application/pdf', 
             'text/plain',
             'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  # docx
@@ -106,7 +106,8 @@ class UserUploadForm(forms.ModelForm):
         # Validate the file type against supported MIME types
         if mime_type and mime_type.lower() not in [fmt.lower() for fmt in valid_mime_types]:
         # if mime_type not in valid_mime_types:
-            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, mov, quicktime, mpeg, pdf, txt, docx, xlsx, xls, pptx, py, xml, json, zip.")
+            # raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, mp4, mov, quicktime, mpeg, pdf, txt, docx, xlsx, xls, pptx, py, xml, json, zip.")
+            raise ValidationError(f"Unsupported file type: {mime_type}. Supported types are: jpg, jpeg, png, pdf, txt, docx, xlsx, xls, pptx, py, xml, json, zip.")
         
         # Additional validation for .zip (folders)
         if mime_type == 'application/zip':
