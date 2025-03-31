@@ -9,11 +9,14 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-'''
+
+
 from pathlib import Path
 import os
 from cryptography.fernet import Fernet
 import environ
+import dj_database_url
+
 
 
 
@@ -51,12 +54,20 @@ environ.Env.read_env(env_path)  # Reads the .env file
 # # Read the encryption key from the environment
 ENCRYPTION_KEY = env('ENCRYPTION_KEY')
 SECRET_KEY = env('SECRET_KEY')
-#ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
-ALLOWED_HOSTS = ["socyfie.com","www.socyfie.com","ec2-13-235-125-150.ap-south-1.compute.amazonaws.com"]
+# ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+
+DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
+print(f"DEBUG: DJANGO_ALLOWED_HOSTS={DJANGO_ALLOWED_HOSTS}")  # Debugging line
+
+ALLOWED_HOSTS = [host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",")]
+
+print(f"DEBUG: ALLOWED_HOSTS={ALLOWED_HOSTS}")  # Debugging line
+
 
 # Application definition
 INSTALLED_APPS = [
 
+    # "daphne",  # Make sure Daphne is installed and listed FIRST
     "django.contrib.admin",
     "django.contrib.auth",
     'django.contrib.sites',
@@ -68,6 +79,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "whitenoise.runserver_nostatic",
     # 'django-select2',
     "rest_framework",
     'channels',
@@ -123,7 +135,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'asgi_redis.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('redis://:090399Akash$@13.235.125.150:6379/0')],
+            'hosts': [('redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0')],
         },
         'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
     }
@@ -133,7 +145,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'redis://:090399Akash@$13.235.125.150:6379/1',  # For Redis
+        'LOCATION': 'redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/1',  # For Redis
         # 'LOCATION': '127.0.0.1:11211',  # For Memcached
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -166,9 +178,13 @@ SECURE_SSL_REDIRECT = False
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+
+
 MIDDLEWARE = [
 
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -190,11 +206,9 @@ SECURE_HSTS_PRELOAD = True
 # Secure cookies  new29
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"   #new vanuralibity protection
 
-SECURE_CONTENT_TYPE_NOSNIFF = True   #new vanuralibity protection
-
-
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
 
 ROOT_URLCONF = "socyfie_application.urls"
@@ -238,11 +252,12 @@ COMPRESSED_MEDIA_STORAGE = {
     'storage': 'nmk.service_auth.storage.CompressedMediaStorage',
     'options': {
         'image_quality': 65,
-        # 'video_crf': 28,
+        #’video_crf': 28,
         'max_image_dimension': 1920,
         'audio_bitrate': '128k',
     },
 }
+
 
 
 LOGGING = {
@@ -263,8 +278,8 @@ LOGGING = {
 
 
 # Celery Configuration Options
-CELERY_BROKER_URL = 'redis://:090399Akash$@13.235.125.150:6379/0'  # Redis is the broker for task queue
-CELERY_RESULT_BACKEND = 'redis://:090399Akash$@13.235.125.150:6379/0'  # Optional: Used to store task results
+CELERY_BROKER_URL = 'redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0'  # Redis is the broker for task queue
+CELERY_RESULT_BACKEND = 'redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0'  # Optional: Used to store task results
 CELERY_ACCEPT_CONTENT = ['json']  # Specifies allowed content types
 CELERY_TASK_SERIALIZER = 'json'   # Serialize task messages as JSON
 CELERY_RESULT_SERIALIZER = 'json'  # Serialize result data as JSON
@@ -283,23 +298,53 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 DEBUG = env.bool('DEBUG', default=False)
 # DEBUG = os.getenv("DEBUG", "False") == "True"
 
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "socyfiedev",
-        "USER": "testadmin",
-        "PASSWORD": "090399Akash$",
-        "HOST": "13.235.125.150",
-        "PORT": "5432",
+        "NAME": "railway",
+        "USER": "postgres",
+        "PASSWORD": "uGjLCCFChLfXumEMoMsHzkAPQTZCQchO",
+        "HOST": "shinkansen.proxy.rlwy.net",
+        "PORT": "40723",
     }
 }
+
+
+
+# DATABASE_URL = os.getenv("DATABASE_URL")
+
 # DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": "database_setup/db.sqlite3",
-#     }
+#     "default": dj_database_url.config(default=DATABASE_URL)
 # }
+
+
+# DB_TYPE = os.getenv("DB_TYPE", "postgres")  # Default to PostgreSQL
+
+# if DB_TYPE == "sqlite":
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.sqlite3",
+#             "NAME": "database_setup/db.sqlite3",
+#         }
+#     }
+# else:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql",
+#             "NAME": os.getenv("POSTGRES_DB", ""),
+#             "USER": os.getenv("POSTGRES_USER", ""),
+#             "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
+#             # "HOST": "postgres.railway.internal",
+#             "PORT": "5432",
+#         }
+#     }
 # DATABASE_URL = env('DATABASE_URL', default='')
+
+
+
 
 
 # Password validation
@@ -365,6 +410,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+STATICFILES_STORAGE ="whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 #MEDIA_URL = 'nmk/media/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -393,13 +440,17 @@ AUTHENTICATION_BACKENDS = [
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 
+
+
+
+
+
+
+
+
+
+
 '''
-
-
-
-
-
-
 
 """
 Django settings for nmk project.
@@ -454,7 +505,14 @@ environ.Env.read_env(env_path)  # Reads the .env file
 # # Read the encryption key from the environment
 ENCRYPTION_KEY = env('ENCRYPTION_KEY')
 SECRET_KEY = env('SECRET_KEY')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+# ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+
+DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
+print(f"DEBUG: DJANGO_ALLOWED_HOSTS={DJANGO_ALLOWED_HOSTS}")  # Debugging line
+
+ALLOWED_HOSTS = [host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",")]
+
+print(f"DEBUG: ALLOWED_HOSTS={ALLOWED_HOSTS}")  # Debugging line
 
 # Application definition
 INSTALLED_APPS = [
@@ -700,7 +758,28 @@ DATABASES = {
         "NAME": "database_setup/db.sqlite3",
     }
 }
-DATABASE_URL = env('DATABASE_URL', default='')
+
+# DB_TYPE = os.getenv("DB_TYPE", "postgres")  # Default to PostgreSQL
+
+# if DB_TYPE == "sqlite":
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.sqlite3",
+#             "NAME": "database_setup/db.sqlite3",
+#         }
+#     }
+# else:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql",
+#             "NAME": os.getenv("POSTGRES_DB", "socyfiedev"),
+#             "USER": os.getenv("POSTGRES_USER", "testadmin"),
+#             "PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
+#             "HOST": "db",
+#             "PORT": "5432",
+#         }
+#     }
+# DATABASE_URL = env('DATABASE_URL', default='')
 
 
 # Password validation
@@ -766,6 +845,7 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -792,3 +872,4 @@ AUTHENTICATION_BACKENDS = [
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
 
+'''

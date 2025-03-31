@@ -5,13 +5,13 @@ from celery import Celery
 from celery.schedules import crontab
 
 # Set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'socyfie_application.settings')
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'socyfie_application.settings')
 
-# app = Celery(
-#     'socyfie_application',
-#     broker='redis://:090399Akash$13.235.125.150:6379/0',  
-#     backend='redis://:090399Akash$13.235.125.150:6379/0'
-# )
+app = Celery(
+    'socyfie_application',
+    broker='redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0',  
+    backend='redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0'
+)
 
 app = Celery('socyfie_application')
 

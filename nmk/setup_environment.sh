@@ -32,10 +32,10 @@ echo "Packages installed successfully in ${PYTHON_PATH}"
 export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
 # export SECRET_KEY="your-secret-key"
 export DEBUG=True  # Set to False in production
-export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL
+# export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL
 # export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL
-# export DATABASE_URL="postgres://postgres:090399Akash$@localhost:5432/socyfiedev"
-export REDIS_URL="redis://localhost:6379/0"  # Example Redis URL if you use Redis
+export DATABASE_URL="postgresql://postgres:uGjLCCFChLfXumEMoMsHzkAPQTZCQchO@postgres.railway.internal:5432/railway"
+export REDIS_URL="redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0"  # Example Redis URL if you use Redis
 
 # Add Celery-related environment variables (if needed)
 export CELERY_BROKER_URL=$REDIS_URL  # Assuming you're using Redis for Celery
@@ -106,8 +106,8 @@ echo "Celery worker and beat are running."
 # # Export environment variables
 # export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
 # export DEBUG=True
-# #export DATABASE_URL="testadmin://postgres:090399Akash$@13.235.125.150:5432/socyfiedev" #use for deploymenty 
-# #export REDIS_URL="redis://:090399Akash$@13.235.125.150:6379/0"
+# #export DATABASE_URL="postgresql://postgres:uGjLCCFChLfXumEMoMsHzkAPQTZCQchO@postgres.railway.internal:5432/railway" #use for deploymenty 
+# #export REDIS_URL="redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0"
 
 # export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL use for local
 # export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL use for local
