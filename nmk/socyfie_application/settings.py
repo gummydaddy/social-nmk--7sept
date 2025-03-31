@@ -15,7 +15,7 @@ from pathlib import Path
 import os
 from cryptography.fernet import Fernet
 import environ
-import dj_database_url
+# import dj_database_url
 
 
 
