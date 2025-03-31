@@ -9,8 +9,8 @@ from celery.schedules import crontab
 
 app = Celery(
     'socyfie_application',
-    broker='redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0',  
-    backend='redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0'
+    broker='redis://default:HjHXYmyrKGGXZCSHabGdwfMgOQKmUWwU@tramway.proxy.rlwy.net:43396/0',  
+    backend='redis://default:HjHXYmyrKGGXZCSHabGdwfMgOQKmUWwU@tramway.proxy.rlwy.net:43396/0'
 )
 
 app = Celery('socyfie_application')

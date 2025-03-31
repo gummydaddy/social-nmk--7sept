@@ -135,7 +135,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'asgi_redis.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0')],
+            'hosts': [('redis://default:HjHXYmyrKGGXZCSHabGdwfMgOQKmUWwU@tramway.proxy.rlwy.net:43396/0')],
         },
         'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
     }
@@ -145,7 +145,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/1',  # For Redis
+        'LOCATION': 'redis://default:HjHXYmyrKGGXZCSHabGdwfMgOQKmUWwU@tramway.proxy.rlwy.net:43396/1',  # For Redis
         # 'LOCATION': '127.0.0.1:11211',  # For Memcached
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -278,8 +278,8 @@ LOGGING = {
 
 
 # Celery Configuration Options
-CELERY_BROKER_URL = 'redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0'  # Redis is the broker for task queue
-CELERY_RESULT_BACKEND = 'redis://default:alwWUdXiSXHxAdakpiPzwkcSGVRzngAl@redis.railway.internal:6379/0'  # Optional: Used to store task results
+CELERY_BROKER_URL = 'redis://default:HjHXYmyrKGGXZCSHabGdwfMgOQKmUWwU@tramway.proxy.rlwy.net:43396/0'  # Redis is the broker for task queue
+CELERY_RESULT_BACKEND = 'redis://default:HjHXYmyrKGGXZCSHabGdwfMgOQKmUWwU@tramway.proxy.rlwy.net:43396/0'  # Optional: Used to store task results
 CELERY_ACCEPT_CONTENT = ['json']  # Specifies allowed content types
 CELERY_TASK_SERIALIZER = 'json'   # Serialize task messages as JSON
 CELERY_RESULT_SERIALIZER = 'json'  # Serialize result data as JSON
@@ -306,9 +306,9 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "railway",
         "USER": "postgres",
-        "PASSWORD": "uGjLCCFChLfXumEMoMsHzkAPQTZCQchO",
-        "HOST": "shinkansen.proxy.rlwy.net",
-        "PORT": "40723",
+        "PASSWORD": "exzmfOYwqiGwtQAGPbLgsiCKmQtJfDfA",
+        "HOST": "interchange.proxy.rlwy.net",
+        "PORT": "57843",
     }
 }
 
