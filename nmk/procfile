@@ -1,4 +1,3 @@
 web: gunicorn socyfie_application.wsgi:application --bind 0.0.0.0:$PORT
-# web: daphne -b 0.0.0.0 -p $PORT socyfie_application.asgi:application
 worker: celery -A socyfie_application worker --loglevel=info -n worker1@%h
 beat: celery -A socyfie_application beat --loglevel=info
