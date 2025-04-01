@@ -295,7 +295,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = False
-DEBUG = env.bool('DEBUG', default=False)
+DEBUG = env.bool('DEBUG', default=True)
 # DEBUG = os.getenv("DEBUG", "False") == "True"
 
 
@@ -410,7 +410,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-STATICFILES_STORAGE ="whitenoise.storage.CompressedManifestStaticFilesStorage"
+WHITENOISE_MANIFEST_STRICT = False
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 #MEDIA_URL = 'nmk/media/'
 MEDIA_URL = '/media/'
@@ -423,10 +424,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://localhost:8000', 
+    'http://localhost:8000', 
     'https://socyfie.com', 
     'https://www.socyfie.com',
-    'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com',
+    # 'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com',
     'https://courteous-optimism-production.up.railway.app'
     ]
 
