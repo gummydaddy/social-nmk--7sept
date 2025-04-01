@@ -426,7 +426,8 @@ CSRF_TRUSTED_ORIGINS = [
     'https://localhost:8000', 
     'https://socyfie.com', 
     'https://www.socyfie.com',
-    'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com'
+    'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com',
+    'https://courteous-optimism-production.up.railway.app'
     ]
 
 
