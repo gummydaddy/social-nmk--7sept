@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 
 class CompressedMediaStorage(FileSystemStorage):
     def __init__(self, *args, **kwargs):
-        self.image_quality = kwargs.pop('image_quality', 65)
-        self.video_crf = kwargs.pop('video_crf', 28)
+        self.image_quality = kwargs.pop('image_quality', 85)
+       # self.video_crf = kwargs.pop('video_crf', 28)
         self.max_image_dimension = kwargs.pop('max_image_dimension', 1920)
         self.audio_bitrate = kwargs.pop('audio_bitrate', '128k')
         super().__init__(*args, **kwargs)
         logger.info(f"CompressedMediaStorage initialized with image_quality={self.image_quality}, "
-                    f"video_crf={self.video_crf}, max_image_dimension={self.max_image_dimension},"
+                   # f"video_crf={self.video_crf}, max_image_dimension={self.max_image_dimension},"
                     f"audio_bitrate={self.audio_bitrate}")
         
         
@@ -50,8 +50,8 @@ class CompressedMediaStorage(FileSystemStorage):
         if isinstance(content, (InMemoryUploadedFile, TemporaryUploadedFile)):
             if ext in ['.jpg', '.jpeg', '.png']:
                 content = self.compress_image(content, ext, name)
-            elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
-                content = self.compress_video(content, ext, name)
+           # elif ext in ['.mp4', '.mov', '.avi', '.mkv']:
+               # content = self.compress_video(content, ext, name)
             elif ext in ['.mp3', '.wav', '.ogg']:
                 content = self.compress_audio(content, ext, name)
         return super()._save(name, content)
@@ -116,7 +116,7 @@ class CompressedMediaStorage(FileSystemStorage):
             img.thumbnail((self.max_image_dimension, self.max_image_dimension))
         return img
 
-
+    '''
     def compress_video(self, content, ext, name):
         logger.info(f"Compressing video: {name} with ffmpeg")
         # logger.debug(f"Running ffmpeg command: {' '.join(self.get_ffmpeg_command(content, ext, name))}")
@@ -172,6 +172,62 @@ class CompressedMediaStorage(FileSystemStorage):
             '-acodec', 'aac', '-strict', 'experimental',
             f"{name}_compressed{ext}"
         ]
+    
+
+    def compress_video(self, content, ext, name):
+        logger.info(f"Compressing video: {name} with ffmpeg")
+        try:
+            # Write the uploaded content to a temporary file
+            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp_file:
+                tmp_file.write(content.read())
+                tmp_file.flush()
+                input_path = tmp_file.name
+                output_path = f"{tmp_file.name}_compressed{ext}"
+
+            # Generate the ffmpeg command
+            command = self.get_ffmpeg_command(input_path, output_path)
+            logger.debug(f"Running ffmpeg command: {' '.join(command)}")
+            subprocess.run(command, check=True, capture_output=True)
+
+            # Log the successful compression
+            logger.info(f"Compressed video {name}, size: {os.path.getsize(output_path)} bytes")
+        
+            # Return the compressed file
+            return InMemoryUploadedFile(
+                open(output_path, 'rb'), None, name, f'video/{ext[1:]}',
+                os.path.getsize(output_path), None
+            )
+
+        except subprocess.CalledProcessError as e:
+            logger.error(f"ffmpeg error compressing video {name}: {e.stderr.decode()}")
+            return content  # Return original content if compression fails
+
+        except Exception as e:
+            logger.error(f"Error compressing video {name}: {e}")
+            return content  # Return original content if compression fails
+
+        finally:
+            # Cleanup temporary files (both input and output)
+            try:
+                os.remove(input_path)
+                os.remove(output_path)
+                logger.info("Temporary files successfully deleted after processing.")
+            except Exception as cleanup_error:
+                logger.error(f"Failed to delete temporary files: {cleanup_error}")
+
+    def get_ffmpeg_command(self, input_path, output_path):
+        """
+        Generate ffmpeg command to compress video
+        """
+        return [
+            'ffmpeg', '-i', input_path,
+            '-vcodec', 'libx264', '-crf', str(self.video_crf),
+            '-acodec', 'aac', '-strict', 'experimental',
+            '-preset', 'fast',  # Fast preset for quicker compression
+            '-movflags', '+faststart',  # Optimize MP4 for web playback
+            output_path
+        ]
+   '''
 
     def compress_audio(self, content, ext, name):
         logger.info(f"Compressing audio: {name} with ffmpeg")

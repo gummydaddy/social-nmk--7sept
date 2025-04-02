@@ -3,11 +3,12 @@
 
 {% block main_content %}
 <h2>Upload</h2>
+<h6>the "video" upload function is not availabe currently</h6>
 <form id="uploadForm" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.non_field_errors }}
     <div class="form-group">
-        <label for="id_file">image/video</label>
+        <label for="id_file">image</label>
         <input type="file" class="form-control-file" id="id_file" name="file" accept="image/*, video/*" required onchange="previewFile(event)">
         {% for error in form.file.errors %}
             <p class="help-block text-danger">{{ error }}</p>

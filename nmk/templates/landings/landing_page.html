@@ -453,7 +453,25 @@
     {% comment %} You can integrate Prism.js to add syntax highlighting for code files: {% endcomment %}
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let lazyImages = document.querySelectorAll("img.lazyload");
         
+            const lazyLoad = () => {
+                lazyImages.forEach(img => {
+                    if (img.getBoundingClientRect().top < window.innerHeight && img.dataset.src) {
+                        img.src = img.dataset.src;  // Replace thumbnail with full media
+                        img.classList.remove("lazyload");
+                    }
+                });
+            };
+        
+            // Load images when scrolling
+            window.addEventListener("scroll", lazyLoad);
+            window.addEventListener("resize", lazyLoad);
+            lazyLoad();  // Load visible images immediately
+        });
+    </script>        
 
     <!-- Include Vue.js from a CDN -->
     {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}

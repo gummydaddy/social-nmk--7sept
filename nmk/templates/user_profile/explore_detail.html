@@ -138,6 +138,7 @@
     </div>
 </div>
 
+<!--
 <div id="related-media-container" class="row row-cols-2 g-4 mt-4">
     {% for related in related_media %}
     <div class="col related-media-item">
@@ -149,6 +150,46 @@
             </video>
             {% else %}
             <img src="{{ related.file.url }}" alt="media" class="img-fluid">
+            {% endif %}
+        </a>
+        <div class="actions">
+            <a href="{% url 'user_profile:like_media' related.id %}" 
+               class="like-link {% if request.user in related.likes.all %}liked{% endif %}" 
+               data-url="{% url 'user_profile:like_media' related.id %}" 
+               data-media-id="{{ related.id }}" 
+               data-csrf-token="{{ csrf_token }}">
+                {% if request.user in related.likes.all %}
+                    ❤️
+                {% else %}
+                    ♡
+                {% endif %}
+            </a>
+            <span class="like-count">{{ related.likes.count }}</span> 
+        </div>
+    </div>
+    {% endfor %}
+</div>
+-->
+
+<div id="related-media-container" class="row row-cols-2 g-4 mt-4">
+    {% for related in related_media %}
+    <div class="col related-media-item">
+        <a href="{% url 'user_profile:explore_detail' related.id %}">
+            {% if related.file.url|is_video %}
+                {% if related.thumbnail %}
+                    <img src="{{ related.thumbnail.url }}" alt="video thumbnail" 
+                         class="img-fluid video-thumbnail" 
+                         data-video="{{ related.file.url }}">
+                {% else %}
+                    <img src="{{ related.file.url }}" alt="video fallback" 
+                         class="img-fluid video-thumbnail">
+                {% endif %}
+            {% else %}
+                {% if related.thumbnail %}
+                    <img src="{{ related.thumbnail.url }}" alt="thumbnail" class="img-fluid">
+                {% else %}
+                    <img src="{{ related.file.url }}" alt="image fallback" class="img-fluid">
+                {% endif %}
             {% endif %}
         </a>
         <div class="actions">
@@ -375,4 +416,21 @@
         }
     });
 </script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".video-thumbnail").forEach(function(img) {
+            img.addEventListener("click", function(event) {
+                event.preventDefault();  // Prevent navigation if inside <a>
+                let videoUrl = this.getAttribute("data-video");
+                let videoTag = `<video controls class="img-fluid autoplay-video" autoplay muted>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>`;
+                this.outerHTML = videoTag;
+            });
+        });
+    });
+</script>
+
 {% endblock %}

@@ -219,6 +219,7 @@
 {% endif %}
 
 <h2>{{ media.user.username }}'s Other Uploads</h2>
+<!--
 <div class="row row-cols-2 g-4">
     {% for upload in page_obj %}
         <div class="col">
@@ -231,6 +232,42 @@
                         </video>
                     {% else %}
                         <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
+                    {% endif %}
+                </a>
+
+                <div class="view-count">
+                    <p>Views: {{ upload.view_count }}</p>
+                </div>
+
+                <div class="description">
+                    <p>{{ upload.description|safe }}</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+-->
+
+<div class="row row-cols-2 g-4">
+    {% for upload in page_obj %}
+        <div class="col">
+            <div id="media-container-{{ upload.id }}" class="upload-item">
+                <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+                    {% if upload.file.url|is_video %}
+                        {% if upload.thumbnail %}
+                            <img src="{{ upload.thumbnail.url }}" alt="video thumbnail" 
+                                 class="img-fluid video-thumbnail" 
+                                 data-video="{{ upload.file.url }}">
+                        {% else %}
+                            <img src="{{ upload.file.url }}" alt="video fallback" 
+                                 class="img-fluid video-thumbnail">
+                        {% endif %}
+                    {% else %}
+                        {% if upload.thumbnail %}
+                            <img src="{{ upload.thumbnail.url }}" alt="image thumbnail" class="img-fluid">
+                        {% else %}
+                            <img src="{{ upload.file.url }}" alt="image fallback" class="img-fluid">
+                        {% endif %}
                     {% endif %}
                 </a>
 
@@ -413,6 +450,22 @@
         });
     });
 </script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll(".video-thumbnail").forEach(function(img) {
+            img.addEventListener("click", function(event) {
+                event.preventDefault();  // Prevent navigation if inside <a>
+                let videoUrl = this.getAttribute("data-video");
+                let videoTag = `<video controls class="img-fluid autoplay-video" autoplay muted>
+                                    <source src="${videoUrl}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>`;
+                this.outerHTML = videoTag;
+            });
+        });
+    });
+</script>
+
 {% endblock %}
 
 
