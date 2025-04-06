@@ -42,6 +42,7 @@ from pdf2image import convert_from_path
 from PIL import Image
 import io
 import shutil
+from .tasks import process_file_upload  # import your Celery task
 
 
 
@@ -415,7 +416,7 @@ def subgroup_signup(request):
         form = SubgroupSignupForm(user=request.user)
     return render(request, 'subgroup_signup_form.html', {'form': form})
 
-
+'''
 @login_required
 def upload_document(request):
     if request.method == 'POST':
@@ -438,9 +439,34 @@ def upload_document(request):
         form = UserUploadForm()
 
     return render(request, 'upload_document.html', {'form': form})
+'''
 
 def buy_storage(request):
     return render(request, 'buy_storage.html')
+
+
+def upload_document(request):
+    if request.method == 'POST':
+        form = UserUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            upload_instance = form.save(commit=False)
+            upload_instance.user = request.user
+            upload_instance.save()  # Save metadata without full validation
+
+            # Call the Celery task
+            process_file_upload.delay(upload_instance.id)
+
+            messages.success(request, "Upload started! We'll notify you once it's processed.")
+
+            if CustomGroupAdmin.objects.filter(user=request.user).exists():
+                return redirect('/subgroup_landing_page')
+            else:
+                return redirect('/landing_page')
+    else:
+        form = UserUploadForm()
+
+    return render(request, 'upload_document.html', {'form': form})
+
 
 
 # Set up logging
