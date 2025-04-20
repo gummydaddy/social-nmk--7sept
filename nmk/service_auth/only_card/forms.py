@@ -33,11 +33,16 @@ class CustomSignupForm(SignupForm):
     )
     email = forms.EmailField(
         max_length=200, 
-        label='Email Address', 
-        help_text='Required', 
+        required=True,
         error_messages={'required': 'Email is required.'},
         widget=forms.EmailInput(attrs={'placeholder': 'Enter email'})
     )
+
+    def __init__(self, *args, **kwargs):
+        super(CustomSignupForm, self).__init__(*args, **kwargs)
+        # Force override the label without "optional"
+        self.fields['email'].label = 'Email *'
+
 
     def save(self, request, commit=True):
         user = super(CustomSignupForm, self).save(request)
