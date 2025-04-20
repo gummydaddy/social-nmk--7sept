@@ -115,11 +115,11 @@
 
 <p>
   <div class="uploads-section">
-      <div class="row row-cols-3 g-4">
+      <div class="row row-cols-2 g-4">
           <!-- In your home page template (notionHome.html) -->
           <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button> 
           <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id%}'">Notions</button>
-          <button type="button" class="btn btn-primary" >Dream<br>comming soon </button>
+          {% comment %} <button type="button" class="btn btn-primary" >Dream<br>comming soon </button> {% endcomment %}
       </div>
   </div>  
 </p>

@@ -45,6 +45,13 @@
     </div>
     <button type="submit" class="btn btn-primary">Upload</button>
 </form>
+
+                    <div class="home bg-white">
+                        <a href="{% url 'user_profile:add_story' %}">
+                            <i class="fas fa-upload"></i>
+                            <div>Add Story</div>
+                        </a>
+                    </div>
 {% endblock %}
 
 {% block upload_script %} 

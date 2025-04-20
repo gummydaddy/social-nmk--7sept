@@ -158,6 +158,41 @@
         <img src="{% static 'images/loading_spinner.gif' %}" alt="Loading Spinner">
     </div>
 
+            {% block footer %}
+            <footer class="bg-primary text-white bg-black py-4">
+                <div class="bottom-strip d-flex justify-content-around">
+    
+                    <div class="home bg-white">
+                        <a href="{% url 'only_card:landing_page' %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+    
+                    {% block new_notion %}
+    
+                    <div class="notion bg-white">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id%}">notions</a>
+                    </div>
+    
+                    {% endblock %}
+
+                    <div class="home bg-white">
+                        <a href="{% url 'user_profile:upload_media' %}">
+                            <i class="fas fa-upload"></i>
+                        </a>
+                    </div>
+
+    
+                    <div class="profile bg-white">
+                        {% comment %} <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button"> {% endcomment %}
+                        <a href="{% url 'user_profile:following_media' %}" class="profile-button">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </div>
+                </div>
+            </footer>
+            {%endblock%}
+
 {% endblock %}
 
 {% block following_media_script %}

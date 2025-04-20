@@ -62,6 +62,7 @@ def delete_expired_stories():
     return f"Deleted {count} expired stories and their associated media."
 
 
+
 @shared_task(bind=True, max_retries=3)
 def process_media_upload(self, media_id, file_name, media_type, filter_name=None):
     try:

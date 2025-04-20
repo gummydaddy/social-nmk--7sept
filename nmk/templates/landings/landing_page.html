@@ -7,7 +7,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socyfie</title>
+<!--
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+-->
+    <!-- Standard favicon -->
+    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+
+    <!-- PNG icons for modern browsers -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
+
+    <!-- For Apple devices -->
+   <!-- <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon.png' %}">-->
+    <link rel="icon" type="image/x-icon" sizes="180x180" href="{% static 'images/favicon-180x180.png' %}">
+
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 
 
@@ -524,7 +537,6 @@
                 </a>
                 <a>
                     {% comment %} <a href="{% url 'only_card:upload_folder' %}">Upload folders</a> {% endcomment %}
-                    <button type="button" >Upload folders<br>comming soon </button>
 
                     {% comment %} <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a> {% endcomment %}
                     {% comment %} <button type="button" >Submit kyc<br>comming soon </button> {% endcomment %}
@@ -536,9 +548,7 @@
     
                     {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
                     {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
-                    <button type="button"  >Send File<br>comming soon </button>
                     {% comment %} <a href="{% url 'only_card:create_card' %}">Create Card</a> {% endcomment %}
-                    {% comment %} <button type="button" >Create Card<br>comming soon </button><br> {% endcomment %}
                 </a>
     
                 

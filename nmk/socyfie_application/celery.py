@@ -9,8 +9,8 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'socyfie_application.settings')
 
 app = Celery(
     'socyfie_application',
-    broker='redis://:090399Akash$13.235.125.150:6379/0',  
-    backend='redis://:090399Akash$13.235.125.150:6379/0'
+    broker='redis://:090399Akash%24@15.235.192.133:6379/0',  
+    backend='redis://:090399Akash%24@15.235.192.133:6379/0'
 )
 
 # Using a string here means the worker doesn't have to serialize

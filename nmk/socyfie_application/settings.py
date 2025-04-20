@@ -69,7 +69,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',    
-    'allauth.socialaccount.providers.google',    
+    #'allauth.socialaccount.providers.google',    
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -129,7 +129,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'asgi_redis.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('redis://:090399Akash$@13.235.125.150:6379/0')],
+            'hosts': [('redis://:090399Akash%24@15.235.192.133:6379/0')],
         },
         'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
     }
@@ -139,7 +139,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'redis://:090399Akash@$13.235.125.150:6379/1',  # For Redis
+        'LOCATION': 'redis://:090399Akash%24@15.235.192.133:6379/1',  # For Redis
         # 'LOCATION': '127.0.0.1:11211',  # For Memcached
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -175,6 +175,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 MIDDLEWARE = [
 
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -270,8 +271,8 @@ LOGGING = {
 
 
 # Celery Configuration Options
-CELERY_BROKER_URL = 'redis://:090399Akash$@13.235.125.150:6379/0'  # Redis is the broker for task queue
-CELERY_RESULT_BACKEND = 'redis://:090399Akash$@13.235.125.150:6379/0'  # Optional: Used to store task results
+CELERY_BROKER_URL = 'redis://:090399Akash%24@15.235.192.133:6379/0'  # Redis is the broker for task queue
+CELERY_RESULT_BACKEND = 'redis://:090399Akash%24@15.235.192.133:6379/0'  # Optional: Used to store task results
 CELERY_ACCEPT_CONTENT = ['json']  # Specifies allowed content types
 CELERY_TASK_SERIALIZER = 'json'   # Serialize task messages as JSON
 CELERY_RESULT_SERIALIZER = 'json'  # Serialize result data as JSON
@@ -295,8 +296,8 @@ DATABASES = {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "socyfiedev",
         "USER": "testadmin",
-        "PASSWORD": env("DATABASE_PASSWORD"),
-        "HOST": "13.235.125.150",
+        "PASSWORD": "090399Akash$",
+        "HOST": "15.235.192.133",
         "PORT": "5432",
     }
 }
@@ -391,11 +392,11 @@ CSRF_TRUSTED_ORIGINS = [
 
 
 AUTHENTICATION_BACKENDS = [
-    #'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    #'allauth.account.auth_backends.AuthenticationBackend',
     #'social_core.backends.google.GoogleOAuth2',
 ]
 
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')

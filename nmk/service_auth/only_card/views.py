@@ -72,6 +72,10 @@ def home(request):
     return render(request, 'home.html')
 
 
+def TermAndCondition(request):
+    return render(request, 'TermAndCondition.html')
+
+
 def send_confirmation_email(user):
     subject = "Welcome to NMK Financial Services - Django Login!"
     message = f"Hello {user.first_name},\nWelcome to NMK!\nThank you for being a part of our community."

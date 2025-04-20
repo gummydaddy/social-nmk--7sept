@@ -25,7 +25,7 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
    
     path("admin/", admin.site.urls),
-    path('accounts/', include('allauth.urls')),
+   # path('accounts/', include('allauth.urls')),
 
     #app
     path('' , include('service_auth.only_card.urls')),

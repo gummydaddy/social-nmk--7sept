@@ -8,7 +8,7 @@
         </div> {% endcomment %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Socyfie Login</title>
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
@@ -26,6 +26,12 @@
             background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
             background-size: 400% 400%;
             animation: gradient 15s ease infinite;
+            /* Add favicon as background image (faint and centered) */
+            background-image: url("{% static 'images/logo.png' %}"), linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 300px, 400% 400%;
+            background-blend-mode: lighten;
         }
         @keyframes gradient {
             0% {background-position: 0% 50%;}
@@ -36,7 +42,7 @@
             width: 100%;
             max-width: 400px;
             padding: 20px;
-            background-color: rgba(255, 255, 255, 0.8);
+            background-color: rgba(255, 255, 255, 0.4);
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             animation: fadeIn 1s ease-in-out;
@@ -45,7 +51,7 @@
             width: 100%;
             max-width: 200px;
             padding: 20px;
-            background-color: rgba(255, 205, 255, 0.8);
+            background-color: rgba(255, 205, 255, 0.4);
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             animation: fadeIn 1s ease-in-out;
