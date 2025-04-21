@@ -5218,3 +5218,1406 @@ Not Found: /teorema505
 [2025-04-20 09:49:00,086: INFO/ForkPoolWorker-4] Running task to delete old notions...
 [2025-04-20 09:49:00,115: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
 [2025-04-20 09:49:00,117: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[515d568e-77c0-4dc0-bcd7-73e994f02394] succeeded in 0.031611321959644556s: None
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /static/css/style.css
+Not Found: /static/img/default_profile_picture.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /favicon.ico
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Error creating encryption keys for user Tushar: name 'generate_key_pair' is not defined
+Forbidden (CSRF cookie not set.): /signup/
+[2025-04-20 10:25:00,050: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 10:25:00,056: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[399bf163-287c-45fc-930f-8cf70afde9e1] received
+[2025-04-20 10:25:00,084: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[399bf163-287c-45fc-930f-8cf70afde9e1] succeeded in 0.025642311025876552s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-16x16.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /static/img/loading_spinner.gif
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /favicon.ico
+Invalid HTTP_HOST header: 'api.ipify.org'. You may need to add 'api.ipify.org' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/utils/deprecation.py", line 133, in __call__
+    response = self.process_request(request)
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/middleware/common.py", line 48, in process_request
+    host = request.get_host()
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/http/request.py", line 150, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: 'api.ipify.org'. You may need to add 'api.ipify.org' to ALLOWED_HOSTS.
+Bad Request: /
+[2025-04-20 10:36:05 +0000] [216273] [WARNING] Invalid HTTP request received.
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+Not Found: /path/to/default/profile/picture.jpg
+[2025-04-20 10:49:00,093: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 10:49:00,099: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[e678cef9-71d2-4504-8049-9642cd1bbfa5] received
+[2025-04-20 10:49:00,102: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 10:49:00,124: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 10:49:00,126: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[e678cef9-71d2-4504-8049-9642cd1bbfa5] succeeded in 0.025056443002540618s: None
+[2025-04-20 11:25:00,017: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 11:25:00,027: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[873b53e3-76c6-449b-9396-1b4e94fd91ed] received
+[2025-04-20 11:25:00,065: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[873b53e3-76c6-449b-9396-1b4e94fd91ed] succeeded in 0.03461556398542598s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /.git/config
+[2025-04-20 11:49:00,097: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 11:49:00,118: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[68093807-e22f-440e-8cd0-8dba763b4fbf] received
+[2025-04-20 11:49:00,129: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 11:49:00,163: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 11:49:00,168: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[68093807-e22f-440e-8cd0-8dba763b4fbf] succeeded in 0.04290286696050316s: None
+Forbidden (Referer checking failed - no Referer.): /
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 12:25:00,050: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 12:25:00,059: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[4900f31a-8d09-40bb-8499-f58ea2cccbac] received
+[2025-04-20 12:25:00,092: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[4900f31a-8d09-40bb-8499-f58ea2cccbac] succeeded in 0.02990787790622562s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /.env
+[2025-04-20 12:49:00,053: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 12:49:00,058: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[2851dc60-83a8-498f-8800-d03a38f9b380] received
+[2025-04-20 12:49:00,060: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 12:49:00,088: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 12:49:00,090: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[2851dc60-83a8-498f-8800-d03a38f9b380] succeeded in 0.02972749900072813s: None
+[2025-04-20 13:25:00,020: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 13:25:00,027: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[22e4b45b-9323-41c2-aea0-81ce3e74e6c5] received
+[2025-04-20 13:25:00,064: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[22e4b45b-9323-41c2-aea0-81ce3e74e6c5] succeeded in 0.034426124999299645s: 'Deleted 0 expired stories and their associated media.'
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /.env
+Not Found: /conf/config.ini
+Not Found: /config.yml
+Not Found: /configure.php.bak
+Not Found: /config.ini.bak
+[2025-04-20 13:49:00,000: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 13:49:00,006: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[5416aa37-017d-46bf-84e1-ce6fc48a7587] received
+[2025-04-20 13:49:00,008: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 13:49:00,032: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 13:49:00,034: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[5416aa37-017d-46bf-84e1-ce6fc48a7587] succeeded in 0.026130534010007977s: None
+[2025-04-20 14:00:00,043: INFO/MainProcess] Scheduler: Sending due task delete-old-notifications-every-day (service_auth.notion.tasks.delete_old_notifications)
+[2025-04-20 14:00:00,051: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notifications[8164f6b3-3fb1-4249-bd57-eafc9e4f1277] received
+[2025-04-20 14:00:00,089: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notifications[8164f6b3-3fb1-4249-bd57-eafc9e4f1277] succeeded in 0.035122646018862724s: 'Deleted 0 old notifications.'
+Not Found: /.env
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 14:25:00,004: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 14:25:00,009: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[69887c63-19e6-40a7-90ca-4d9cb43c14e4] received
+[2025-04-20 14:25:00,036: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[69887c63-19e6-40a7-90ca-4d9cb43c14e4] succeeded in 0.024973056046292186s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /static/css/style.css
+Not Found: /static/img/default_profile_picture.png
+Not Found: /static/images/favicon-180x180.png
+[2025-04-20 14:49:00,084: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 14:49:00,091: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[948bc479-6cf4-4d80-ab50-c9119da59c0f] received
+[2025-04-20 14:49:00,094: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 14:49:00,115: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 14:49:00,117: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[948bc479-6cf4-4d80-ab50-c9119da59c0f] succeeded in 0.023093277937732637s: None
+Not Found: /.env
+Not Found: /.env
+Not Found: /index/b/home/h213348220/fundlead.ru/docs/wp-admin/includes/
+Not Found: /Content/UserFiles/News/Orjinal/
+Not Found: /templates/p/snippets/g8ofh3h3db/raw/
+Not Found: /wp-link.php/wp-content/plugins/wp-content/uploads/wp_live_chat/
+Not Found: /wp-cro.php/
+Not Found: /wordpress/wp-includes/js/mediaelement/renderers/
+Not Found: /newlms/assets/frontend/
+Not Found: /wp/wp-content/themes/twentytwenty/template-parts/
+Not Found: /.well-known/acme-challenge/action=./
+Not Found: /vendor/symfony/serializer/Mapping/
+Not Found: /assets/admin/plugins/ckeditor/plugins/scayt/dialogs/dialogs/
+Not Found: /files/
+Not Found: /images/icons/rouyg/hppd/
+Not Found: /templates/ja_purity/
+Not Found: /cgi-bin/
+Not Found: /sos/NewTheme/images/VillagesPictures/Dhodial/Dhodial/
+Not Found: /assets/css/
+[2025-04-20 15:25:00,019: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 15:25:00,024: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[59cf3aa1-c851-4713-b1cb-1ad24a5e87af] received
+[2025-04-20 15:25:00,051: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[59cf3aa1-c851-4713-b1cb-1ad24a5e87af] succeeded in 0.025363438995555043s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /.well-known/pki-validation/
+Not Found: /templates/
+Not Found: /backup/wp-content/themes/
+Not Found: /images/headers/
+Not Found: /about/
+Not Found: /wordpress/wp-includes/sodium_compat/src/Core32/
+Not Found: /about/b/home/iune/www/about/
+Not Found: /classwithtostrin.php/rbzccnn.php/
+Not Found: /.well-known/acme-challenge/
+Not Found: /http:/gracecommunications.church/
+Not Found: /.well-known/pki-validation/wp-admin/
+Not Found: /index/sr
+Not Found: /assets/
+Not Found: /sec/core/tests/Drupal/FunctionalTests/Hal/
+Not Found: /.well-known/
+Not Found: /.well-known
+Not Found: /.well-known/config
+Not Found: /Public/
+Not Found: /app/wp-content/plugins/fix/
+Not Found: /backup/
+Not Found: /css/colors/coffee/
+Not Found: /libraries/php
+Not Found: /plugins/custom/
+Not Found: /post.php/wp-includes/Requests/
+Not Found: /upload/
+Not Found: /vendor/bin/loader.php/wp-admin/
+[2025-04-20 15:49:00,076: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 15:49:00,081: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[f7464f88-310b-4aa3-8b3f-055de0f50872] received
+[2025-04-20 15:49:00,084: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 15:49:00,107: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 15:49:00,109: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[f7464f88-310b-4aa3-8b3f-055de0f50872] succeeded in 0.02587971498724073s: None
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 16:25:00,051: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 16:25:00,058: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[3cc21856-d8ef-4bdc-84e8-c656949c80dd] received
+[2025-04-20 16:25:00,089: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[3cc21856-d8ef-4bdc-84e8-c656949c80dd] succeeded in 0.027624600916169584s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /wordpress/wp-includes/IXR/
+Not Found: /assets/fonts/
+Not Found: /vendor/phpunit/phpunit/src/Util/PHP/
+Not Found: /wp/wp-includes/
+Not Found: /filemanager/
+Not Found: /images/
+Not Found: /img/
+Not Found: /modules/mod_simplefileuploadv1.3/elements/
+Not Found: /ALFA_DATA/alfacgiapi/
+Not Found: /libraries/vendor/
+Not Found: /include/
+Not Found: /libraries/legacy/
+Not Found: /libraries/phpmailer/
+Not Found: /.wp-cli/
+Not Found: /assets/images/
+Not Found: /.well-known//.well-known/
+Not Found: /wp/wp-admin/includes/
+Not Found: /.tmb/
+Not Found: /docs/
+Not Found: /wordpress/wp-includes/
+Not Found: /class.api.php999
+Not Found: /baxa1.php7
+Not Found: /blog.php7
+Not Found: /vendor/guzzlehttp/alfa-rex.php7
+Not Found: /.env
+Not Found: /cong.php935
+Not Found: /csxcvtg6v
+Not Found: /.well-known/acme-challenge/index_php
+Not Found: /.well-known/pki-validation/class_api.php999
+Not Found: /baxa1.php8
+Not Found: /.well-known/acme-challenge/class_api.php999
+Not Found: /class-php
+Not Found: /vendor/php
+[2025-04-20 16:49:00,036: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 16:49:00,041: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[3fd7e06c-3138-4b4d-85ab-621d6e247442] received
+[2025-04-20 16:49:00,044: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 16:49:00,067: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 16:49:00,069: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[3fd7e06c-3138-4b4d-85ab-621d6e247442] succeeded in 0.025431601097807288s: None
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+[2025-04-20 17:25:00,052: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 17:25:00,061: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[3a0b341c-c5b1-4cb4-8109-a31bd430c391] received
+[2025-04-20 17:25:00,104: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[3a0b341c-c5b1-4cb4-8109-a31bd430c391] succeeded in 0.03475143690593541s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /favicon.ico
+[2025-04-20 17:34:51 +0000] [216273] [WARNING] Invalid HTTP request received.
+Error creating encryption keys for user Sitcom: name 'generate_key_pair' is not defined
+[2025-04-20 17:49:00,016: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 17:49:00,036: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[a028bae8-b9a5-496a-b62e-1aa79a090db8] received
+[2025-04-20 17:49:00,050: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 17:49:00,085: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 17:49:00,088: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[a028bae8-b9a5-496a-b62e-1aa79a090db8] succeeded in 0.039368282072246075s: None
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 18:25:00,050: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 18:25:00,056: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[af2c0f4e-9773-4860-9726-728c1fd5e34e] received
+[2025-04-20 18:25:00,089: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[af2c0f4e-9773-4860-9726-728c1fd5e34e] succeeded in 0.03112265991512686s: 'Deleted 0 expired stories and their associated media.'
+Invalid HTTP_HOST header: 'www.visa.com.hk'. You may need to add 'www.visa.com.hk' to ALLOWED_HOSTS.
+Traceback (most recent call last):
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/utils/deprecation.py", line 133, in __call__
+    response = self.process_request(request)
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/middleware/common.py", line 48, in process_request
+    host = request.get_host()
+  File "/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/http/request.py", line 150, in get_host
+    raise DisallowedHost(msg)
+django.core.exceptions.DisallowedHost: Invalid HTTP_HOST header: 'www.visa.com.hk'. You may need to add 'www.visa.com.hk' to ALLOWED_HOSTS.
+Bad Request: /cdn-cgi/trace
+[2025-04-20 18:49:00,014: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 18:49:00,020: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[72d1407f-06f6-4046-bfb0-bc506b2c8e25] received
+[2025-04-20 18:49:00,022: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 18:49:00,046: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 18:49:00,048: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[72d1407f-06f6-4046-bfb0-bc506b2c8e25] succeeded in 0.026328003965318203s: None
+Not Found: /favicon.ico
+Not Found: /favicon.ico
+[2025-04-20 19:20:06 +0000] [216273] [WARNING] Invalid HTTP request received.
+Not Found: /static/images/favicon-180x180.png
+Forbidden (CSRF token from POST incorrect.): /login/
+[2025-04-20 19:25:00,050: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 19:25:00,057: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[4d2b24b5-6539-4591-be16-49e1bf554e44] received
+[2025-04-20 19:25:00,089: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[4d2b24b5-6539-4591-be16-49e1bf554e44] succeeded in 0.024977436056360602s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /static/img/loading_spinner.gif
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /favicon.ico
+Not Found: /.env
+[2025-04-20 19:49:00,093: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 19:49:00,102: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[33a41e8a-da79-4cca-b1b7-9ba262c19ef0] received
+[2025-04-20 19:49:00,108: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 19:49:00,134: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 19:49:00,138: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[33a41e8a-da79-4cca-b1b7-9ba262c19ef0] succeeded in 0.030456161010079086s: None
+Forbidden (Referer checking failed - no Referer.): /
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /WuEL
+Not Found: /a
+Not Found: /download/file.ext
+Not Found: /SiteLoader
+Not Found: /mPlayer
+Not Found: //blog/wp-includes/wlwmanifest.xml
+Not Found: //web/wp-includes/wlwmanifest.xml
+Not Found: //wordpress/wp-includes/wlwmanifest.xml
+Not Found: //website/wp-includes/wlwmanifest.xml
+Not Found: //wp/wp-includes/wlwmanifest.xml
+Not Found: //news/wp-includes/wlwmanifest.xml
+Not Found: //2018/wp-includes/wlwmanifest.xml
+Not Found: //2019/wp-includes/wlwmanifest.xml
+Not Found: //shop/wp-includes/wlwmanifest.xml
+Not Found: //wp1/wp-includes/wlwmanifest.xml
+Not Found: //test/wp-includes/wlwmanifest.xml
+Not Found: //media/wp-includes/wlwmanifest.xml
+Not Found: //wp2/wp-includes/wlwmanifest.xml
+Not Found: //site/wp-includes/wlwmanifest.xml
+Not Found: //cms/wp-includes/wlwmanifest.xml
+Not Found: //sito/wp-includes/wlwmanifest.xml
+[2025-04-20 20:20:15 +0000] [216273] [WARNING] Invalid HTTP request received.
+Not Found: /robots.txt
+Not Found: /sitemap.xml
+Not Found: /config.json
+Not Found: /sse
+Not Found: /mcp
+Not Found: /mcp-sse
+[2025-04-20 20:25:00,034: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 20:25:00,067: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[115cca04-5e37-4d70-9173-35891e576fa1] received
+[2025-04-20 20:25:00,119: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[115cca04-5e37-4d70-9173-35891e576fa1] succeeded in 0.046390888979658484s: 'Deleted 0 expired stories and their associated media.'
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 20:49:00,094: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 20:49:00,106: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[155aa3d7-7b5c-466c-998f-57ba6cf9fc23] received
+[2025-04-20 20:49:00,112: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 20:49:00,148: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 20:49:00,152: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[155aa3d7-7b5c-466c-998f-57ba6cf9fc23] succeeded in 0.039783970918506384s: None
+[2025-04-20 21:00:00,008: INFO/MainProcess] Scheduler: Sending due task delete-old-notifications-every-day (service_auth.notion.tasks.delete_old_notifications)
+[2025-04-20 21:00:00,032: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notifications[3d9d2ebb-023c-490b-bb90-ef46e5a3487a] received
+[2025-04-20 21:00:00,085: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notifications[3d9d2ebb-023c-490b-bb90-ef46e5a3487a] succeeded in 0.045688852085731924s: 'Deleted 0 old notifications.'
+[2025-04-20 21:15:54 +0000] [216273] [WARNING] Invalid HTTP request received.
+[2025-04-20 21:15:54 +0000] [216273] [WARNING] Invalid HTTP request received.
+[2025-04-20 21:25:00,062: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 21:25:00,069: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[08fa9e84-a317-458a-9dc8-d789f2f7ab72] received
+[2025-04-20 21:25:00,101: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[08fa9e84-a317-458a-9dc8-d789f2f7ab72] succeeded in 0.02972573193255812s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /baxa1.phP8
+Not Found: /alfa-rex.php7
+Not Found: /alfanew.php7
+Not Found: /classwithtostring.php/rbzccnnp.php/
+Not Found: /alfa-rex2.php7
+Not Found: /wp-p.php7
+Not Found: /images/stories/
+Not Found: /docs/
+Not Found: /alfanew2.php7
+Not Found: /css/dist/
+Not Found: /ALFA_DATA/alfacgiapi/
+Not Found: /gebase.php69
+Not Found: /bypass.php7
+Not Found: /about.php7
+Not Found: /wp/wp-content/themes/f6pe9wcj/
+Not Found: /gecko-new.php.1
+Not Found: /assets/cms/plugins/ckfinder/_samples/php/
+Not Found: /ws.php7
+Not Found: /class-php
+Not Found: /css/dmtixucz/golden-access/
+Not Found: /about.php525
+Not Found: /ebs.php7
+Not Found: /pki-validation/
+Not Found: /1.php7
+Not Found: /alfanew.php7
+[2025-04-20 21:49:00,063: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 21:49:00,071: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[bc1025b9-9199-4a23-8fcb-1f826af94d6b] received
+[2025-04-20 21:49:00,074: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 21:49:00,102: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 21:49:00,104: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[bc1025b9-9199-4a23-8fcb-1f826af94d6b] succeeded in 0.03077303001191467s: None
+Not Found: /.env
+Not Found: /alfa-rex.php7
+Not Found: /alfa-rex.php7
+Not Found: /wp-p.php7
+Not Found: /about.php7
+Not Found: /alfanew.php7
+Not Found: /adminfuns.php7
+Not Found: /ebs.php7
+Not Found: /ws.php7
+Not Found: /alfanew2.php7
+Not Found: /alfa-rex2.php7
+Not Found: /owa/auth/logon.aspx
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /randkeyword.PhP7
+Not Found: /baxa1.phP8
+Not Found: /libraries/phpmailer/
+Not Found: /.well-known/themes
+Not Found: /erin1.PhP7
+Not Found: /sleepster/
+Not Found: /components/com_jea/views/form/
+Not Found: /assets/libs/filemanager/
+Not Found: /adminfuns.php7
+Not Found: /randkeyword.PhP8
+Not Found: /wp/wp-admin/includes/wp-admin/
+Not Found: /ioxi001.PhP7
+Not Found: /wp-links.php/wp-content/plugins/wp-content/uploads/wp_live_chat/
+Not Found: /wordpress/wp-content/plugins/sdxxcfgt/
+Not Found: /ioxi002.PhP7
+Not Found: /makeasmtp.php/wp-includes/Requests/
+Not Found: /yanz.php/wp-admin/user/
+Not Found: /test.php7
+Not Found: /lv.php7
+Not Found: /images/resumes/
+Not Found: /alfa-rex.php7
+Not Found: /modules/mod_ariimageslidersa/
+Not Found: /wq.php7
+Not Found: /project/plugins/bootstrap-rtl/css/
+Not Found: /plugins/background-image-cropper/
+Not Found: /system/
+Not Found: /bitrix/js/seo/ads/client_selector/lang/ru/
+Not Found: /blog.php7
+Not Found: /gawean.PhP7
+Not Found: /sites/default/files/
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 22:25:00,050: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 22:25:00,058: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[8111d106-b26d-4c23-913e-61898f07dcc3] received
+[2025-04-20 22:25:00,085: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[8111d106-b26d-4c23-913e-61898f07dcc3] succeeded in 0.02460971800610423s: 'Deleted 0 expired stories and their associated media.'
+[2025-04-20 22:49:00,076: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 22:49:00,119: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[b646ab92-4567-4e1b-a505-926a9c89a0f4] received
+[2025-04-20 22:49:00,123: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 22:49:00,147: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 22:49:00,149: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[b646ab92-4567-4e1b-a505-926a9c89a0f4] succeeded in 0.02744798199273646s: None
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-20 23:25:00,036: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-20 23:25:00,044: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[18d97e0b-b3fa-43b3-9eb2-9d443cf242b7] received
+[2025-04-20 23:25:00,090: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[18d97e0b-b3fa-43b3-9eb2-9d443cf242b7] succeeded in 0.03914402495138347s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /sdk
+Not Found: /odinhttpcall1745191541
+Not Found: /HNAP1
+Not Found: /evox/about
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /aaa9
+Not Found: /aab8
+Not Found: /index.php/module/action/param1/${@phpinfo()}
+Not Found: /module/action/param1/${@phpinfo()}
+[2025-04-20 23:49:00,013: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-20 23:49:00,018: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[6c60c3c9-9110-41e9-aad9-2e7aaf509387] received
+[2025-04-20 23:49:00,020: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-20 23:49:00,041: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-20 23:49:00,043: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[6c60c3c9-9110-41e9-aad9-2e7aaf509387] succeeded in 0.02327234297990799s: None
+[2025-04-21 00:00:00,001: INFO/MainProcess] Scheduler: Sending due task delete-old-notifications-every-day (service_auth.notion.tasks.delete_old_notifications)
+[2025-04-21 00:00:00,012: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notifications[fb020401-a8a8-4670-b1ab-0e05cff346d0] received
+[2025-04-21 00:00:00,039: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notifications[fb020401-a8a8-4670-b1ab-0e05cff346d0] succeeded in 0.02503306104335934s: 'Deleted 0 old notifications.'
+[2025-04-21 00:01:19 +0000] [216273] [WARNING] Invalid HTTP request received.
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-21 00:25:00,085: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 00:25:00,102: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[0a4db628-cc18-4c33-b8e5-5d5f29c082f1] received
+[2025-04-21 00:25:00,140: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[0a4db628-cc18-4c33-b8e5-5d5f29c082f1] succeeded in 0.03310992103070021s: 'Deleted 0 expired stories and their associated media.'
+[2025-04-21 00:49:00,018: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 00:49:00,023: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[e6bec762-2709-476a-8aa0-bf0325530242] received
+[2025-04-21 00:49:00,026: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 00:49:00,048: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 00:49:00,050: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[e6bec762-2709-476a-8aa0-bf0325530242] succeeded in 0.024593240930698812s: None
+[2025-04-21 01:25:00,010: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 01:25:00,018: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[a85b9d6d-1be6-414c-81cf-9bd9b4d90ed7] received
+[2025-04-21 01:25:00,056: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[a85b9d6d-1be6-414c-81cf-9bd9b4d90ed7] succeeded in 0.03495932393707335s: 'Deleted 0 expired stories and their associated media.'
+[2025-04-21 01:27:56 +0000] [216273] [WARNING] Invalid HTTP request received.
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /aaa9
+Not Found: /aab9
+Not Found: /aaa9
+Not Found: /aab9
+[2025-04-21 01:49:00,093: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 01:49:00,099: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[3707233f-0e17-4b52-9bf6-fede98506ef0] received
+[2025-04-21 01:49:00,102: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 01:49:00,125: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 01:49:00,127: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[3707233f-0e17-4b52-9bf6-fede98506ef0] succeeded in 0.025198123999871314s: None
+Not Found: /sitemap.xml
+Not Found: /config.json
+Not Found: /.git/config
+Not Found: /.env
+[2025-04-21 02:25:00,049: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 02:25:00,055: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[5e62932f-7618-4fae-86c1-edd5901b39a5] received
+[2025-04-21 02:25:00,090: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[5e62932f-7618-4fae-86c1-edd5901b39a5] succeeded in 0.03205761290155351s: 'Deleted 0 expired stories and their associated media.'
+[2025-04-21 02:49:00,070: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 02:49:00,076: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[a374e901-1e73-45f1-a3c6-61dc45cae374] received
+[2025-04-21 02:49:00,078: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 02:49:00,102: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 02:49:00,104: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[a374e901-1e73-45f1-a3c6-61dc45cae374] succeeded in 0.02621257898863405s: None
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /.env
+Not Found: /.env
+Not Found: /static/img/default_profile_picture.png
+Not Found: /static/css/style.css
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+[2025-04-21 03:25:00,051: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 03:25:00,057: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[eedf62b4-afeb-434f-9c6f-d693c57c6799] received
+[2025-04-21 03:25:00,083: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[eedf62b4-afeb-434f-9c6f-d693c57c6799] succeeded in 0.024660869035869837s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /wordpress/wp-includes/IXR/
+Not Found: /assets/fonts/
+Not Found: /vendor/phpunit/phpunit/src/Util/PHP/
+Not Found: /wp/wp-includes/
+Not Found: /filemanager/
+Not Found: /images/
+Not Found: /img/
+Not Found: /modules/mod_simplefileuploadv1.3/elements/
+Not Found: /ALFA_DATA/alfacgiapi/
+Not Found: /libraries/vendor/
+Not Found: /include/
+Not Found: /libraries/legacy/
+Not Found: /libraries/phpmailer/
+Not Found: /.wp-cli/
+Not Found: /assets/images/
+Not Found: /.well-known//.well-known/
+Not Found: /wp/wp-admin/includes/
+Not Found: /.tmb/
+Not Found: /docs/
+Not Found: /wordpress/wp-includes/
+Not Found: /class.api.php999
+Not Found: /baxa1.php7
+Not Found: /blog.php7
+Not Found: /vendor/guzzlehttp/alfa-rex.php7
+Not Found: /cong.php935
+Not Found: /csxcvtg6v
+Not Found: /.well-known/acme-challenge/index_php
+Not Found: /.well-known/pki-validation/class_api.php999
+Not Found: /baxa1.php8
+Not Found: /.well-known/acme-challenge/class_api.php999
+Not Found: /class-php
+Not Found: /vendor/php
+[2025-04-21 03:49:00,016: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 03:49:00,023: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[665cd090-6756-4665-9b54-e1e02823adb8] received
+[2025-04-21 03:49:00,025: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 03:49:00,055: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 03:49:00,057: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[665cd090-6756-4665-9b54-e1e02823adb8] succeeded in 0.032498179003596306s: None
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+[2025-04-21 03:54:54 +0000] [216241] [INFO] Handling signal: term
+
+worker: Warm shutdown (MainProcess)
+[2025-04-21 03:54:54 +0000] [216273] [INFO] Shutting down
+[2025-04-21 03:54:54 +0000] [216273] [INFO] Error while closing socket [Errno 9] Bad file descriptor
+[2025-04-21 03:54:54 +0000] [216273] [INFO] Finished server process [216273]
+[2025-04-21 03:54:54 +0000] [216241] [ERROR] Worker (pid:216273) was sent SIGTERM!
+[2025-04-21 03:54:54 +0000] [216241] [INFO] Shutting down: Master
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+celery beat v5.4.0 (opalescent) is starting.
+__    -    ... __   -        _
+LocalTime -> 2025-04-20 08:55:40
+Configuration ->
+    . broker -> redis://:**@15.235.192.133:6379/0
+    . loader -> celery.loaders.app.AppLoader
+    . scheduler -> celery.beat.PersistentScheduler
+    . db -> celerybeat-schedule
+    . logfile -> [stderr]@%INFO
+    . maxinterval -> 5.00 minutes (300s)
+Requirement already satisfied: pip in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (25.0.1)
+Requirement already satisfied: six in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (1.17.0)
+Requirement already satisfied: aiohappyeyeballs==2.4.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 1)) (2.4.3)
+Requirement already satisfied: aiohttp==3.10.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 2)) (3.10.10)
+Requirement already satisfied: aiohttp-retry==2.8.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 3)) (2.8.3)
+Requirement already satisfied: aiosignal==1.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 4)) (1.3.1)
+Requirement already satisfied: altgraph==0.17.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 5)) (0.17.2)
+Requirement already satisfied: amqp==5.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 6)) (5.2.0)
+Requirement already satisfied: appmap==2.1.8 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 7)) (2.1.8)
+Requirement already satisfied: asgiref==3.8.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 8)) (3.8.1)
+Requirement already satisfied: async-timeout==4.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 9)) (4.0.3)
+Requirement already satisfied: attrs==24.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 10)) (24.2.0)
+Requirement already satisfied: billiard==4.2.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 11)) (4.2.1)
+Requirement already satisfied: bleach==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 12)) (6.1.0)
+Requirement already satisfied: blessed==1.20.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 13)) (1.20.0)
+Requirement already satisfied: blinker==1.8.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 14)) (1.8.2)
+Requirement already satisfied: Brotli==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 15)) (1.1.0)
+Requirement already satisfied: catalogue==2.0.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 16)) (2.0.10)
+Requirement already satisfied: celery==5.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 17)) (5.4.0)
+Requirement already satisfied: certifi==2024.8.30 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 18)) (2024.8.30)
+Requirement already satisfied: cffi==1.17.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 19)) (1.17.1)
+Requirement already satisfied: channels==4.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 20)) (4.1.0)
+Requirement already satisfied: charset-normalizer==3.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 21)) (3.4.0)
+Requirement already satisfied: click==8.1.7 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 22)) (8.1.7)
+Requirement already satisfied: click-didyoumean==0.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 23)) (0.3.1)
+Requirement already satisfied: click-plugins==1.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 24)) (1.1.1)
+Requirement already satisfied: click-repl==0.3.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 25)) (0.3.0)
+Requirement already satisfied: ConfigArgParse==1.7 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 26)) (1.7)
+Requirement already satisfied: contexttimer==0.3.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 27)) (0.3.3)
+Requirement already satisfied: cron-descriptor==1.4.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 28)) (1.4.5)
+Requirement already satisfied: cryptography==43.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 29)) (43.0.3)
+Requirement already satisfied: decorator==4.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 30)) (4.4.2)
+Requirement already satisfied: defusedxml==0.8.0rc2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 31)) (0.8.0rc2)
+Requirement already satisfied: Django==4.2.16 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 32)) (4.2.16)
+Requirement already satisfied: django-allauth==65.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 33)) (65.0.2)
+Requirement already satisfied: django-appconf==1.0.6 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 34)) (1.0.6)
+Requirement already satisfied: django-celery-beat==2.7.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 35)) (2.7.0)
+Requirement already satisfied: django-countries==7.6.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 36)) (7.6.1)
+Requirement already satisfied: django-crispy-forms==2.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 37)) (2.3)
+Requirement already satisfied: django-environ==0.11.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 38)) (0.11.2)
+Requirement already satisfied: django-redis==5.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 39)) (5.4.0)
+Requirement already satisfied: django-select2==8.2.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 40)) (8.2.1)
+Requirement already satisfied: django-sslserver==0.22 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 41)) (0.22)
+Requirement already satisfied: django-timezone-field==7.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 42)) (7.1)
+Requirement already satisfied: djangorestframework==3.15.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 43)) (3.15.2)
+Requirement already satisfied: et-xmlfile==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 44)) (1.1.0)
+Requirement already satisfied: Flask==3.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 45)) (3.0.3)
+Requirement already satisfied: Flask-Cors==5.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 46)) (5.0.0)
+Requirement already satisfied: Flask-Login==0.6.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 47)) (0.6.3)
+Requirement already satisfied: frozenlist==1.4.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 48)) (1.4.1)
+Requirement already satisfied: future==0.18.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 49)) (0.18.2)
+Requirement already satisfied: gcloud==0.18.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 50)) (0.18.3)
+Requirement already satisfied: gevent==24.10.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 51)) (24.10.3)
+Requirement already satisfied: geventhttpclient==2.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 52)) (2.3.1)
+Requirement already satisfied: gitdb==4.0.12 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 53)) (4.0.12)
+Requirement already satisfied: GitPython==3.1.44 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 54)) (3.1.44)
+Requirement already satisfied: googleapis-common-protos==1.65.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 55)) (1.65.0)
+Requirement already satisfied: greenlet==3.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 56)) (3.1.1)
+Requirement already satisfied: gunicorn==23.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 57)) (23.0.0)
+Requirement already satisfied: httplib2==0.22.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 58)) (0.22.0)
+Requirement already satisfied: humanfriendly==10.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 59)) (10.0)
+Requirement already satisfied: idna==3.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 60)) (3.10)
+Requirement already satisfied: imageio==2.36.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 61)) (2.36.0)
+Requirement already satisfied: imageio-ffmpeg==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 62)) (0.5.1)
+Requirement already satisfied: importlib-resources==5.13.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 63)) (5.13.0)
+Requirement already satisfied: importlib_metadata==8.5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 64)) (8.5.0)
+Requirement already satisfied: inflection==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 65)) (0.5.1)
+Requirement already satisfied: itsdangerous==2.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 66)) (2.2.0)
+Requirement already satisfied: Jinja2==3.1.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 67)) (3.1.4)
+Requirement already satisfied: joblib==1.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 68)) (1.4.2)
+Requirement already satisfied: jws==0.1.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 69)) (0.1.3)
+Requirement already satisfied: kombu==5.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 70)) (5.4.2)
+Requirement already satisfied: lxml==5.3.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 71)) (5.3.0)
+Requirement already satisfied: macholib==1.15.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 72)) (1.15.2)
+Requirement already satisfied: MarkupSafe==3.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 73)) (3.0.2)
+Requirement already satisfied: moviepy==1.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 74)) (1.0.3)
+Requirement already satisfied: msgpack==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 75)) (1.1.0)
+Requirement already satisfied: multidict==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 76)) (6.1.0)
+Requirement already satisfied: numpy==2.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 77)) (2.0.2)
+Requirement already satisfied: oauth2client==4.1.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 78)) (4.1.3)
+Requirement already satisfied: oauthlib==3.2.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 79)) (3.2.2)
+Requirement already satisfied: openpyxl==3.1.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 80)) (3.1.5)
+Requirement already satisfied: packaging==24.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 81)) (24.2)
+Requirement already satisfied: pandas==2.2.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 82)) (2.2.3)
+Requirement already satisfied: pdf2image==1.17.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 83)) (1.17.0)
+Requirement already satisfied: pillow==11.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 84)) (11.0.0)
+Requirement already satisfied: proglog==0.1.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 85)) (0.1.10)
+Requirement already satisfied: prompt_toolkit==3.0.48 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 86)) (3.0.48)
+Requirement already satisfied: propcache==0.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 87)) (0.2.0)
+Requirement already satisfied: protobuf==5.29.0rc1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 88)) (5.29.0rc1)
+Requirement already satisfied: psutil==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 89)) (6.1.0)
+Requirement already satisfied: psycopg2-binary==2.9.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 90)) (2.9.3)
+Requirement already satisfied: pyasn1==0.6.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 91)) (0.6.1)
+Requirement already satisfied: pyasn1_modules==0.4.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 92)) (0.4.1)
+Requirement already satisfied: pycparser==2.22 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 93)) (2.22)
+Requirement already satisfied: pycryptodome==3.21.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 94)) (3.21.0)
+Requirement already satisfied: PyJWT==2.9.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 95)) (2.9.0)
+Requirement already satisfied: pyparsing==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 96)) (3.2.0)
+Requirement already satisfied: PyPDF2==3.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 97)) (3.0.1)
+Requirement already satisfied: Pyrebase4==4.8.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 98)) (4.8.0)
+Requirement already satisfied: python-crontab==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 99)) (3.2.0)
+Requirement already satisfied: python-dateutil==2.9.0.post0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 100)) (2.9.0.post0)
+Requirement already satisfied: python-docx==1.1.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 101)) (1.1.2)
+Requirement already satisfied: python-jwt==2.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 102)) (2.0.1)
+Requirement already satisfied: python-pptx==1.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 103)) (1.0.2)
+Requirement already satisfied: python3-openid==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 104)) (3.2.0)
+Requirement already satisfied: pytz==2025.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 105)) (2025.1)
+Requirement already satisfied: PyYAML==6.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 106)) (6.0.2)
+Requirement already satisfied: pyzmq==26.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 107)) (26.2.0)
+Requirement already satisfied: redis==5.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 108)) (5.1.1)
+Requirement already satisfied: requests==2.32.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 109)) (2.32.3)
+Requirement already satisfied: requests-oauthlib==2.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 110)) (2.0.0)
+Requirement already satisfied: requests-toolbelt==0.10.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 111)) (0.10.1)
+Requirement already satisfied: rsa==4.9 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 112)) (4.9)
+Requirement already satisfied: scikit-learn==1.5.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 113)) (1.5.2)
+Requirement already satisfied: scipy==1.13.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 114)) (1.13.1)
+Requirement already satisfied: setuptools==75.8.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 115)) (75.8.0)
+Requirement already satisfied: six==1.17.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 116)) (1.17.0)
+Requirement already satisfied: sklearn==0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 117)) (0.0)
+Requirement already satisfied: smmap==5.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 118)) (5.0.2)
+Requirement already satisfied: social-auth-app-django==5.4.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 119)) (5.4.3)
+Requirement already satisfied: social-auth-core==4.5.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 120)) (4.5.4)
+Requirement already satisfied: sqlparse==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 121)) (0.5.1)
+Requirement already satisfied: srsly==2.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 122)) (2.5.1)
+Requirement already satisfied: threadpoolctl==3.5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 123)) (3.5.0)
+Requirement already satisfied: tomli==2.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 124)) (2.0.2)
+Requirement already satisfied: tqdm==4.66.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 125)) (4.66.5)
+Requirement already satisfied: twilio==9.3.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 126)) (9.3.4)
+Requirement already satisfied: typing_extensions==4.12.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 127)) (4.12.2)
+Requirement already satisfied: tzdata==2024.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 128)) (2024.2)
+Requirement already satisfied: tzlocal==5.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 129)) (5.2)
+Requirement already satisfied: urllib3==1.26.18 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 130)) (1.26.18)
+Requirement already satisfied: vine==5.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 131)) (5.1.0)
+Requirement already satisfied: wcwidth==0.2.13 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 132)) (0.2.13)
+Requirement already satisfied: webencodings==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 133)) (0.5.1)
+Requirement already satisfied: Werkzeug==3.0.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 134)) (3.0.4)
+Requirement already satisfied: whitenoise==6.9.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 135)) (6.9.0)
+Requirement already satisfied: xlrd==2.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 136)) (2.0.1)
+Requirement already satisfied: XlsxWriter==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 137)) (3.2.0)
+Requirement already satisfied: yarl==1.15.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 138)) (1.15.5)
+Requirement already satisfied: zipp==3.20.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 139)) (3.20.2)
+Requirement already satisfied: zope.event==5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 140)) (5.0)
+Requirement already satisfied: zope.interface==7.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 141)) (7.1.1)
+Packages installed successfully in virtual environment at /home/ubuntu/social-nmk--7sept/venv
+PYTHONPATH set to: /home/ubuntu/social-nmk--7sept/venv/lib/3.9/site-packages/
+Starting Celery worker and beat services...
+Celery worker and beat are running.
+[2025-04-21 03:56:54 +0000] [231335] [INFO] Starting gunicorn 23.0.0
+[2025-04-21 03:56:54 +0000] [231335] [INFO] Listening at: http://0.0.0.0:8000 (231335)
+[2025-04-21 03:56:54 +0000] [231335] [INFO] Using worker: uvicorn.workers.UvicornWorker
+[2025-04-21 03:56:54 +0000] [231367] [INFO] Booting worker with pid: 231367
+[2025-04-21 03:56:57 +0000] [231367] [INFO] Started server process [231367]
+[2025-04-21 03:56:57 +0000] [231367] [INFO] Waiting for application startup.
+[2025-04-21 03:56:57 +0000] [231367] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-04-21 03:56:57 +0000] [231367] [INFO] Application startup complete.
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+ 
+ -------------- worker1@vps-10ca135a v5.4.0 (opalescent)
+--- ***** ----- 
+-- ******* ---- Linux-6.11.0-18-generic-x86_64-with-glibc2.40 2025-04-21 03:56:58
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         socyfie_application:0x7bc7897150d0
+- ** ---------- .> transport:   redis://:**@15.235.192.133:6379/0
+- ** ---------- .> results:     redis://:**@15.235.192.133:6379/0
+- *** --- * --- .> concurrency: 4 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . service_auth.notion.tasks.delete_old_notifications
+  . service_auth.notion.tasks.delete_old_notions
+  . service_auth.only_card.tasks.process_file_upload
+  . service_auth.user_profile.tasks.delete_expired_stories
+  . service_auth.user_profile.tasks.process_media_upload
+
+[2025-04-21 03:56:58,918: INFO/MainProcess] beat: Starting...
+[2025-04-21 03:56:59,925: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-04-21 03:56:59,930: INFO/MainProcess] mingle: searching for neighbors
+[2025-04-21 03:57:00,943: INFO/MainProcess] mingle: all alone
+[2025-04-21 03:57:00,960: INFO/MainProcess] worker1@vps-10ca135a ready.
+Not Found: /static/css/style.css
+Not Found: /static/img/default_profile_picture.png
+[2025-04-21 03:57:33 +0000] [231335] [INFO] Handling signal: term
+
+worker: Warm shutdown (MainProcess)
+[2025-04-21 03:57:33 +0000] [231367] [INFO] Shutting down
+[2025-04-21 03:57:33 +0000] [231367] [INFO] Error while closing socket [Errno 9] Bad file descriptor
+[2025-04-21 03:57:34 +0000] [231367] [INFO] Finished server process [231367]
+[2025-04-21 03:57:34 +0000] [231335] [ERROR] Worker (pid:231367) was sent SIGTERM!
+[2025-04-21 03:57:34 +0000] [231335] [INFO] Shutting down: Master
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+celery beat v5.4.0 (opalescent) is starting.
+__    -    ... __   -        _
+LocalTime -> 2025-04-21 03:56:58
+Configuration ->
+    . broker -> redis://:**@15.235.192.133:6379/0
+    . loader -> celery.loaders.app.AppLoader
+    . scheduler -> celery.beat.PersistentScheduler
+    . db -> celerybeat-schedule
+    . logfile -> [stderr]@%INFO
+    . maxinterval -> 5.00 minutes (300s)
+Requirement already satisfied: pip in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (25.0.1)
+Requirement already satisfied: six in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (1.17.0)
+Requirement already satisfied: aiohappyeyeballs==2.4.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 1)) (2.4.3)
+Requirement already satisfied: aiohttp==3.10.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 2)) (3.10.10)
+Requirement already satisfied: aiohttp-retry==2.8.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 3)) (2.8.3)
+Requirement already satisfied: aiosignal==1.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 4)) (1.3.1)
+Requirement already satisfied: altgraph==0.17.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 5)) (0.17.2)
+Requirement already satisfied: amqp==5.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 6)) (5.2.0)
+Requirement already satisfied: appmap==2.1.8 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 7)) (2.1.8)
+Requirement already satisfied: asgiref==3.8.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 8)) (3.8.1)
+Requirement already satisfied: async-timeout==4.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 9)) (4.0.3)
+Requirement already satisfied: attrs==24.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 10)) (24.2.0)
+Requirement already satisfied: billiard==4.2.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 11)) (4.2.1)
+Requirement already satisfied: bleach==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 12)) (6.1.0)
+Requirement already satisfied: blessed==1.20.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 13)) (1.20.0)
+Requirement already satisfied: blinker==1.8.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 14)) (1.8.2)
+Requirement already satisfied: Brotli==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 15)) (1.1.0)
+Requirement already satisfied: catalogue==2.0.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 16)) (2.0.10)
+Requirement already satisfied: celery==5.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 17)) (5.4.0)
+Requirement already satisfied: certifi==2024.8.30 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 18)) (2024.8.30)
+Requirement already satisfied: cffi==1.17.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 19)) (1.17.1)
+Requirement already satisfied: channels==4.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 20)) (4.1.0)
+Requirement already satisfied: charset-normalizer==3.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 21)) (3.4.0)
+Requirement already satisfied: click==8.1.7 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 22)) (8.1.7)
+Requirement already satisfied: click-didyoumean==0.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 23)) (0.3.1)
+Requirement already satisfied: click-plugins==1.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 24)) (1.1.1)
+Requirement already satisfied: click-repl==0.3.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 25)) (0.3.0)
+Requirement already satisfied: ConfigArgParse==1.7 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 26)) (1.7)
+Requirement already satisfied: contexttimer==0.3.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 27)) (0.3.3)
+Requirement already satisfied: cron-descriptor==1.4.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 28)) (1.4.5)
+Requirement already satisfied: cryptography==43.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 29)) (43.0.3)
+Requirement already satisfied: decorator==4.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 30)) (4.4.2)
+Requirement already satisfied: defusedxml==0.8.0rc2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 31)) (0.8.0rc2)
+Requirement already satisfied: Django==4.2.16 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 32)) (4.2.16)
+Requirement already satisfied: django-allauth==65.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 33)) (65.0.2)
+Requirement already satisfied: django-appconf==1.0.6 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 34)) (1.0.6)
+Requirement already satisfied: django-celery-beat==2.7.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 35)) (2.7.0)
+Requirement already satisfied: django-countries==7.6.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 36)) (7.6.1)
+Requirement already satisfied: django-crispy-forms==2.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 37)) (2.3)
+Requirement already satisfied: django-environ==0.11.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 38)) (0.11.2)
+Requirement already satisfied: django-redis==5.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 39)) (5.4.0)
+Requirement already satisfied: django-select2==8.2.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 40)) (8.2.1)
+Requirement already satisfied: django-sslserver==0.22 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 41)) (0.22)
+Requirement already satisfied: django-timezone-field==7.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 42)) (7.1)
+Requirement already satisfied: djangorestframework==3.15.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 43)) (3.15.2)
+Requirement already satisfied: et-xmlfile==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 44)) (1.1.0)
+Requirement already satisfied: Flask==3.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 45)) (3.0.3)
+Requirement already satisfied: Flask-Cors==5.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 46)) (5.0.0)
+Requirement already satisfied: Flask-Login==0.6.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 47)) (0.6.3)
+Requirement already satisfied: frozenlist==1.4.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 48)) (1.4.1)
+Requirement already satisfied: future==0.18.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 49)) (0.18.2)
+Requirement already satisfied: gcloud==0.18.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 50)) (0.18.3)
+Requirement already satisfied: gevent==24.10.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 51)) (24.10.3)
+Requirement already satisfied: geventhttpclient==2.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 52)) (2.3.1)
+Requirement already satisfied: gitdb==4.0.12 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 53)) (4.0.12)
+Requirement already satisfied: GitPython==3.1.44 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 54)) (3.1.44)
+Requirement already satisfied: googleapis-common-protos==1.65.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 55)) (1.65.0)
+Requirement already satisfied: greenlet==3.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 56)) (3.1.1)
+Requirement already satisfied: gunicorn==23.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 57)) (23.0.0)
+Requirement already satisfied: httplib2==0.22.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 58)) (0.22.0)
+Requirement already satisfied: humanfriendly==10.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 59)) (10.0)
+Requirement already satisfied: idna==3.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 60)) (3.10)
+Requirement already satisfied: imageio==2.36.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 61)) (2.36.0)
+Requirement already satisfied: imageio-ffmpeg==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 62)) (0.5.1)
+Requirement already satisfied: importlib-resources==5.13.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 63)) (5.13.0)
+Requirement already satisfied: importlib_metadata==8.5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 64)) (8.5.0)
+Requirement already satisfied: inflection==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 65)) (0.5.1)
+Requirement already satisfied: itsdangerous==2.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 66)) (2.2.0)
+Requirement already satisfied: Jinja2==3.1.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 67)) (3.1.4)
+Requirement already satisfied: joblib==1.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 68)) (1.4.2)
+Requirement already satisfied: jws==0.1.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 69)) (0.1.3)
+Requirement already satisfied: kombu==5.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 70)) (5.4.2)
+Requirement already satisfied: lxml==5.3.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 71)) (5.3.0)
+Requirement already satisfied: macholib==1.15.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 72)) (1.15.2)
+Requirement already satisfied: MarkupSafe==3.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 73)) (3.0.2)
+Requirement already satisfied: moviepy==1.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 74)) (1.0.3)
+Requirement already satisfied: msgpack==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 75)) (1.1.0)
+Requirement already satisfied: multidict==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 76)) (6.1.0)
+Requirement already satisfied: numpy==2.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 77)) (2.0.2)
+Requirement already satisfied: oauth2client==4.1.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 78)) (4.1.3)
+Requirement already satisfied: oauthlib==3.2.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 79)) (3.2.2)
+Requirement already satisfied: openpyxl==3.1.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 80)) (3.1.5)
+Requirement already satisfied: packaging==24.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 81)) (24.2)
+Requirement already satisfied: pandas==2.2.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 82)) (2.2.3)
+Requirement already satisfied: pdf2image==1.17.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 83)) (1.17.0)
+Requirement already satisfied: pillow==11.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 84)) (11.0.0)
+Requirement already satisfied: proglog==0.1.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 85)) (0.1.10)
+Requirement already satisfied: prompt_toolkit==3.0.48 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 86)) (3.0.48)
+Requirement already satisfied: propcache==0.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 87)) (0.2.0)
+Requirement already satisfied: protobuf==5.29.0rc1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 88)) (5.29.0rc1)
+Requirement already satisfied: psutil==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 89)) (6.1.0)
+Requirement already satisfied: psycopg2-binary==2.9.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 90)) (2.9.3)
+Requirement already satisfied: pyasn1==0.6.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 91)) (0.6.1)
+Requirement already satisfied: pyasn1_modules==0.4.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 92)) (0.4.1)
+Requirement already satisfied: pycparser==2.22 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 93)) (2.22)
+Requirement already satisfied: pycryptodome==3.21.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 94)) (3.21.0)
+Requirement already satisfied: PyJWT==2.9.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 95)) (2.9.0)
+Requirement already satisfied: pyparsing==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 96)) (3.2.0)
+Requirement already satisfied: PyPDF2==3.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 97)) (3.0.1)
+Requirement already satisfied: Pyrebase4==4.8.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 98)) (4.8.0)
+Requirement already satisfied: python-crontab==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 99)) (3.2.0)
+Requirement already satisfied: python-dateutil==2.9.0.post0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 100)) (2.9.0.post0)
+Requirement already satisfied: python-docx==1.1.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 101)) (1.1.2)
+Requirement already satisfied: python-jwt==2.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 102)) (2.0.1)
+Requirement already satisfied: python-pptx==1.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 103)) (1.0.2)
+Requirement already satisfied: python3-openid==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 104)) (3.2.0)
+Requirement already satisfied: pytz==2025.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 105)) (2025.1)
+Requirement already satisfied: PyYAML==6.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 106)) (6.0.2)
+Requirement already satisfied: pyzmq==26.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 107)) (26.2.0)
+Requirement already satisfied: redis==5.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 108)) (5.1.1)
+Requirement already satisfied: requests==2.32.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 109)) (2.32.3)
+Requirement already satisfied: requests-oauthlib==2.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 110)) (2.0.0)
+Requirement already satisfied: requests-toolbelt==0.10.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 111)) (0.10.1)
+Requirement already satisfied: rsa==4.9 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 112)) (4.9)
+Requirement already satisfied: scikit-learn==1.5.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 113)) (1.5.2)
+Requirement already satisfied: scipy==1.13.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 114)) (1.13.1)
+Requirement already satisfied: setuptools==75.8.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 115)) (75.8.0)
+Requirement already satisfied: six==1.17.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 116)) (1.17.0)
+Requirement already satisfied: sklearn==0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 117)) (0.0)
+Requirement already satisfied: smmap==5.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 118)) (5.0.2)
+Requirement already satisfied: social-auth-app-django==5.4.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 119)) (5.4.3)
+Requirement already satisfied: social-auth-core==4.5.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 120)) (4.5.4)
+Requirement already satisfied: sqlparse==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 121)) (0.5.1)
+Requirement already satisfied: srsly==2.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 122)) (2.5.1)
+Requirement already satisfied: threadpoolctl==3.5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 123)) (3.5.0)
+Requirement already satisfied: tomli==2.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 124)) (2.0.2)
+Requirement already satisfied: tqdm==4.66.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 125)) (4.66.5)
+Requirement already satisfied: twilio==9.3.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 126)) (9.3.4)
+Requirement already satisfied: typing_extensions==4.12.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 127)) (4.12.2)
+Requirement already satisfied: tzdata==2024.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 128)) (2024.2)
+Requirement already satisfied: tzlocal==5.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 129)) (5.2)
+Requirement already satisfied: urllib3==1.26.18 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 130)) (1.26.18)
+Requirement already satisfied: vine==5.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 131)) (5.1.0)
+Requirement already satisfied: wcwidth==0.2.13 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 132)) (0.2.13)
+Requirement already satisfied: webencodings==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 133)) (0.5.1)
+Requirement already satisfied: Werkzeug==3.0.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 134)) (3.0.4)
+Requirement already satisfied: whitenoise==6.9.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 135)) (6.9.0)
+Requirement already satisfied: xlrd==2.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 136)) (2.0.1)
+Requirement already satisfied: XlsxWriter==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 137)) (3.2.0)
+Requirement already satisfied: yarl==1.15.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 138)) (1.15.5)
+Requirement already satisfied: zipp==3.20.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 139)) (3.20.2)
+Requirement already satisfied: zope.event==5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 140)) (5.0)
+Requirement already satisfied: zope.interface==7.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 141)) (7.1.1)
+Packages installed successfully in virtual environment at /home/ubuntu/social-nmk--7sept/venv
+PYTHONPATH set to: /home/ubuntu/social-nmk--7sept/venv/lib/3.9/site-packages/
+Starting Celery worker and beat services...
+Celery worker and beat are running.
+[2025-04-21 04:01:34 +0000] [231979] [INFO] Starting gunicorn 23.0.0
+[2025-04-21 04:01:34 +0000] [231979] [INFO] Listening at: http://0.0.0.0:8000 (231979)
+[2025-04-21 04:01:34 +0000] [231979] [INFO] Using worker: uvicorn.workers.UvicornWorker
+[2025-04-21 04:01:34 +0000] [232011] [INFO] Booting worker with pid: 232011
+[2025-04-21 04:01:37 +0000] [232011] [INFO] Started server process [232011]
+[2025-04-21 04:01:37 +0000] [232011] [INFO] Waiting for application startup.
+[2025-04-21 04:01:37 +0000] [232011] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-04-21 04:01:37 +0000] [232011] [INFO] Application startup complete.
+[2025-04-21 04:01:39,195: INFO/MainProcess] beat: Starting...
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+ 
+ -------------- worker1@vps-10ca135a v5.4.0 (opalescent)
+--- ***** ----- 
+-- ******* ---- Linux-6.11.0-18-generic-x86_64-with-glibc2.40 2025-04-21 04:01:39
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         socyfie_application:0x71c5128d50d0
+- ** ---------- .> transport:   redis://:**@15.235.192.133:6379/0
+- ** ---------- .> results:     redis://:**@15.235.192.133:6379/0
+- *** --- * --- .> concurrency: 4 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . service_auth.notion.tasks.delete_old_notifications
+  . service_auth.notion.tasks.delete_old_notions
+  . service_auth.only_card.tasks.process_file_upload
+  . service_auth.user_profile.tasks.delete_expired_stories
+  . service_auth.user_profile.tasks.process_media_upload
+
+[2025-04-21 04:01:40,130: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-04-21 04:01:40,138: INFO/MainProcess] mingle: searching for neighbors
+[2025-04-21 04:01:41,150: INFO/MainProcess] mingle: all alone
+[2025-04-21 04:01:41,173: INFO/MainProcess] worker1@vps-10ca135a ready.
+Unhandled exception in view_file: No UserUpload matches the given query.
+Internal Server Error: /view_file/1/
+Unhandled exception in view_file: No UserUpload matches the given query.
+Internal Server Error: /view_file/1/
+Not Found: /path/to/default/profile/picture.jpg
+Unhandled exception in view_file: No UserUpload matches the given query.
+Internal Server Error: /view_file/1/
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Unhandled exception in view_file: No UserUpload matches the given query.
+Internal Server Error: /view_file/1/
+[2025-04-21 04:25:00,093: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 04:25:00,113: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[e9ffd170-dd4d-4d91-ab02-07de8456a7cf] received
+[2025-04-21 04:25:00,165: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[e9ffd170-dd4d-4d91-ab02-07de8456a7cf] succeeded in 0.04828538105357438s: 'Deleted 0 expired stories and their associated media.'
+[2025-04-21 04:25:09 +0000] [232011] [WARNING] Invalid HTTP request received.
+[2025-04-21 04:25:15 +0000] [231979] [INFO] Handling signal: term
+[2025-04-21 04:25:15 +0000] [232011] [INFO] Shutting down
+[2025-04-21 04:25:15 +0000] [232011] [INFO] Error while closing socket [Errno 9] Bad file descriptor
+
+worker: Warm shutdown (MainProcess)
+[2025-04-21 04:25:15 +0000] [232011] [INFO] Finished server process [232011]
+[2025-04-21 04:25:15 +0000] [231979] [ERROR] Worker (pid:232011) was sent SIGTERM!
+[2025-04-21 04:25:15 +0000] [231979] [INFO] Shutting down: Master
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+celery beat v5.4.0 (opalescent) is starting.
+__    -    ... __   -        _
+LocalTime -> 2025-04-21 04:01:39
+Configuration ->
+    . broker -> redis://:**@15.235.192.133:6379/0
+    . loader -> celery.loaders.app.AppLoader
+    . scheduler -> celery.beat.PersistentScheduler
+    . db -> celerybeat-schedule
+    . logfile -> [stderr]@%INFO
+    . maxinterval -> 5.00 minutes (300s)
+Requirement already satisfied: pip in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (25.0.1)
+Requirement already satisfied: six in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (1.17.0)
+Requirement already satisfied: aiohappyeyeballs==2.4.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 1)) (2.4.3)
+Requirement already satisfied: aiohttp==3.10.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 2)) (3.10.10)
+Requirement already satisfied: aiohttp-retry==2.8.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 3)) (2.8.3)
+Requirement already satisfied: aiosignal==1.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 4)) (1.3.1)
+Requirement already satisfied: altgraph==0.17.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 5)) (0.17.2)
+Requirement already satisfied: amqp==5.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 6)) (5.2.0)
+Requirement already satisfied: appmap==2.1.8 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 7)) (2.1.8)
+Requirement already satisfied: asgiref==3.8.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 8)) (3.8.1)
+Requirement already satisfied: async-timeout==4.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 9)) (4.0.3)
+Requirement already satisfied: attrs==24.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 10)) (24.2.0)
+Requirement already satisfied: billiard==4.2.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 11)) (4.2.1)
+Requirement already satisfied: bleach==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 12)) (6.1.0)
+Requirement already satisfied: blessed==1.20.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 13)) (1.20.0)
+Requirement already satisfied: blinker==1.8.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 14)) (1.8.2)
+Requirement already satisfied: Brotli==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 15)) (1.1.0)
+Requirement already satisfied: catalogue==2.0.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 16)) (2.0.10)
+Requirement already satisfied: celery==5.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 17)) (5.4.0)
+Requirement already satisfied: certifi==2024.8.30 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 18)) (2024.8.30)
+Requirement already satisfied: cffi==1.17.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 19)) (1.17.1)
+Requirement already satisfied: channels==4.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 20)) (4.1.0)
+Requirement already satisfied: charset-normalizer==3.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 21)) (3.4.0)
+Requirement already satisfied: click==8.1.7 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 22)) (8.1.7)
+Requirement already satisfied: click-didyoumean==0.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 23)) (0.3.1)
+Requirement already satisfied: click-plugins==1.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 24)) (1.1.1)
+Requirement already satisfied: click-repl==0.3.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 25)) (0.3.0)
+Requirement already satisfied: ConfigArgParse==1.7 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 26)) (1.7)
+Requirement already satisfied: contexttimer==0.3.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 27)) (0.3.3)
+Requirement already satisfied: cron-descriptor==1.4.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 28)) (1.4.5)
+Requirement already satisfied: cryptography==43.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 29)) (43.0.3)
+Requirement already satisfied: decorator==4.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 30)) (4.4.2)
+Requirement already satisfied: defusedxml==0.8.0rc2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 31)) (0.8.0rc2)
+Requirement already satisfied: Django==4.2.16 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 32)) (4.2.16)
+Requirement already satisfied: django-allauth==65.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 33)) (65.0.2)
+Requirement already satisfied: django-appconf==1.0.6 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 34)) (1.0.6)
+Requirement already satisfied: django-celery-beat==2.7.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 35)) (2.7.0)
+Requirement already satisfied: django-countries==7.6.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 36)) (7.6.1)
+Requirement already satisfied: django-crispy-forms==2.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 37)) (2.3)
+Requirement already satisfied: django-environ==0.11.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 38)) (0.11.2)
+Requirement already satisfied: django-redis==5.4.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 39)) (5.4.0)
+Requirement already satisfied: django-select2==8.2.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 40)) (8.2.1)
+Requirement already satisfied: django-sslserver==0.22 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 41)) (0.22)
+Requirement already satisfied: django-timezone-field==7.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 42)) (7.1)
+Requirement already satisfied: djangorestframework==3.15.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 43)) (3.15.2)
+Requirement already satisfied: et-xmlfile==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 44)) (1.1.0)
+Requirement already satisfied: Flask==3.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 45)) (3.0.3)
+Requirement already satisfied: Flask-Cors==5.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 46)) (5.0.0)
+Requirement already satisfied: Flask-Login==0.6.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 47)) (0.6.3)
+Requirement already satisfied: frozenlist==1.4.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 48)) (1.4.1)
+Requirement already satisfied: future==0.18.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 49)) (0.18.2)
+Requirement already satisfied: gcloud==0.18.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 50)) (0.18.3)
+Requirement already satisfied: gevent==24.10.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 51)) (24.10.3)
+Requirement already satisfied: geventhttpclient==2.3.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 52)) (2.3.1)
+Requirement already satisfied: gitdb==4.0.12 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 53)) (4.0.12)
+Requirement already satisfied: GitPython==3.1.44 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 54)) (3.1.44)
+Requirement already satisfied: googleapis-common-protos==1.65.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 55)) (1.65.0)
+Requirement already satisfied: greenlet==3.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 56)) (3.1.1)
+Requirement already satisfied: gunicorn==23.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 57)) (23.0.0)
+Requirement already satisfied: httplib2==0.22.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 58)) (0.22.0)
+Requirement already satisfied: humanfriendly==10.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 59)) (10.0)
+Requirement already satisfied: idna==3.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 60)) (3.10)
+Requirement already satisfied: imageio==2.36.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 61)) (2.36.0)
+Requirement already satisfied: imageio-ffmpeg==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 62)) (0.5.1)
+Requirement already satisfied: importlib-resources==5.13.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 63)) (5.13.0)
+Requirement already satisfied: importlib_metadata==8.5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 64)) (8.5.0)
+Requirement already satisfied: inflection==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 65)) (0.5.1)
+Requirement already satisfied: itsdangerous==2.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 66)) (2.2.0)
+Requirement already satisfied: Jinja2==3.1.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 67)) (3.1.4)
+Requirement already satisfied: joblib==1.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 68)) (1.4.2)
+Requirement already satisfied: jws==0.1.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 69)) (0.1.3)
+Requirement already satisfied: kombu==5.4.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 70)) (5.4.2)
+Requirement already satisfied: lxml==5.3.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 71)) (5.3.0)
+Requirement already satisfied: macholib==1.15.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 72)) (1.15.2)
+Requirement already satisfied: MarkupSafe==3.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 73)) (3.0.2)
+Requirement already satisfied: moviepy==1.0.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 74)) (1.0.3)
+Requirement already satisfied: msgpack==1.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 75)) (1.1.0)
+Requirement already satisfied: multidict==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 76)) (6.1.0)
+Requirement already satisfied: numpy==2.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 77)) (2.0.2)
+Requirement already satisfied: oauth2client==4.1.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 78)) (4.1.3)
+Requirement already satisfied: oauthlib==3.2.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 79)) (3.2.2)
+Requirement already satisfied: openpyxl==3.1.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 80)) (3.1.5)
+Requirement already satisfied: packaging==24.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 81)) (24.2)
+Requirement already satisfied: pandas==2.2.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 82)) (2.2.3)
+Requirement already satisfied: pdf2image==1.17.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 83)) (1.17.0)
+Requirement already satisfied: pillow==11.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 84)) (11.0.0)
+Requirement already satisfied: proglog==0.1.10 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 85)) (0.1.10)
+Requirement already satisfied: prompt_toolkit==3.0.48 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 86)) (3.0.48)
+Requirement already satisfied: propcache==0.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 87)) (0.2.0)
+Requirement already satisfied: protobuf==5.29.0rc1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 88)) (5.29.0rc1)
+Requirement already satisfied: psutil==6.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 89)) (6.1.0)
+Requirement already satisfied: psycopg2-binary==2.9.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 90)) (2.9.3)
+Requirement already satisfied: pyasn1==0.6.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 91)) (0.6.1)
+Requirement already satisfied: pyasn1_modules==0.4.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 92)) (0.4.1)
+Requirement already satisfied: pycparser==2.22 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 93)) (2.22)
+Requirement already satisfied: pycryptodome==3.21.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 94)) (3.21.0)
+Requirement already satisfied: PyJWT==2.9.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 95)) (2.9.0)
+Requirement already satisfied: pyparsing==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 96)) (3.2.0)
+Requirement already satisfied: PyPDF2==3.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 97)) (3.0.1)
+Requirement already satisfied: Pyrebase4==4.8.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 98)) (4.8.0)
+Requirement already satisfied: python-crontab==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 99)) (3.2.0)
+Requirement already satisfied: python-dateutil==2.9.0.post0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 100)) (2.9.0.post0)
+Requirement already satisfied: python-docx==1.1.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 101)) (1.1.2)
+Requirement already satisfied: python-jwt==2.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 102)) (2.0.1)
+Requirement already satisfied: python-pptx==1.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 103)) (1.0.2)
+Requirement already satisfied: python3-openid==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 104)) (3.2.0)
+Requirement already satisfied: pytz==2025.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 105)) (2025.1)
+Requirement already satisfied: PyYAML==6.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 106)) (6.0.2)
+Requirement already satisfied: pyzmq==26.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 107)) (26.2.0)
+Requirement already satisfied: redis==5.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 108)) (5.1.1)
+Requirement already satisfied: requests==2.32.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 109)) (2.32.3)
+Requirement already satisfied: requests-oauthlib==2.0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 110)) (2.0.0)
+Requirement already satisfied: requests-toolbelt==0.10.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 111)) (0.10.1)
+Requirement already satisfied: rsa==4.9 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 112)) (4.9)
+Requirement already satisfied: scikit-learn==1.5.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 113)) (1.5.2)
+Requirement already satisfied: scipy==1.13.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 114)) (1.13.1)
+Requirement already satisfied: setuptools==75.8.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 115)) (75.8.0)
+Requirement already satisfied: six==1.17.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 116)) (1.17.0)
+Requirement already satisfied: sklearn==0.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 117)) (0.0)
+Requirement already satisfied: smmap==5.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 118)) (5.0.2)
+Requirement already satisfied: social-auth-app-django==5.4.3 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 119)) (5.4.3)
+Requirement already satisfied: social-auth-core==4.5.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 120)) (4.5.4)
+Requirement already satisfied: sqlparse==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 121)) (0.5.1)
+Requirement already satisfied: srsly==2.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 122)) (2.5.1)
+Requirement already satisfied: threadpoolctl==3.5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 123)) (3.5.0)
+Requirement already satisfied: tomli==2.0.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 124)) (2.0.2)
+Requirement already satisfied: tqdm==4.66.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 125)) (4.66.5)
+Requirement already satisfied: twilio==9.3.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 126)) (9.3.4)
+Requirement already satisfied: typing_extensions==4.12.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 127)) (4.12.2)
+Requirement already satisfied: tzdata==2024.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 128)) (2024.2)
+Requirement already satisfied: tzlocal==5.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 129)) (5.2)
+Requirement already satisfied: urllib3==1.26.18 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 130)) (1.26.18)
+Requirement already satisfied: vine==5.1.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 131)) (5.1.0)
+Requirement already satisfied: wcwidth==0.2.13 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 132)) (0.2.13)
+Requirement already satisfied: webencodings==0.5.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 133)) (0.5.1)
+Requirement already satisfied: Werkzeug==3.0.4 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 134)) (3.0.4)
+Requirement already satisfied: whitenoise==6.9.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 135)) (6.9.0)
+Requirement already satisfied: xlrd==2.0.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 136)) (2.0.1)
+Requirement already satisfied: XlsxWriter==3.2.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 137)) (3.2.0)
+Requirement already satisfied: yarl==1.15.5 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 138)) (1.15.5)
+Requirement already satisfied: zipp==3.20.2 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 139)) (3.20.2)
+Requirement already satisfied: zope.event==5.0 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 140)) (5.0)
+Requirement already satisfied: zope.interface==7.1.1 in /home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages (from -r /home/ubuntu/social-nmk--7sept/nmk/requirements.txt (line 141)) (7.1.1)
+Packages installed successfully in virtual environment at /home/ubuntu/social-nmk--7sept/venv
+PYTHONPATH set to: /home/ubuntu/social-nmk--7sept/venv/lib/3.9/site-packages/
+Starting Celery worker and beat services...
+Celery worker and beat are running.
+[2025-04-21 04:25:30 +0000] [232908] [INFO] Starting gunicorn 23.0.0
+[2025-04-21 04:25:30 +0000] [232908] [INFO] Listening at: http://0.0.0.0:8000 (232908)
+[2025-04-21 04:25:30 +0000] [232908] [INFO] Using worker: uvicorn.workers.UvicornWorker
+[2025-04-21 04:25:30 +0000] [232940] [INFO] Booting worker with pid: 232940
+[2025-04-21 04:25:32 +0000] [232940] [INFO] Started server process [232940]
+[2025-04-21 04:25:32 +0000] [232940] [INFO] Waiting for application startup.
+[2025-04-21 04:25:32 +0000] [232940] [INFO] ASGI 'lifespan' protocol appears unsupported.
+[2025-04-21 04:25:32 +0000] [232940] [INFO] Application startup complete.
+[2025-04-21 04:25:34,602: INFO/MainProcess] beat: Starting...
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+ 
+ -------------- worker1@vps-10ca135a v5.4.0 (opalescent)
+--- ***** ----- 
+-- ******* ---- Linux-6.11.0-18-generic-x86_64-with-glibc2.40 2025-04-21 04:25:34
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         socyfie_application:0x70e28b3150d0
+- ** ---------- .> transport:   redis://:**@15.235.192.133:6379/0
+- ** ---------- .> results:     redis://:**@15.235.192.133:6379/0
+- *** --- * --- .> concurrency: 4 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . service_auth.notion.tasks.delete_old_notifications
+  . service_auth.notion.tasks.delete_old_notions
+  . service_auth.only_card.tasks.process_file_upload
+  . service_auth.user_profile.tasks.delete_expired_stories
+  . service_auth.user_profile.tasks.process_media_upload
+
+[2025-04-21 04:25:35,640: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-04-21 04:25:35,648: INFO/MainProcess] mingle: searching for neighbors
+[2025-04-21 04:25:36,661: INFO/MainProcess] mingle: all alone
+[2025-04-21 04:25:36,678: INFO/MainProcess] worker1@vps-10ca135a ready.
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Forbidden (Referer checking failed - no Referer.): /
+[2025-04-21 04:49:00,108: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 04:49:00,130: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[240a61a0-b18c-4998-a811-1c234bcf9ed9] received
+[2025-04-21 04:49:00,135: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 04:49:00,185: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 04:49:00,190: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[240a61a0-b18c-4998-a811-1c234bcf9ed9] succeeded in 0.05609987094067037s: None
+[2025-04-21 05:25:00,000: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 05:25:00,005: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[5bf33797-bef7-4751-bf99-bdf5f3be5880] received
+[2025-04-21 05:25:00,036: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[5bf33797-bef7-4751-bf99-bdf5f3be5880] succeeded in 0.028842294006608427s: 'Deleted 0 expired stories and their associated media.'
+[2025-04-21 05:49:00,063: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 05:49:00,085: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[1e2fbd77-175d-49fd-9d05-58c183f5bf28] received
+[2025-04-21 05:49:00,094: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 05:49:00,124: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 05:49:00,128: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[1e2fbd77-175d-49fd-9d05-58c183f5bf28] succeeded in 0.035664435010403395s: None
+[2025-04-21 05:56:20 +0000] [232940] [WARNING] Invalid HTTP request received.
+Not Found: /autodiscover/autodiscover.json
+Not Found: /favicon.ico
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /favicon.ico
+Error creating encryption keys for user Priyanka: name 'generate_key_pair' is not defined
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /path/to/default/profile/picture.jpg
+[2025-04-21 06:17:51 +0000] [232940] [WARNING] Invalid HTTP request received.
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /wordpress/
+Not Found: /favicon.ico
+[2025-04-21 06:23:20 +0000] [232940] [WARNING] Invalid HTTP request received.
+[2025-04-21 06:25:00,000: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 06:25:00,005: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[ca9e9c96-9099-4f1d-8945-ab122315da0f] received
+[2025-04-21 06:25:00,032: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[ca9e9c96-9099-4f1d-8945-ab122315da0f] succeeded in 0.024117422988638282s: 'Deleted 0 expired stories and their associated media.'
+Forbidden (Referer checking failed - no Referer.): /
+Forbidden (Referer checking failed - no Referer.): /
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+[2025-04-21 06:49:00,119: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 06:49:00,131: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[b1344f5a-0756-446d-bd8c-6ede38e18e58] received
+[2025-04-21 06:49:00,139: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 06:49:00,177: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 06:49:00,179: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[b1344f5a-0756-446d-bd8c-6ede38e18e58] succeeded in 0.04139257699716836s: None
+[2025-04-21 07:00:00,005: INFO/MainProcess] Scheduler: Sending due task delete-old-notifications-every-day (service_auth.notion.tasks.delete_old_notifications)
+[2025-04-21 07:00:00,016: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notifications[4646cc3f-8470-4086-86e1-7945c96b163e] received
+[2025-04-21 07:00:00,050: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notifications[4646cc3f-8470-4086-86e1-7945c96b163e] succeeded in 0.028978087939321995s: 'Deleted 0 old notifications.'
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /path/to/default/profile/picture.jpg
+Error creating encryption keys for user Sonam: name 'generate_key_pair' is not defined
+User Priyanka has no category assigned in their profile
+[2025-04-21 07:15:43,822: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[5509fc47-e345-4084-94b0-856d92d1937c] received
+[2025-04-21 07:15:43,849: INFO/ForkPoolWorker-4] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-04-21 07:15:43,892: INFO/ForkPoolWorker-4] Saving file: media/media/1000133312.jpg with extension: .jpg
+[2025-04-21 07:15:43,897: INFO/ForkPoolWorker-4] Image media/1000133312.jpg processed and uploaded successfully.
+[2025-04-21 07:15:43,899: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.process_media_upload[5509fc47-e345-4084-94b0-856d92d1937c] succeeded in 0.07228087307885289s: None
+Forbidden (Referer checking failed - no Referer.): /
+User Priyanka has no category assigned in their profile
+Unknown file type uploaded: 1000133311.webp
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /apple-touch-icon.png
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /static/img/loading_spinner.gif
+User Priyanka has no category assigned in their profile
+[2025-04-21 07:18:23,918: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[79113c73-64f6-4ee6-ada2-23edac0b4476] received
+[2025-04-21 07:18:23,942: INFO/ForkPoolWorker-4] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-04-21 07:18:23,962: INFO/ForkPoolWorker-4] Saving file: media/media/1000133315.jpg with extension: .jpg
+[2025-04-21 07:18:23,966: INFO/ForkPoolWorker-4] Image media/1000133315.jpg processed and uploaded successfully.
+[2025-04-21 07:18:23,968: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.process_media_upload[79113c73-64f6-4ee6-ada2-23edac0b4476] succeeded in 0.04753536393400282s: None
+User Priyanka has no category assigned in their profile
+Unknown file type uploaded: 1000135523.webp
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /favicon.ico
+[2025-04-21 07:25:00,079: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 07:25:00,085: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[fa6e9142-20eb-4151-8c17-988f557d2718] received
+[2025-04-21 07:25:00,112: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[fa6e9142-20eb-4151-8c17-988f557d2718] succeeded in 0.024942412972450256s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /apple-touch-icon.png
+User vaibhav has no category assigned in their profile
+[2025-04-21 07:33:22,333: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[6f29e918-e6f5-4043-a70c-ede977464fde] received
+[2025-04-21 07:33:22,361: INFO/ForkPoolWorker-4] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-04-21 07:33:22,378: INFO/ForkPoolWorker-4] Saving file: media/media/IMG_4134_Original.jpeg with extension: .jpeg
+[2025-04-21 07:33:22,382: INFO/ForkPoolWorker-4] Image media/IMG_4134_Original.jpeg processed and uploaded successfully.
+[2025-04-21 07:33:22,385: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.process_media_upload[6f29e918-e6f5-4043-a70c-ede977464fde] succeeded in 0.049520577071234584s: None
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /static/img/default_profile_picture.png
+Not Found: /static/css/style.css
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-16x16.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /apple-touch-icon-120x120-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /apple-touch-icon-120x120.png
+Not Found: /apple-touch-icon.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-16x16.png
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /.env
+Not Found: /favicon.ico
+[2025-04-21 07:49:00,093: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 07:49:00,098: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[51bb3885-6b62-431b-998d-47851be4e75d] received
+[2025-04-21 07:49:00,102: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 07:49:00,122: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 07:49:00,124: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[51bb3885-6b62-431b-998d-47851be4e75d] succeeded in 0.022952389088459313s: None
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /apple-touch-icon.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-16x16.png
+Not Found: /favicon.ico
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /static/img/loading_spinner.gif
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /favicon.ico
+Not Found: /static/images/favicon-32x32.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-16x16.png
+Error creating encryption keys for user Vinod: name 'generate_key_pair' is not defined
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /path/to/default/profile/picture.jpg
+Forbidden (CSRF token from POST incorrect.): /login/
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+User Sonam has no category assigned in their profile
+[2025-04-21 08:07:12,810: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[0e79778b-afc2-4f07-bead-5340214c82a5] received
+[2025-04-21 08:07:12,836: INFO/ForkPoolWorker-4] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-04-21 08:07:12,880: INFO/ForkPoolWorker-4] Saving file: media/media/IMG_1715_CSVrdtg.jpeg with extension: .jpeg
+[2025-04-21 08:07:12,884: INFO/ForkPoolWorker-4] Image media/IMG_1715_CSVrdtg.jpeg processed and uploaded successfully.
+[2025-04-21 08:07:12,887: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.process_media_upload[0e79778b-afc2-4f07-bead-5340214c82a5] succeeded in 0.07332869700621814s: None
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /path/to/default/profile/picture.jpg
+Not Found: /.env
+Not Found: /alfa-rex.php7
+Not Found: /wp-p.php7
+Not Found: /about.php7
+Not Found: /alfanew.php7
+Not Found: /adminfuns.php7
+Not Found: /ebs.php7
+Not Found: /ws.php7
+Not Found: /alfanew2.php7
+Not Found: /alfa-rex2.php7
+Not Found: /chosen
+Not Found: /ynz.PhP7
+Not Found: /worm0.PhP7
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/img/loading_spinner.gif
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /apple-touch-icon.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /favicon.ico
+[2025-04-21 08:25:00,011: INFO/MainProcess] Scheduler: Sending due task delete-expired-stories-every-hour (service_auth.user_profile.tasks.delete_expired_stories)
+[2025-04-21 08:25:00,016: INFO/MainProcess] Task service_auth.user_profile.tasks.delete_expired_stories[904fc90e-b9e8-4b9e-9dc5-80f8195feb6b] received
+[2025-04-21 08:25:00,041: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.delete_expired_stories[904fc90e-b9e8-4b9e-9dc5-80f8195feb6b] succeeded in 0.022678320994600654s: 'Deleted 0 expired stories and their associated media.'
+Not Found: /.git/config
+[2025-04-21 08:31:23 +0000] [232940] [WARNING] Invalid HTTP request received.
+[2025-04-21 08:33:47 +0000] [232940] [WARNING] Invalid HTTP request received.
+Not Found: /favicon.ico
+[2025-04-21 08:35:35 +0000] [232940] [WARNING] Invalid HTTP request received.
+Forbidden (Referer checking failed - no Referer.): /
+Error creating encryption keys for user santoshkumar: name 'generate_key_pair' is not defined
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /path/to/default/profile/picture.jpg
+[2025-04-21 08:49:00,062: INFO/MainProcess] Scheduler: Sending due task delete-old-notions-every-day (service_auth.notion.tasks.delete_old_notions)
+[2025-04-21 08:49:00,067: INFO/MainProcess] Task service_auth.notion.tasks.delete_old_notions[908d787d-cfd5-42f5-85e4-03bc66a8f6e4] received
+[2025-04-21 08:49:00,069: INFO/ForkPoolWorker-4] Running task to delete old notions...
+[2025-04-21 08:49:00,090: INFO/ForkPoolWorker-4] Deleted (0, {}) old notions.
+[2025-04-21 08:49:00,092: INFO/ForkPoolWorker-4] Task service_auth.notion.tasks.delete_old_notions[908d787d-cfd5-42f5-85e4-03bc66a8f6e4] succeeded in 0.022876581992022693s: None
+Not Found: /static/img/loading_spinner.gif
+[2025-04-21 08:53:32,216: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[d293719f-5497-454c-b949-4c465780b5cb] received
+[2025-04-21 08:53:32,239: INFO/ForkPoolWorker-4] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-04-21 08:53:32,298: INFO/ForkPoolWorker-4] Saving file: media/media/1000087918.jpg with extension: .jpg
+[2025-04-21 08:53:32,302: INFO/ForkPoolWorker-4] Image media/1000087918.jpg processed and uploaded successfully.
+[2025-04-21 08:53:32,305: INFO/ForkPoolWorker-4] Task service_auth.user_profile.tasks.process_media_upload[d293719f-5497-454c-b949-4c465780b5cb] succeeded in 0.08653561200480908s: None
+Not Found: /apple-touch-icon-precomposed.png
+Not Found: /static/images/favicon-180x180.png
+Not Found: /static/images/favicon-32x32.png
+Not Found: /static/images/favicon-16x16.png
+Not Found: /favicon.ico
+Not Found: /apple-touch-icon.png
+Not Found: /path/to/default/profile/picture.jpg
+WARNING:py.warnings:/home/ubuntu/social-nmk--7sept/venv/lib/python3.9/site-packages/django/core/cache/backends/base.py:117: CacheKeyWarning: Cache key contains characters that will cause errors if used with memcached: 'example caches:1:django.contrib.sessions.cachex44usonnntsd8agx8xzc225z665mktpj'
+  warnings.warn(warning, CacheKeyWarning)
+
+Not Found: /.git/index
+WARNING:django.request:Not Found: /.git/index
+[2025-04-21 09:18:12 +0000] [232908] [INFO] Handling signal: term
+
+worker: Warm shutdown (MainProcess)
+[2025-04-21 09:18:12 +0000] [232940] [INFO] Shutting down
+[2025-04-21 09:18:12 +0000] [232940] [INFO] Error while closing socket [Errno 9] Bad file descriptor
+[2025-04-21 09:18:13 +0000] [232940] [INFO] Finished server process [232940]
+[2025-04-21 09:18:13 +0000] [232908] [ERROR] Worker (pid:232940) was sent SIGTERM!
+[2025-04-21 09:18:13 +0000] [232908] [INFO] Shutting down: Master
+DEBUG: DJANGO_ALLOWED_HOSTS=socyfie.com,www.socyfie.com,localhost,127.0.0.1,13.235.125.150,15.235.192.133
+DEBUG: ALLOWED_HOSTS=['socyfie.com', 'www.socyfie.com', 'localhost', '127.0.0.1', '13.235.125.150', '15.235.192.133']
+celery beat v5.4.0 (opalescent) is starting.
+__    -    ... __   -        _
+LocalTime -> 2025-04-21 04:25:34
+Configuration ->
+    . broker -> redis://:**@15.235.192.133:6379/0
+    . loader -> celery.loaders.app.AppLoader
+    . scheduler -> celery.beat.PersistentScheduler
+    . db -> celerybeat-schedule
+    . logfile -> [stderr]@%INFO
+    . maxinterval -> 5.00 minutes (300s)

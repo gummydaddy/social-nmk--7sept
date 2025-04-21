@@ -193,6 +193,8 @@ def upload_media(request):
                 logger.warning(f"User {request.user.username} has no category assigned in their profile")
 
             # Escape the description to prevent XSS attacks
+            hashtags = set(re.findall(r'#(\w+)', media.description))
+            tagged_usernames = set(re.findall(r'@(\w+)', media.description))
             media.description = escape(media.description)
 
             # Determine if it's an image or video based on extension
@@ -202,6 +204,34 @@ def upload_media(request):
                 media.media_type = 'image'
                 filter_name = request.POST.get('filter')  # Optional filter for image
                 media.save()  # Save the media instance
+                form.save_m2m()  # Save tags after saving media instance
+
+                # Notify tagged users in description
+                for username in tagged_usernames:
+                    try:
+                        tagged_user = AuthUser.objects.get(username=username)
+                        if tagged_user != request.user:
+                            Notification.objects.create(
+                                user=tagged_user,
+                                content=f'{request.user.username} mentioned you in a media description: <a href="{reverse("user_profile:media_detail_view", args=[media.id])}">View Media</a>',
+                                type='mention',
+                                related_user=request.user,
+                                related_media=media
+                            )
+                    except AuthUser.DoesNotExist:
+                        logger.warning(f"Tagged user @{username} does not exist")
+
+                # Notify tagged users
+                for tagged_user in media.tags.all():
+                    if tagged_user != request.user:  # Avoid notifying the uploader themselves
+                        Notification.objects.create(
+                            user=tagged_user,
+                            content=f'{request.user.username} tagged you in a media: <a href="{reverse("user_profile:media_detail_view", args=[media.id])}">View Media</a>',
+                            type='tag',
+                            related_user=request.user,
+                            related_media=media
+                        )
+
                 # Send to Celery for image processing
                 process_media_upload.delay(
                     media.id,
@@ -219,6 +249,18 @@ def upload_media(request):
             else:
                 logger.warning(f"Unknown file type uploaded: {file_name}")
                 media.save()
+                form.save_m2m()
+                # Notify tagged users for other file types (optional)
+                for tagged_user in media.tags.all():
+                    if tagged_user != request.user:
+                        Notification.objects.create(
+                            user=tagged_user,
+                            content=f'{request.user.username} tagged you in a media: <a href="{reverse("user_profile:media_detail_view", args=[media.id])}">View Media</a>',
+                            type='tag',
+                            related_user=request.user,
+                            related_media=media
+                        )
+
                 return redirect('user_profile:profile', request.user.id)
         else:
             logger.warning("MediaForm is invalid.")
