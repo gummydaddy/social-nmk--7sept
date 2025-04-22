@@ -40,8 +40,8 @@
 </button> {% endcomment %}
 
 <div class="uploads-section">
-    <div class="row row-cols-3 g-4">
-        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:profile' user_id=request.user.id %}'">Profile</button>
+    <div class="row row-cols-2 g-4">
+       {% comment %} <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:profile' user_id=request.user.id %}'">Profile</button> {% endcomment %}
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
     </div>
@@ -184,8 +184,8 @@
 
     
                     <div class="profile bg-white">
-                        {% comment %} <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button"> {% endcomment %}
-                        <a href="{% url 'user_profile:following_media' %}" class="profile-button">
+                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
+                       {% comment %} <a href="{% url 'user_profile:following_media' %}" class="profile-button"> {% endcomment %}
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>

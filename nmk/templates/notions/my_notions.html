@@ -148,7 +148,8 @@
       {% endblock %}
     </div>
     <div class="profile bg-white">
-      <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
+     {% comment %} <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button"> {% endcomment %}
+      <a href="{% url 'user_profile:following_media' %}" class="profile-button">
         <i class="fas fa-user-circle"></i>
         {% comment %} alt="Profile Image" {% endcomment %}
       </a>

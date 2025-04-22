@@ -7,22 +7,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socyfie</title>
-<!--
+
     <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
--->
-    <!-- Standard favicon -->
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
 
-    <!-- PNG icons for modern browsers -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'images/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon-precomposed" href="{% static 'images/apple-touch-icon-precomposed.png' %}">
 
-    <!-- For Apple devices -->
-   <!-- <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicon.png' %}">-->
-    <link rel="icon" type="image/x-icon" sizes="180x180" href="{% static 'images/favicon-180x180.png' %}">
-
+    <link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
 
 
 
@@ -611,10 +603,12 @@
                                             <h5 class="card-title">{{ upload.file_name }}</h5>
                                             <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
                                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
+<!--
                                             <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
                                                 {% csrf_token %}
                                                 <button type="submit" class="btn btn-danger">Delete</button>
                                             </form>
+-->
                                         </div>
                                     </div>
                                 </div>
@@ -643,6 +637,10 @@
                                         <p>Uploaded on: {{ upload.upload_date }}</p>
                                         <p>Document Type: {{ upload.document_type }}</p>
                                         <p>Country: {{ upload.country }}</p>
+                                            <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
                         
                                         <!-- Display the uploaded file -->
                                         {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower %}

@@ -47,9 +47,9 @@ echo "Packages installed successfully in virtual environment at ${VENV_PATH}"
 echo "PYTHONPATH set to: $PYTHONPATH"
 
 # Run Django's SSL server in the background
-#python3 manage.py runserver 0.0.0.0:8000 &
+python3 manage.py runserver 0.0.0.0:8000 &
 
-gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
+#gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
 
 
 # Start Celery worker and beat services in the background

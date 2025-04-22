@@ -202,7 +202,7 @@ def upload_media(request):
             if file_name.endswith(('.jpg', '.jpeg', '.png')):
                 logger.info(f"Image file detected: {file_name}")
                 media.media_type = 'image'
-                filter_name = request.POST.get('filter')  # Optional filter for image
+                #filter_name = request.POST.get('filter')  # Optional filter for image
                 media.save()  # Save the media instance
                 form.save_m2m()  # Save tags after saving media instance
 
@@ -237,7 +237,9 @@ def upload_media(request):
                     media.id,
                     media.file.name,
                     'image',
-                    filter_name
+                    #filter_name
+                    request.POST.get('filter')  # Optional
+
                 )
                 return redirect('user_profile:profile', request.user.id)
 
