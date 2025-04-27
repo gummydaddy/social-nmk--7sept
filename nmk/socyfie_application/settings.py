@@ -168,7 +168,7 @@ REST_FRAMEWORK = {
 }
 
 # new29
-SECURE_SSL_REDIRECT = False
+SECURE_SSL_REDIRECT = True
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -328,14 +328,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Session settings
 #SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or any other session backend you are using
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+#SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = "default"
 
 SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_AGE = 36000  #seconds
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  #seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-#SESSION_SAVE_EVERY_REQUEST = True
-#SESSION_COOKIE_SECURE = True  # Use HTTPS for session cookies (set to True in production)
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = True  # Use HTTPS for session cookies (set to True in production)
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript from accessing the session cookie
 
 

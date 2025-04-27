@@ -131,6 +131,7 @@ def login_view(request):
         
         username_or_email = request.POST['username']
         password = request.POST['pass1']
+        remember_me = request.POST.get('remember_me')  # This is a checkbox in your HTML
         print(f'print if it is coming to this block')
 
         try:
@@ -161,6 +162,12 @@ def login_view(request):
 
                     # Ensure the session remains intact after password update
                     update_session_auth_hash(request, user)
+                    # Set session expiry based on "remember me"
+                    if not remember_me:
+                        request.session.set_expiry(0)  # Session expires on browser/app close
+                    else:
+                        request.session.set_expiry(60 * 60 * 24 * 14)  # 14 days
+
 
                     # Set session cookie and cache the username
                     response = HttpResponse("You're logged in.")
@@ -199,6 +206,12 @@ def login_view(request):
             user = group.users.first()
             if user:
                 login(request, user)
+                # Set session expiry based on "remember me" here as well
+                if not remember_me:
+                    request.session.set_expiry(0)
+                else:
+                    request.session.set_expiry(60 * 60 * 24 * 14)
+
                 request.session['association_name'] = username_or_email
                 request.session['user_id'] = user.id
                 cache.set(f'user_{user.id}', username_or_email)
