@@ -43,7 +43,7 @@ from PIL import Image
 import io
 import shutil
 from .tasks import process_file_upload  # import your Celery task
-
+from django.views.decorators.cache import never_cache
 
 
 
@@ -125,14 +125,16 @@ def signup(request):
     return render(request, 'signup.html', {'form': form})
 
 
-
+@never_cache
 def login_view(request):
+    if request.user.is_authenticated:
+
+        return redirect('/following_media')  
+
     if request.method == 'POST':
-        
         username_or_email = request.POST['username']
         password = request.POST['pass1']
         remember_me = request.POST.get('remember_me')  # This is a checkbox in your HTML
-        print(f'print if it is coming to this block')
 
         try:
             # Check if the input is an email or username
@@ -168,20 +170,25 @@ def login_view(request):
                     else:
                         request.session.set_expiry(60 * 60 * 24 * 14)  # 14 days
 
+                    response = redirect('/following_media')  # Default redirect
 
                     # Set session cookie and cache the username
-                    response = HttpResponse("You're logged in.")
-                    response.set_cookie('username', username)
-                    cache.set(f'user_{user.id}', user.username)
+                    #response = HttpResponse("You're logged in.")
+                    #response.set_cookie('username', username)
+                    #cache.set(f'user_{user.id}', user.username)
 
                     # Redirect based on user roles
                     if CustomGroupAdmin.objects.filter(user=user).exists():
                         return redirect('/subgroup_landing_page')
                     elif user.is_staff:
                         return redirect('/super_user_landing_page')
-                    else:
+                    #else:
                         # return redirect('/landing_page')
-                        return redirect('/following_media')
+                        #return redirect('/following_media')
+                    # Set session/cookie/cache
+                    response.set_cookie('username', username)
+                    cache.set(f'user_{user.id}', username)
+                    return response  
 
             except Exception as firebase_error:
                 # Handle Firebase authentication errors
@@ -196,9 +203,9 @@ def login_view(request):
         except User.DoesNotExist:
             messages.error(request, 'Invalid username or email')
 
-        except Exception as e:
+        #except Exception as e:
             # Handle any other errors
-            messages.error(request, f"Failed to log in: {str(e)}")
+            #messages.error(request, f"Failed to log in: {str(e)}")
 
         # Group-based authentication (if necessary)
         try:
@@ -217,7 +224,11 @@ def login_view(request):
                 cache.set(f'user_{user.id}', username_or_email)
                 return redirect('/landing_page')
         except CustomGroup.DoesNotExist:
-            pass
+            #pass
+            messages.error(request, 'Invalid username, email, or group name.')
+
+        except Exception as e:
+            messages.error(request, f"Login failed: {str(e)}")
 
         return render(request, 'login_view.html')
 
@@ -386,10 +397,13 @@ def password_reset(request):
 # Landing
 @login_required   
 def landing_page(request):
-    user_username = cache.get(f'user_{request.user.id}')
+    cache_key = f'user_{request.user.id}_username'
+    user_username = cache.get(cache_key)
+    #user_username = cache.get(f'user_{request.user.id}')
     if not user_username:
         user_username = request.user.username
-        cache.set(f'user_{request.user.id}', user_username, timeout=3600)
+        cache.set(cache_key, user_username, timeout=60 * 60 * 24)  # Cache for 1 day
+        #cache.set(f'user_{request.user.id}', user_username, timeout=3600)
     try:
         user_card = request.user.card
     except User.card.RelatedObjectDoesNotExist:

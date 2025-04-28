@@ -1,102 +1,109 @@
 {% load static %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Socyfie</title>
-
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Socyfie">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>Socyfie - Login</title>
 
     <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
-
-    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
-
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
-    <link rel="apple-touch-icon-precomposed" href="{% static 'images/apple-touch-icon-precomposed.png' %}">
-
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
-
-
     <link rel="manifest" href="{% static 'manifest.json' %}">
 
-
-   <!-- <link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">-->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
-
+    <!-- Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-    <!-- Animate.css for animations -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <style>
         body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #E0E7FF, #F0FDFA);
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
-            /* Add favicon as background image (faint and centered) */
-            background-image: url("{% static 'images/logo.png' %}"), linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: 300px, 400% 400%;
-            background-blend-mode: lighten;
+            overflow: hidden;
         }
-        @keyframes gradient {
-            0% {background-position: 0% 50%;}
-            50% {background-position: 100% 50%;}
-            100% {background-position: 0% 50%;}
-        }
-        .container {
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.4);
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            animation: fadeIn 1s ease-in-out;
+            text-align: center;
+            animation: fadeIn 1.2s ease;
         }
-        .containerB {
-            width: 100%;
-            max-width: 200px;
-            padding: 20px;
-            background-color: rgba(255, 205, 255, 0.4);
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            animation: fadeIn 1s ease-in-out;
-        }
-        .container h1 {
-            animation: slideInDown 1s ease-in-out;
-        }
+
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes slideInDown {
-            from { transform: translate3d(0, -100%, 0); }
-            to { transform: translate3d(0, 0, 0); }
+
+        h1 {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4F46E5;
+        }
+
+        p.subtitle {
+            font-size: 16px;
+            color: #6B7280;
+            margin-bottom: 30px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+
+        .btn-primary {
+            background-color: #4F46E5;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338CA;
+        }
+
+        .btn-secondary, .btn-link {
+            background: none;
+            border: none;
+            color: #4F46E5;
+            text-decoration: underline;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .btn-secondary:hover, .btn-link:hover {
+            color: #4338CA;
+        }
+
+        .other-actions {
+            margin-top: 20px;
+        }
+
+        .alert {
+            font-size: 14px;
         }
     </style>
 </head>
+
 <body>
-    {% comment %} <div class="containerB">
+
+    <div class="login-container">
         <h1>Socyfie</h1>
-    </div> {% endcomment %}
-    {% comment %} </br> {% endcomment %}
-    {%load socialaccount %}
-    {% comment %} <h2> google login</h2>
-    </br>
-    <a href ="{% provider_login_url 'google' %}?next=/" class="btn btn-primary">Login with Google</a> {% endcomment %}
-    
-    <div class="container">
-        <h1 class="text-center">Socyfie Login</h1>
+        <p class="subtitle">Welcome back! Please login to continue.</p>
+
         {% if messages %}
         <div class="alert alert-danger" role="alert">
             {% for message in messages %}
@@ -104,79 +111,60 @@
             {% endfor %}
         </div>
         {% endif %}
-        <form class="row g-3 needs-validation" action="{% url 'only_card:login' %}" method="post" novalidate>
+
+        <form class="needs-validation" action="{% url 'only_card:login' %}" method="post" novalidate>
             {% csrf_token %}
-            <div class="col-md-12">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required>
-                <div class="valid-feedback">Looks good!</div>
-                <div class="invalid-feedback">Please provide a valid username.</div>
+            <div class="mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
             </div>
-            <div class="col-md-12">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="pass1" name="pass1" required>
-                <div class="valid-feedback">Looks good!</div>
-                <div class="invalid-feedback">Please provide a valid password.</div>
+            <div class="mb-3">
+                <input type="password" class="form-control" id="pass1" name="pass1" placeholder="Password" required>
             </div>
-            <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="remember_me" id="rememberMe">
-                    <label class="form-check-label" for="rememberMe">Remember me</label>
+                    <label class="form-check-label small" for="rememberMe">Remember me</label>
                 </div>
-            </div>
-            <div class="col-12">
-                <button class="btn btn-primary" type="submit">Login</button>
-                <a href="/" class="btn btn-secondary">Back</a>
-            </div>
-            <div class="text-center mt-4">
-                <a href="/signup/" class="btn btn-primary">Sign Up</a>
-            </div>
-            <div class="text-center mt-4">
-                <a href="/password_reset/" class="btn btn-primary">Reset Password</a>
+                <a href="/password_reset/" class="btn-link">Forgot Password?</a>
             </div>
 
-           {% comment %}  <div>
-                {% block password_reset %}
-                {% endblock %}
-            </div> {% endcomment %}            
+            <button type="submit" class="btn btn-primary">Login</button>
         </form>
-
 
             <div>
                 {% block password_reset %}
                 {% endblock %}
             </div>
+
+        <div class="other-actions">
+            <a href="/signup/" class="btn-link">Don't have an account? Sign Up</a>
+            <br>
+        </div>
     </div>
-    <!-- Bootstrap Bundle with Popper -->
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Form validation script -->
-    <script src="https://apis.google.com/js/platform.js" async defer></script>
     <script>
         (function () {
             'use strict'
-            // Fetch all the forms we want to apply custom Bootstrap validation styles to
             var forms = document.querySelectorAll('.needs-validation')
-            // Loop over them and prevent submission
             Array.prototype.slice.call(forms)
-            .forEach(function (form) {
-                form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    form.classList.add('was-validated')
-                }, false)
-            })
+                .forEach(function (form) {
+                    form.addEventListener('submit', function (event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault()
+                            event.stopPropagation()
+                        }
+                        form.classList.add('was-validated')
+                    }, false)
+                })
         })()
     </script>
-    
-
+            <script>
+              // Replace current history so back button won't return to login
+              window.history.pushState(null, "", window.location.href);
+              window.onpopstate = function() {
+                window.history.pushState(null, "", window.location.href);
+              };
+            </script>
 </body>
 </html>
-
-
-
-<!-- Add Reset Password Button -->
-{% comment %} <div class="text-center mt-4">
-    <a href="{% url 'password_reset' %}" class="btn btn-primary">Reset Password</a>
-</div> {% endcomment %}

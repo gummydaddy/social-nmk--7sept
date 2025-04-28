@@ -126,7 +126,7 @@
             padding: 10px;
             background-color: #fff;
             box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 1px;
+            border-radius: 20px;
             position: relative;
             top: 20px;
             transition: background-color 0.3s ease;
@@ -244,7 +244,6 @@
             left: 0;
             right: 0;        
         }
-
         footer {
             position: fixed;
             bottom: 0;
@@ -256,6 +255,26 @@
             background-color: #007bff;
         }
 
+        .footer-icon {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .footer-icon a {
+            color: #4F46E5;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-icon:hover {
+            background: #e0e7ff;
+            transform: translateY(-4px);
+        }
         .bottom-strip {
             display: flex;
             justify-content: space-around;
@@ -462,6 +481,24 @@
         #splash-content {
             display: none; /* Hide main content initially */
         }
+        nav.navbar {
+           border-radius: 12px;
+           margin-bottom: 20px;
+        }
+        .navbar-dark .navbar-nav .nav-link {
+          color: white;
+        }
+
+        #globe-button, .openbtn, .messagebtn {
+          background-color: #4F46E5;
+          border: none;
+          color: white;
+          padding: 8px 12px;
+          border-radius: 50px;
+          font-size: 18px;
+          margin: 0 5px;
+        }
+
 
         
     </style>
@@ -553,19 +590,17 @@
                 
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
-    
             <header>
-                    <nav class="navbar navbar-expand-lg navbar-dark bg-black">
-                        <div class="container">
-                            <a href="{% url 'only_message:message_list_view' %}" class="button-link">
-                                <button class="messagebtn"> 💬 </button>
-                            </a>
-    
-                            <button class="openbtn" onclick="openNav()">☰ </button>
-                        </div>
-                    </nav>
-                <!-- Profile Picture Section -->
+              <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+                <div class="container">
+                  <a href="{% url 'only_message:message_list_view' %}">
+                    <button class="messagebtn">💬</button>
+                  </a>
+                  <button class="openbtn" onclick="openNav()">☰</button>
+                </div>
+              </nav>
             </header>
+
     
             <main id="main">
                 {% block main_content %}
@@ -720,33 +755,32 @@
                 {% endblock %}
                 
             </main>
-    
             {% block footer %}
-            <footer class="bg-primary text-white bg-black py-3">
-                <div class="bottom-strip d-flex justify-content-around">
-    
-                    <div class="home bg-white">
+            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+                <div class="bottom-strip d-flex justify-content-around align-items-center">
+
+                    <div class="footer-icon">
                         <a href="{% url 'only_card:landing_page' %}">
                             <i class="fas fa-shield-alt"></i>
                         </a>
                     </div>
-    
-                    {% block new_notion %}
-    
-                    <div class="notion bg-white">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id%}">notions</a>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
                     </div>
-    
-                    {% endblock %}
-    
-                    <div class="profile bg-white">
-                        <a href="{% url 'user_profile:following_media' %}" class="profile-button">
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>
+
                 </div>
             </footer>
-            {%endblock%}
+
+            {% endblock %}
+    
         {% endblock %}
     </div>
 
@@ -813,6 +847,15 @@
             </script>
             <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+            <script>
+              // Replace current history so back button won't return to login
+              window.history.pushState(null, "", window.location.href);
+              window.onpopstate = function() {
+                window.history.pushState(null, "", window.location.href);
+              };
+            </script>
+
 
 {% block media_detail_script %}
 {% endblock %}

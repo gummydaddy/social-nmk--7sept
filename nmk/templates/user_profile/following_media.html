@@ -8,6 +8,26 @@
     .description {
         color: #123;
     }
+    .footer-icon {
+        background: #f9fafb;
+        padding: 10px;
+        border-radius: 50%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: background 0.3s ease, transform 0.3s ease;
+    }
+
+    .footer-icon a {
+        color: #4F46E5;
+        font-size: 1.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .footer-icon:hover {
+        background: #e0e7ff;
+        transform: translateY(-4px);
+    }
 </style>
 
 <header>
@@ -90,52 +110,6 @@
     </div>
 </div>
 
-<!--
-<div class="media-wrapper">
-    <div class="row row-cols-1 g-4" id="media-container">
-        {% if page_obj %}
-            {% for media in page_obj %}
-                <div class="col media-item" data-id="{{ media.id }}" data-url="{% url 'user_profile:media_detail_view' media.id %}">
-                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-                        {{ media.user.username }}
-                    </a>
-                    <div class="media-content">
-                        {% if media.file.url|is_video %}
-                            <video class="img-fluid autoplay-video" 
-                                   {% if media.thumbnail %} poster="{{ media.thumbnail.url }}" {% else %} poster="{{ media.file.url }}" {% endif %} 
-                                   muted autoplay loop playsinline>
-                                <source src="{{ media.file.url }}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        {% else %}
-                            <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}" 
-                                 alt="media" class="img-fluid lazyload">
-                        {% endif %}
-                        <div class="description">
-                            <a href="{% url 'user_profile:like_media' media.id %}" 
-                               class="like-link {% if request.user in media.likes.all %}liked{% endif %}" 
-                               data-url="{% url 'user_profile:like_media' media.id %}" 
-                               data-media-id="{{ media.id }}" 
-                               data-csrf-token="{{ csrf_token }}">
-                                {% if request.user in media.likes.all %}
-                                    ❤️
-                                {% else %}
-                                    ♡
-                                {% endif %}
-                            </a> 
-                            <span class="like-count">{{ media.likes.count }}</span> likes
-                            <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
-                            <p>{{ media.description|safe }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>No media available from followed users. Showing recommended content based on your preferences. If you are new, click on the green globe at the top.</p>
-        {% endif %}
-    </div>
-</div>
--->
      <!-- Pagination controls -->
      <div class="pagination" >
         <span class="step-links">
@@ -159,39 +133,38 @@
     </div>
 
             {% block footer %}
-            <footer class="bg-primary text-white bg-black py-4">
-                <div class="bottom-strip d-flex justify-content-around">
-    
-                    <div class="home bg-white">
+            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+                <div class="bottom-strip d-flex justify-content-around align-items-center">
+
+                    <div class="footer-icon">
                         <a href="{% url 'only_card:landing_page' %}">
                             <i class="fas fa-shield-alt"></i>
                         </a>
                     </div>
-    
-                    {% block new_notion %}
-    
-                    <div class="notion bg-white">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id%}">notions</a>
-                    </div>
-    
-                    {% endblock %}
 
-                    <div class="home bg-white">
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
                         <a href="{% url 'user_profile:upload_media' %}">
                             <i class="fas fa-upload"></i>
                         </a>
                     </div>
 
-    
-                    <div class="profile bg-white">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
-                       {% comment %} <a href="{% url 'user_profile:following_media' %}" class="profile-button"> {% endcomment %}
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>
+
                 </div>
             </footer>
-            {%endblock%}
+
+            {% endblock %}
+
 
 {% endblock %}
 
