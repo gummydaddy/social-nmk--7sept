@@ -19,6 +19,14 @@
 
 {% block script %}
   <script>
+    // Prevent back button navigation
+    (function () {
+      window.history.pushState(null, "", window.location.href);
+      window.onpopstate = function () {
+        window.history.pushState(null, "", window.location.href);
+      };
+    })();
+
     var ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
     var chatSocket = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/chat/');
 

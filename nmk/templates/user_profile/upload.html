@@ -16,7 +16,7 @@
     {{ form.non_field_errors }}
     <div class="form-group">
         <label for="id_file">image</label>
-        <input type="file" class="form-control-file" id="id_file" name="file" accept="image/*, video/*" required onchange="previewFile(event)">
+        <input type="file" class="form-control-file" id="id_file" name="file" accept="image/*, video/*" onchange="previewFile(event)">
         {% for error in form.file.errors %}
             <p class="help-block text-danger">{{ error }}</p>
         {% endfor %}
@@ -61,7 +61,135 @@
                     </div>
 {% endblock %}
 
-{% block upload_script %} 
+{% block upload_script %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+        // Tag user field with Select2
+        $('#id_tags').select2({
+            ajax: {
+                url: '{% url "user_profile:tag_user_search" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return { q: params.term };
+                },
+                processResults: function(data) {
+                    return { results: data.results };
+                },
+                cache: true
+            },
+            minimumInputLength: 1,
+            placeholder: 'Search for users to tag...',
+            allowClear: true,
+        });
+    });
+
+    function previewFile(event) {
+        const input = event.target;
+        const previewContainer = document.getElementById('filePreview');
+        previewContainer.innerHTML = '';
+
+        const file = input.files[0];
+        if (file) {
+            const fileType = file.type;
+            const previewElement = document.createElement(fileType.startsWith('image/') ? 'img' : 'video');
+
+            previewElement.src = URL.createObjectURL(file);
+            previewElement.style.maxWidth = '100%';
+            previewElement.style.maxHeight = '400px';
+
+            if (fileType.startsWith('video/')) {
+                previewElement.controls = true;
+                document.getElementById('videoOptions').style.display = 'block';
+            } else {
+                document.getElementById('videoOptions').style.display = 'none';
+            }
+
+            previewContainer.appendChild(previewElement);
+        }
+    }
+
+    function convertLinks(event) {
+        const input = event.target;
+        const previewContainer = document.getElementById('descriptionPreview');
+        previewContainer.innerHTML = '';
+
+        const text = input.value;
+        const linkifiedText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+        previewContainer.innerHTML = linkifiedText;
+    }
+</script>
+
+<script>
+$(document).ready(function() {
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();  // Stop normal form submission
+
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: '{% url "user_profile:upload_media" %}',  // Your media upload view
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'  // So Django knows it's AJAX
+            },
+            success: function(response) {
+                // You could handle response if needed
+            },
+            error: function(xhr, status, error) {
+                alert("Upload in progress. Try wait.");
+            }
+        });
+
+        // Instantly redirect (doesn't wait for success)
+        window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+    });
+});
+</script>
+
+<script>
+$(document).ready(function() {
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();  // Prevent normal form
+
+        const formData = new FormData(this);
+
+        // Show localStorage flag so profile page can show "Uploading..."
+        localStorage.setItem('upload_status', 'processing');
+
+        $.ajax({
+            url: '{% url "user_profile:upload_media" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                // Regardless of success, redirect
+                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+            },
+            error: function(xhr, status, error) {
+                // Set failed flag
+                localStorage.setItem('upload_status', 'failed');
+                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+            }
+        });
+    });
+});
+</script>
+
+
+{% endblock %}
+
+
+<!--
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <script>
@@ -131,4 +259,37 @@
     }
 </script>
 
-{% endblock %}
+
+<script>
+$(document).ready(function() {
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();  // Prevent normal form
+
+        const formData = new FormData(this);
+
+        // Show localStorage flag so profile page can show "Uploading..."
+        localStorage.setItem('upload_status', 'processing');
+
+        $.ajax({
+            url: '{% url "user_profile:upload_media" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                // Regardless of success, redirect
+                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+            },
+            error: function(xhr, status, error) {
+                // Set failed flag
+                localStorage.setItem('upload_status', 'failed');
+                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+            }
+        });
+    });
+});
+</script>
+-->

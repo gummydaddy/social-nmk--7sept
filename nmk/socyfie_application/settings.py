@@ -225,6 +225,8 @@ TEMPLATES = [
             os.path.join(BASE_DIR, "templates/notions"),
             os.path.join(BASE_DIR, "templates/user_profile"),
             os.path.join(BASE_DIR, "templates/only_message"),
+            os.path.join(BASE_DIR, "templates/partials"),
+
             ],
         #'DIRS': [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
@@ -320,6 +322,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        'NAME': 'service_auth.only_card.validators.CustomUserAttributeSimilarityValidator',
+    },
 ]
 
 

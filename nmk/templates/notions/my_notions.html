@@ -169,7 +169,7 @@
       <div class="new-notion-container notions-container">
         <form action="{% url 'notion:post_notion' %}" method="post" enctype="multipart/form-data">
           {% csrf_token %}
-          <textarea name="content" required></textarea>
+          <textarea name="content"  placeholder="write notions here" required></textarea>
           <button type="submit" class="btn btn-primary btn-sm">Notify</button>
         </form>
       </div>
@@ -189,7 +189,7 @@
           {% if request.user in notion.likes.all %}❤️{% else %}♡{% endif %}
         </a>
         <span class="like-count">{{ notion.likes.count }}</span> likes
-        <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">Comment</button>
+        <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">💬</button>
       </div>
       <div class="notion-comments">
         <form method="post" action="{% url 'notion:post_comment' notion.id %}" class="notion-comment-form">

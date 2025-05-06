@@ -155,7 +155,7 @@
 </div>
 
 <div class="uploads-section">
-  <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button>
+  <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button>-->
   <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id %}'">My Notions</button>
 </div>
 
@@ -188,7 +188,7 @@
     </a> 
     <span class="like-count">{{ notion.likes.count }}</span>
   </div>
-  <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">Comment</button>
+  <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>
 
   <div class="comments mt-3">
     <form method="post" action="{% url 'notion:post_comment' notion.id %}">
@@ -208,6 +208,11 @@
     <a href="{% url 'only_card:landing_page' %}" style="color: #4F46E5; font-size: 1.8rem;">
       <i class="fas fa-shield-alt"></i>
     </a>
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_explorer' %}">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
     <a href="{% url 'user_profile:following_media' %}" style="color: #4F46E5; font-size: 1.8rem;">
       <i class="fas fa-user-circle"></i>
     </a>

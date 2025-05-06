@@ -126,9 +126,9 @@
       <a href="{% url 'only_message:message_list_view' %}">
         <button class="messagebtn">💬</button>
       </a>
-      <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
+<!--      <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
         🌐
-      </button>
+      </button>-->
 
       <button class="openbtn" onclick="openNav()">☰</button>
     </div>
@@ -166,7 +166,7 @@
             {% endif %}
           </a>
           <span class="like-count">{{ notion.likes.count }}</span> likes
-          <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">Comment</button>
+          <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">💬</button>
         </div>
       </div>
     {% endfor %}
@@ -185,6 +185,12 @@
         <i class="fas fa-shield-alt"></i>
       </a>
     </div>
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
+                    </div>
+
     <div class="footer-icon">
       <a href="{% url 'user_profile:following_media' %}">
         <i class="fas fa-user-circle"></i>

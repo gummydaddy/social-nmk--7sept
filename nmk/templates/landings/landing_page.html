@@ -531,11 +531,11 @@
     {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}
 </head>
 <body style="padding-bottom: 60px;">
-    <!-- Splash Screen Container -->
+    <!-- Splash Screen Container-->
     <div id="splash-screen">
         <img src="{% static 'images/logo.png' %}" alt="App Logo" class="splash-logo">
         <h1>Welcome to Socyfie</h1>
-    </div>
+    </div> 
 
     <!-- Main Content -->
     <div id="splash-content" style="display: none;">
@@ -609,6 +609,9 @@
                 <a href="{% url 'only_card:upload_document' %}" >
                     <button type="button">Upload Documents</button>
                 </a>
+                                <p>we are still working on the display of excel data appologies for the inconivience </p>
+                                <p>images, video and document uploaded in this section is only accessible to you, not even socyfie have the access to view you data in the vault  </p>
+
                 <div class="container my-5">
                     <div class="row">
                         <div class="col-12 text-center">
@@ -633,7 +636,6 @@
                                 {% endif %}
                             {% endfor %}
                             <div class="col-12 text-center">
-                                <p>we are still working on the display of excel data appologies for the inconivience </p>
                             </div>
                         {% endif %}
                     </div>
@@ -718,7 +720,7 @@
                                                         language-text
                                                     {% endif %}
                                                 ">
-                                                    {{ upload.file.read|safe }}
+                                                    {{ upload.file.read|escape }}
                                                     
                                             </pre>
                                             <!-- Download option for these files -->
@@ -856,8 +858,25 @@
               };
             </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const message = sessionStorage.getItem('uploadMessage');
+    if (message) {
+        alert(message);
+        sessionStorage.removeItem('uploadMessage');
+    }
+});
+</script>
+
 
 {% block media_detail_script %}
+<script>
+ // Replace current history so back button won't return to login
+ window.history.pushState(null, "", window.location.href);
+ window.onpopstate = function() {
+   window.history.pushState(null, "", window.location.href);
+ };
+</script>
 {% endblock %}
 
 {% block edit_profile_script%}
@@ -872,7 +891,7 @@
 {% block upload_script %}
 {% endblock %}
 
-{% block notionHome_script %}   
+{% block notionHome_script %}
 {% endblock %}
 
 {% block my_notion_script%}
@@ -882,6 +901,9 @@
 {% endblock %}
 
 {% block extra_js %}
+{% endblock %}
+
+{% block vault_doc_script%}
 {% endblock %}
 
     </body>

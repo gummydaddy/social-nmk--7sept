@@ -31,7 +31,8 @@ fi
 
 # Export environment variables
 export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
-export DEBUG=True
+export DEBUG=False
+#export DEBUG=True
 export DATABASE_URL="testadmin://postgres:090399Akash$@15.235.192.133:5432/socyfiedev"
 export REDIS_URL="redis://:090399Akash%24@15.235.192.133:6379/0"
 
@@ -49,8 +50,9 @@ echo "PYTHONPATH set to: $PYTHONPATH"
 # Run Django's SSL server in the background
 #python3 manage.py runserver 0.0.0.0:8000 &
 
-gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
+#gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
 
+gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 &
 
 # Start Celery worker and beat services in the background
 echo "Starting Celery worker and beat services..."

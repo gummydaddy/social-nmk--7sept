@@ -130,6 +130,14 @@
 
 {% block Message_script %}
 <script>
+    // Prevent back button navigation
+    (function () {
+      window.history.pushState(null, "", window.location.href);
+      window.onpopstate = function () {
+        window.history.pushState(null, "", window.location.href);
+      };
+    })();
+
     document.addEventListener('DOMContentLoaded', function() {
         // Scroll to the bottom of the message-container on page load
         var messageContainer = document.querySelector('.message-container');

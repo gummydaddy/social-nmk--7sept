@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 #         story.delete()
 #     return f"Deleted {count} expired stories."
 
-
+"""
 @shared_task
 def delete_expired_stories():
     expired_stories = Story.objects.filter(created_at__lt=now() - timezone.timedelta(hours=24))
@@ -60,11 +60,14 @@ def delete_expired_stories():
             story.delete()
 
     return f"Deleted {count} expired stories and their associated media."
+"""
 
-
-
+"""
+#best w3orking yet5may
 @shared_task(bind=True, max_retries=3)
 def process_media_upload(self, media_id, file_name, media_type, filter_name=None):
+    temp_file_path = None  # Initialize variable
+
     try:
         media = Media.objects.get(id=media_id)
         storage = CompressedMediaStorage()
@@ -110,31 +113,41 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
         self.retry(exc=e)
 
     finally:
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+        if temp_file_path and isinstance(temp_file_path, (str, bytes, os.PathLike)) and os.path.exists(temp_file_path):
+            try:
+                logger.debug(f"Attempting to delete temporary file at path: {repr(temp_file_path)}")
+                os.remove(temp_file_path)
+            except Exception as e:
+                logger.error(f"Failed to delete temporary file {temp_file_path}: {e}")
 
-'''
-@shared_task(bind=True, max_retries=3)
+        #if temp_file_path and os.path.exists(temp_file_path):
+            #try:
+                #os.remove(temp_file_path)
+            #except Exception as e:
+                #logger.error(f"Failed to delete temporary file {temp_file_path}: {e}")
+        #if os.path.exists(temp_file_path):
+            #os.remove(temp_file_path)
+"""
+
+@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70)
 def process_media_upload(self, media_id, file_name, media_type, filter_name=None):
-    temp_file_path = None  # Initialize variable
+    temp_file_path = None  # Initialize variable for cleanup in finally block
 
     try:
-        # Fetch the Media model dynamically inside the function
-        Media = apps.get_model('user_profile', 'Media')  
         media = Media.objects.get(id=media_id)
         storage = CompressedMediaStorage()
 
-        # Create a proper temporary file
-        temp_fd, temp_file_path = tempfile.mkstemp(suffix=os.path.splitext(file_name)[1])
-        os.close(temp_fd)
-
-        with open(temp_file_path, 'wb') as temp_file:
+        # Save media to a temporary file
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             for chunk in media.file.chunks():
                 temp_file.write(chunk)
+            temp_file_path = temp_file.name
 
+        # Process image
         if media_type == 'image':
             image = Image.open(temp_file_path)
 
+            # Apply optional filter
             if filter_name:
                 logger.info(f"Applying filter: {filter_name}")
                 filter_map = {
@@ -143,7 +156,6 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
                     'grayscale': 'grayscale',
                     'invert': ImageOps.invert,
                 }
-
                 if filter_name == 'sepia':
                     image = ImageOps.colorize(image.convert("L"), "#704214", "#C0C090")
                 elif filter_name == 'grayscale':
@@ -151,34 +163,38 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
                 else:
                     image = image.filter(filter_map.get(filter_name, ImageFilter.BLUR))
 
-            # Save compressed image
+            # Compress and save
             byte_io = io.BytesIO()
             image = storage.resize_image(image)
-
             if image.mode == 'RGBA':
                 image = image.convert('RGB')
-
             image.save(byte_io, format='JPEG', quality=storage.image_quality)
             media.file.save(file_name, ContentFile(byte_io.getvalue()), save=True)
 
+        # Process video
         elif media_type == 'video':
-            # Directly save the uploaded video without any processing
             with open(temp_file_path, 'rb') as original_file:
                 media.file.save(file_name, ContentFile(original_file.read()), save=True)
 
-        logger.info(f"{media_type.capitalize()} {file_name} uploaded successfully.")
+        logger.info(f"{media_type.capitalize()} {file_name} processed and uploaded successfully.")
 
-    except Media.DoesNotExist:
-        logger.error(f"Media object with ID {media_id} does not exist.")
+    except SoftTimeLimitExceeded:
+        logger.error(f"Task exceeded soft time limit and was terminated for media: {file_name}")
+        # Optionally, mark the media object as failed
+        return
+
     except Exception as e:
-        logger.exception(f"Failed to process {media_type} {file_name}: {e}")
+        logger.error(f"Failed to process {media_type} {file_name}: {e}")
         self.retry(exc=e)
 
     finally:
-        if temp_file_path and os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-            logger.info(f"Cleaned up temp file: {temp_file_path}")
-'''
+        if temp_file_path and isinstance(temp_file_path, (str, bytes, os.PathLike)) and os.path.exists(temp_file_path):
+            try:
+                logger.debug(f"Attempting to delete temporary file at path: {repr(temp_file_path)}")
+                os.remove(temp_file_path)
+            except Exception as e:
+                logger.error(f"Failed to delete temporary file {temp_file_path}: {e}")
+
 
 '''
 

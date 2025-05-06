@@ -132,7 +132,7 @@
                 <span class="like-count">{{ media.likes.count }}</span> likes
             </div>
             <div class="dropdown">
-                <span>⋮</span>
+                <span>☰</span>
                 <div class="dropdown-content">
                     <form method="POST" action="{% url 'user_profile:save_upload' media.id %}">
                         {% csrf_token %}
@@ -177,7 +177,7 @@
                     <strong><a href="{% url 'user_profile:profile' user_id=comment.user.id %}">{{ comment.user.username }}</a></strong> 
                     {{ comment.content|safe }}
                     <div class="dropdown">
-                        <span>⋮</span>
+                        <span>☰</span>
                         <div class="dropdown-content">
                             {% if comment.user == request.user %}
                             <form method="post" action="{% url 'user_profile:delete_user_comment' comment.id %}" style="display:inline;">

@@ -2,6 +2,7 @@ from celery import shared_task
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from .models import UserUpload
+from service_auth.only_card.utils import is_storage_full
 
 @shared_task
 def process_file_upload(upload_id):

@@ -44,6 +44,7 @@ import io
 import shutil
 from .tasks import process_file_upload  # import your Celery task
 from django.views.decorators.cache import never_cache
+from django.http import JsonResponse
 
 
 
@@ -236,97 +237,6 @@ def login_view(request):
         return render(request, 'login_view.html')
 
 
-# Cache settings
-# CACHE_TIMEOUT = 300  # 5 minutes
-# CACHE_PREFIX = 'auth'
-
-# def get_cache_key(key):
-#     return f"{CACHE_PREFIX}_{key}"
-
-# def authenticate_user(username, password):
-#     """
-#     Authenticate user using Firebase and Django.
-    
-#     Args:
-#     username (str): User's username or email.
-#     password (str): User's password.
-    
-#     Returns:
-#     User or None: Authenticated user object or None.
-#     """
-#     cache_key = 'my_key'
-#     user = cache.get(cache_key)
-    
-#     if not user:
-#         try:
-#             # Check if the input is an email or username
-#             if '@' in username:
-#                 user = User.objects.get(email=username)
-#             else:
-#                 user = User.objects.get(username=username)
-            
-#             # Cache user object
-#             cache.set(cache_key, user, CACHE_TIMEOUT)
-#         except User.DoesNotExist:
-#             return None
-        
-#         # Firebase authentication
-#         try:
-#             firebase_user = auth.sign_in_with_email_and_password(user.email, password)
-#             user.set_password(password)
-#             user.save()
-#         except Exception as e:
-#             # Handle Firebase authentication errors
-#             return None
-    
-#     return user
-
-# def group_based_authentication(username_or_email):
-#     """
-#     Authenticate user using group-based authentication.
-    
-#     Args:
-#     username_or_email (str): Group name or username.
-    
-#     Returns:
-#     User or None: Authenticated user object or None.
-#     """
-#     cache_key = get_cache_key(f"group_{username_or_email}")
-#     user = cache.get(cache_key)
-    
-#     if not user:
-#         try:
-#             group = CustomGroup.objects.get(name=username_or_email)
-#             user = group.users.first()
-            
-#             # Cache user object
-#             cache.set(cache_key, user, CACHE_TIMEOUT)
-#         except CustomGroup.DoesNotExist:
-#             return None
-    
-#     return user
-
-# def login_view(request):
-#     if request.method == 'POST':
-#         username_or_email = request.POST['username']
-#         password = request.POST['pass1']
-        
-#         user = authenticate_user(username_or_email, password)
-#         if user is None:
-#             user = group_based_authentication(username_or_email)
-        
-#         if user:
-#             login(request, user)
-#             # Update session and cache
-#             cache.set(get_cache_key(f"user_{user.id}"), user.username, CACHE_TIMEOUT)
-#             return redirect('/landing_page')
-#         else:
-#             # Handle authentication failure
-#             messages.error(request, 'Invalid username or password')
-#             return render(request, 'login_view.html')
-#     else:
-#         return render(request, 'login_view.html')
-
 
 
 @staff_member_required
@@ -447,30 +357,6 @@ def subgroup_signup(request):
         form = SubgroupSignupForm(user=request.user)
     return render(request, 'subgroup_signup_form.html', {'form': form})
 
-'''
-@login_required
-def upload_document(request):
-    if request.method == 'POST':
-        form = UserUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.instance.user = request.user
-
-            try:
-                form.save()  # This will check the storage limit
-            except ValueError as e:
-                # If storage is full, show a message and prevent upload
-                messages.error(request, "Storage full. Please buy more storage.")
-                return redirect('/buy_storage')  # Redirect to a "Buy Storage" page
-
-            if CustomGroupAdmin.objects.filter(user=request.user).exists():
-                return redirect('/subgroup_landing_page')
-            else:
-                return redirect('/landing_page')
-    else:
-        form = UserUploadForm()
-
-    return render(request, 'upload_document.html', {'form': form})
-'''
 
 def buy_storage(request):
     return render(request, 'buy_storage.html')
@@ -482,21 +368,17 @@ def upload_document(request):
         if form.is_valid():
             upload_instance = form.save(commit=False)
             upload_instance.user = request.user
-            upload_instance.save()  # Save metadata without full validation
+            upload_instance.save()
 
-            # Call the Celery task
             process_file_upload.delay(upload_instance.id)
 
-            messages.success(request, "Upload started! We'll notify you once it's processed.")
+            redirect_url = '/subgroup_landing_page' if CustomGroupAdmin.objects.filter(user=request.user).exists() else '/landing_page'
 
-            if CustomGroupAdmin.objects.filter(user=request.user).exists():
-                return redirect('/subgroup_landing_page')
-            else:
-                return redirect('/landing_page')
-    else:
-        form = UserUploadForm()
+            return JsonResponse({'status': 'success', 'redirect_url': redirect_url})
+        else:
+            return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
-    return render(request, 'upload_document.html', {'form': form})
+    return render(request, 'upload_document.html', {'form': UserUploadForm()})
 
 
 
