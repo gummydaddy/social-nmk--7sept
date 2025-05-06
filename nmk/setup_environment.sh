@@ -1,71 +1,69 @@
 #!/bin/bash
+# Exit on error
+set -e
 
-# Define variables
-PYTHON_PATH="/Users/vaibhav/python310"  # Set your custom Python path
-REQUIREMENTS_FILE="/Users/vaibhav/Desktop/social-nmk--7sept/nmk/requirements.txt"  # Path to your requirements.txt file
+# Define the virtual environment path
+VENV_PATH="/home/ubuntu/social-nmk--7sept/venv"
 
-# Create the custom Python directory if it doesn't exist
-mkdir -p $PYTHON_PATH
+# Define the path to your requirements.txt file
+REQUIREMENTS_FILE="/home/ubuntu/social-nmk--7sept/nmk/requirements.txt"
 
-# Set the environment variables to point to the custom Python path
-export PYTHONUSERBASE=$PYTHON_PATH
-export PATH="$PYTHON_PATH/bin:$PATH"
+# Create the virtual environment if it doesn't exist
+if [ ! -d "$VENV_PATH" ]; then
+    echo "Creating virtual environment at $VENV_PATH..."
+    python3 -m venv "$VENV_PATH"
+fi
 
-# Upgrade pip in the custom Python path
-pip3 install --upgrade pip --user
+# Activate the virtual environment
+source "$VENV_PATH/bin/activate"
 
-# Upgrade six to the latest version
-pip3 install --upgrade six --user
+# Upgrade pip and six in the virtual environment
+pip install --upgrade pip
+pip install --upgrade six
 
-# Install the packages from requirements.txt to the custom Python path
+# Install the packages from requirements.txt
 if [ -f "$REQUIREMENTS_FILE" ]; then
-    pip3 install --prefix=$PYTHON_PATH -r $REQUIREMENTS_FILE
+    pip install -r "$REQUIREMENTS_FILE"
 else
-    echo "requirements.txt not found."
+    echo "requirements.txt not found at $REQUIREMENTS_FILE."
     exit 1
 fi
 
-# Print a message indicating completion
-echo "Packages installed successfully in ${PYTHON_PATH}"
-
 # Export environment variables
 export DJANGO_SETTINGS_MODULE="socyfie_application.settings"
-# export SECRET_KEY="your-secret-key"
-export DEBUG=True  # Set to False in production
-# export DATABASE_URL="sqlite:///db.sqlite3"  # Update this with your database URL
-# export DATABASE_URL="database_setup/db.sqlite3"  # Update this with your database URL
-export DATABASE_URL="postgres://postgres:090399Akash$@localhost:5432/socyfiedev"
-export REDIS_URL="redis://localhost:6379/0"  # Example Redis URL if you use Redis
+export DEBUG=False
+#export DEBUG=True
+export DATABASE_URL="testadmin://postgres:090399Akash$@15.235.192.133:5432/socyfiedev"
+export REDIS_URL="redis://:090399Akash%24@15.235.192.133:6379/0"
 
-# Add Celery-related environment variables (if needed)
-export CELERY_BROKER_URL=$REDIS_URL  # Assuming you're using Redis for Celery
+#export DATABASE_URL="postgres://postgres:090399Akash$@13.235.125.150:5432/socyfiedev"
+#export REDIS_URL="redis://:090399Akash$@13.235.125.150:6379/0"  # Example Redis URL if you use Redis
 
-# Add any other environment variables your application needs
-# export ANOTHER_VAR="value"
+export CELERY_BROKER_URL="$REDIS_URL"
 
-# Add Python and Celery to the path
-export PATH="$PYTHON_PATH/bin:$PATH:/Users/vaibhav/Library/Python/3.9/bin"
+# (Optional) Adjust PYTHONPATH if needed for additional modules
+export PYTHONPATH="$VENV_PATH/lib/$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')/site-packages/"
 
-export PYTHONPATH="$PYTHON_PATH/bin:$PATH:/Users/vaibhav/python310/lib/python3.9/site-packages/"
+echo "Packages installed successfully in virtual environment at ${VENV_PATH}"
+echo "PYTHONPATH set to: $PYTHONPATH"
 
-# Print a message indicating the environment variables are set
-echo $PYTHONPATH
-echo "Environment variables set successfully."
+# Run Django's SSL server in the background
+#python3 manage.py runserver 0.0.0.0:8000 &
 
-# Optional: install dependencies if needed
-# pip3 install -r /Users/vaibhav/Desktop/social-nmk--7sept/nmk/requirements.txt
+#gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
 
+gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 &
 
-python3 manage.py runsslserver &
-# Start Celery (worker and beat services)
+# Start Celery worker and beat services in the background
 echo "Starting Celery worker and beat services..."
-
-# Run Celery workerc
 celery -A socyfie_application worker --loglevel=info -n worker1@%h &
 
+#celery -A socyfie_application worker --loglevel=info -Q media_worker -n media_worker@%h &
 
-# Run Celery beat
+
+#celery -A socyfie_application worker --loglevel=info -Q media_worker &
+
 celery -A socyfie_application beat --loglevel=info &
 
-# Print a message indicating Celery services are started
 echo "Celery worker and beat are running."
+

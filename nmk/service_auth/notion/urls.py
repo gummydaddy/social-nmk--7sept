@@ -29,4 +29,6 @@ urlpatterns = [
     path('block-user/<int:user_id>/', views.block_user, name='block_user'),
     path('unblock-user/<int:user_id>/', views.unblock_user, name='unblock_user'),
     path('blocked-users/', views.blocked_user_list, name='blocked_user_list'),
+    path('notion/<int:notion_id>/delete/', views.delete_notion, name='delete_notion'),
+
 ]

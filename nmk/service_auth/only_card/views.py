@@ -42,7 +42,9 @@ from pdf2image import convert_from_path
 from PIL import Image
 import io
 import shutil
-
+from .tasks import process_file_upload  # import your Celery task
+from django.views.decorators.cache import never_cache
+from django.http import JsonResponse
 
 
 
@@ -69,6 +71,10 @@ auth=firebase.auth()
 
 def home(request):
     return render(request, 'home.html')
+
+
+def TermAndCondition(request):
+    return render(request, 'TermAndCondition.html')
 
 
 def send_confirmation_email(user):
@@ -120,13 +126,16 @@ def signup(request):
     return render(request, 'signup.html', {'form': form})
 
 
-
+@never_cache
 def login_view(request):
+    if request.user.is_authenticated:
+
+        return redirect('/following_media')  
+
     if request.method == 'POST':
-        
         username_or_email = request.POST['username']
         password = request.POST['pass1']
-        print(f'print if it is coming to this block')
+        remember_me = request.POST.get('remember_me')  # This is a checkbox in your HTML
 
         try:
             # Check if the input is an email or username
@@ -156,20 +165,31 @@ def login_view(request):
 
                     # Ensure the session remains intact after password update
                     update_session_auth_hash(request, user)
+                    # Set session expiry based on "remember me"
+                    if not remember_me:
+                        request.session.set_expiry(0)  # Session expires on browser/app close
+                    else:
+                        request.session.set_expiry(60 * 60 * 24 * 14)  # 14 days
+
+                    response = redirect('/following_media')  # Default redirect
 
                     # Set session cookie and cache the username
-                    response = HttpResponse("You're logged in.")
-                    response.set_cookie('username', username)
-                    cache.set(f'user_{user.id}', user.username)
+                    #response = HttpResponse("You're logged in.")
+                    #response.set_cookie('username', username)
+                    #cache.set(f'user_{user.id}', user.username)
 
                     # Redirect based on user roles
                     if CustomGroupAdmin.objects.filter(user=user).exists():
                         return redirect('/subgroup_landing_page')
                     elif user.is_staff:
                         return redirect('/super_user_landing_page')
-                    else:
+                    #else:
                         # return redirect('/landing_page')
-                        return redirect('/following_media')
+                        #return redirect('/following_media')
+                    # Set session/cookie/cache
+                    response.set_cookie('username', username)
+                    cache.set(f'user_{user.id}', username)
+                    return response  
 
             except Exception as firebase_error:
                 # Handle Firebase authentication errors
@@ -184,9 +204,9 @@ def login_view(request):
         except User.DoesNotExist:
             messages.error(request, 'Invalid username or email')
 
-        except Exception as e:
+        #except Exception as e:
             # Handle any other errors
-            messages.error(request, f"Failed to log in: {str(e)}")
+            #messages.error(request, f"Failed to log in: {str(e)}")
 
         # Group-based authentication (if necessary)
         try:
@@ -194,109 +214,28 @@ def login_view(request):
             user = group.users.first()
             if user:
                 login(request, user)
+                # Set session expiry based on "remember me" here as well
+                if not remember_me:
+                    request.session.set_expiry(0)
+                else:
+                    request.session.set_expiry(60 * 60 * 24 * 14)
+
                 request.session['association_name'] = username_or_email
                 request.session['user_id'] = user.id
                 cache.set(f'user_{user.id}', username_or_email)
                 return redirect('/landing_page')
         except CustomGroup.DoesNotExist:
-            pass
+            #pass
+            messages.error(request, 'Invalid username, email, or group name.')
+
+        except Exception as e:
+            messages.error(request, f"Login failed: {str(e)}")
 
         return render(request, 'login_view.html')
 
     else:
         return render(request, 'login_view.html')
 
-
-# Cache settings
-# CACHE_TIMEOUT = 300  # 5 minutes
-# CACHE_PREFIX = 'auth'
-
-# def get_cache_key(key):
-#     return f"{CACHE_PREFIX}_{key}"
-
-# def authenticate_user(username, password):
-#     """
-#     Authenticate user using Firebase and Django.
-    
-#     Args:
-#     username (str): User's username or email.
-#     password (str): User's password.
-    
-#     Returns:
-#     User or None: Authenticated user object or None.
-#     """
-#     cache_key = 'my_key'
-#     user = cache.get(cache_key)
-    
-#     if not user:
-#         try:
-#             # Check if the input is an email or username
-#             if '@' in username:
-#                 user = User.objects.get(email=username)
-#             else:
-#                 user = User.objects.get(username=username)
-            
-#             # Cache user object
-#             cache.set(cache_key, user, CACHE_TIMEOUT)
-#         except User.DoesNotExist:
-#             return None
-        
-#         # Firebase authentication
-#         try:
-#             firebase_user = auth.sign_in_with_email_and_password(user.email, password)
-#             user.set_password(password)
-#             user.save()
-#         except Exception as e:
-#             # Handle Firebase authentication errors
-#             return None
-    
-#     return user
-
-# def group_based_authentication(username_or_email):
-#     """
-#     Authenticate user using group-based authentication.
-    
-#     Args:
-#     username_or_email (str): Group name or username.
-    
-#     Returns:
-#     User or None: Authenticated user object or None.
-#     """
-#     cache_key = get_cache_key(f"group_{username_or_email}")
-#     user = cache.get(cache_key)
-    
-#     if not user:
-#         try:
-#             group = CustomGroup.objects.get(name=username_or_email)
-#             user = group.users.first()
-            
-#             # Cache user object
-#             cache.set(cache_key, user, CACHE_TIMEOUT)
-#         except CustomGroup.DoesNotExist:
-#             return None
-    
-#     return user
-
-# def login_view(request):
-#     if request.method == 'POST':
-#         username_or_email = request.POST['username']
-#         password = request.POST['pass1']
-        
-#         user = authenticate_user(username_or_email, password)
-#         if user is None:
-#             user = group_based_authentication(username_or_email)
-        
-#         if user:
-#             login(request, user)
-#             # Update session and cache
-#             cache.set(get_cache_key(f"user_{user.id}"), user.username, CACHE_TIMEOUT)
-#             return redirect('/landing_page')
-#         else:
-#             # Handle authentication failure
-#             messages.error(request, 'Invalid username or password')
-#             return render(request, 'login_view.html')
-#     else:
-#         return render(request, 'login_view.html')
 
 
 
@@ -324,8 +263,9 @@ def logout_view(request):
     user = request.user
     if user.is_authenticated:
         cache.delete(f'user_{user.id}')
-    logout(request)
     request.session.flush()
+    logout(request)
+   # request.session.flush()
     return redirect('/')
 
 
@@ -367,10 +307,13 @@ def password_reset(request):
 # Landing
 @login_required   
 def landing_page(request):
-    user_username = cache.get(f'user_{request.user.id}')
+    cache_key = f'user_{request.user.id}_username'
+    user_username = cache.get(cache_key)
+    #user_username = cache.get(f'user_{request.user.id}')
     if not user_username:
         user_username = request.user.username
-        cache.set(f'user_{request.user.id}', user_username, timeout=3600)
+        cache.set(cache_key, user_username, timeout=60 * 60 * 24)  # Cache for 1 day
+        #cache.set(f'user_{request.user.id}', user_username, timeout=3600)
     try:
         user_card = request.user.card
     except User.card.RelatedObjectDoesNotExist:
@@ -415,31 +358,28 @@ def subgroup_signup(request):
     return render(request, 'subgroup_signup_form.html', {'form': form})
 
 
-@login_required
+def buy_storage(request):
+    return render(request, 'buy_storage.html')
+
+
 def upload_document(request):
     if request.method == 'POST':
         form = UserUploadForm(request.POST, request.FILES)
         if form.is_valid():
-            form.instance.user = request.user
+            upload_instance = form.save(commit=False)
+            upload_instance.user = request.user
+            upload_instance.save()
 
-            try:
-                form.save()  # This will check the storage limit
-            except ValueError as e:
-                # If storage is full, show a message and prevent upload
-                messages.error(request, "Storage full. Please buy more storage.")
-                return redirect('/buy_storage')  # Redirect to a "Buy Storage" page
+            process_file_upload.delay(upload_instance.id)
 
-            if CustomGroupAdmin.objects.filter(user=request.user).exists():
-                return redirect('/subgroup_landing_page')
-            else:
-                return redirect('/landing_page')
-    else:
-        form = UserUploadForm()
+            redirect_url = '/subgroup_landing_page' if CustomGroupAdmin.objects.filter(user=request.user).exists() else '/landing_page'
 
-    return render(request, 'upload_document.html', {'form': form})
+            return JsonResponse({'status': 'success', 'redirect_url': redirect_url})
+        else:
+            return JsonResponse({'status': 'error', 'errors': form.errors}, status=400)
 
-def buy_storage(request):
-    return render(request, 'buy_storage.html')
+    return render(request, 'upload_document.html', {'form': UserUploadForm()})
+
 
 
 # Set up logging

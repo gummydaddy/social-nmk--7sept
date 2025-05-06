@@ -2,55 +2,64 @@
 {% load static %}
 
 {% block main_content %}
-{% comment %} <div class="profile-picture-scroll">
-  {% for story in active_stories_users %}
-    <div class="profile-picture-container">
-      <a href="{% url 'user_profile:view_story' story_id=story.id %}">
-        {% if story.user.profile.profile_picture %}
-          <img src="{{ story.user.profile.profile_picture.url }}" alt="{{ story.user.username }}'s Profile Picture" class="profile-picture">
-        {% else %}
-          <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
-        {% endif %}
-      </a>
-    </div>
-  {% endfor %}
-</div> {% endcomment %}
 <style>
-  .notions-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0rem;
-    border: 2px solid lightgray;
-    border-radius: 9px;
-    color: #123;
-
-  }
-
-  .content-area {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    align-items: flex-start;
-    margin: 20px 0;
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #E0E7FF, #F0FDFA);
+    min-height: 100vh;
     padding: 20px;
-    border: 4px solid lightgray;
-    border-radius: 4px;
-    background-color: white;
+    overflow-x: hidden;
   }
 
   .notion-item {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f9f9f9;
+    padding: 10px 10px;
+    animation: fadeIn 1.2s ease;
+    transition: transform 0.3s;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .notion-item:hover {
+    transform: translateY(-5px);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .like-section {
+    margin-top: 10px;
+  }
+
+  .like-link {
+    text-decoration: none;
+    font-size: 24px;
+    margin-right: 8px;
+    color: #6B7280;
+  }
+
+  .like-link.liked {
+    color: #4F46E5;
+  }
+
+  .like-count {
+    font-size: 16px;
+    color: #6B7280;
   }
 
   .profile-picture-scroll {
     display: flex;
     overflow-x: auto;
     padding: 10px 0;
-    gap: 15px; /* Adds space between the profile pictures */
+    gap: 15px;
+    margin-bottom: 20px;
   }
 
   .profile-picture-container {
@@ -62,175 +71,191 @@
     height: 50px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid #fff; /* Optional: Add a border to make the profile picture stand out */
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Optional: Add a subtle shadow for better visual separation */
+    border: 2px solid #fff;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   }
 
-  .profile-picture-scroll::-webkit-scrollbar {
-    height: 12px;
+  .uploads-section {
+    margin-bottom: 20px;
+    text-align: middle;
   }
 
-  .profile-picture-scroll::-webkit-scrollbar-thumb {
-    background-color: #ccc;
+  .btn-primary {
+    background-color: #4F46E5;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 18px;
+    margin: 5px;
+    transition: background 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #4338CA;
+  }
+
+  form textarea {
+    width: 100%;
+    padding: 10px;
     border-radius: 10px;
+    border: 1px solid #d1d5db;
+    margin-top: 10px;
+    resize: none;
   }
 
-  .profile-picture-scroll::-webkit-scrollbar-track {
-    background-color: #f1f1f1;
+  .comments form button {
+    margin-top: 8px;
+    width: 100%;
+    border-radius: 10px;
+    background-color: #4F46E5;
+    color: white;
+    padding: 10px;
+    border: none;
+    transition: background 0.3s;
+  }
+
+  .comments form button:hover {
+    background-color: #4338CA;
+  }
+
+  .search-form {
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .search-form input {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    width: 70%;
+    max-width: 400px;
+  }
+
+  .search-form button {
+    margin-left: 10px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background-color: #4F46E5;
+    color: white;
+    border: none;
   }
 </style>
 
-{% comment %} <h2>{{ user.username }}</h2> {% endcomment %}
-{% comment %} <div>
-  <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
-    <i class="fas fa-bell"></i>
-  </button>
-</div> {% endcomment %}
-
-<header>
-  {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
-      
-      <nav class="navbar navbar-expand-lg navbar-dark bg-black">
-          <div class="container">
-              <a href="{% url 'only_message:message_list_view' %}" class="button-link">
-                  <button class="messagebtn"> 💬 </button>
-              </a>
-
-              {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
-                  <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
-                  <button type="submit">Search</button>
-              </form> {% endcomment %}
-              <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
-                <i class="fas fa-globe"></i>
-              </button>
-              
-              <button class="openbtn" onclick="openNav()">☰ </button>
-          </div>
-      </nav>
-      
-      
-  <!-- Profile Picture Section -->
-</header>
-
-
-<p>
-  <div class="uploads-section">
-      <div class="row row-cols-3 g-4">
-          <!-- In your home page template (notionHome.html) -->
-          <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button> 
-          <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id%}'">Notions</button>
-          <button type="button" class="btn btn-primary" >Dream<br>comming soon </button>
-      </div>
-  </div>  
-</p>
-
-<form method="GET" action="{% url 'notion:notion_explorer' %}">
-  <input type="text" name="q" placeholder="Search notions, hashtags, users">
-  <button type="submit">Search</button>
-</form>
-
-<div class="notions-container">
-  {% for notion in notions %}
-  <div class="notion-item">
-    <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
-    <p>{{ notion.content|safe }}</p>
-    {% if notion.custom_group %}
-    <p>Group: {{ notion.custom_group.name }}</p>
-    {% endif %}
-    <p>{{ notion.created_at }}</p>
-    <div class="like-section">
-      <a href="{% url 'notion:like_notion' notion.id %}" 
-         class="like-link {% if request.user in notion.likes.all %}liked{% endif %}" 
-         data-url="{% url 'notion:like_notion' notion.id %}" 
-         data-csrf-token="{{ csrf_token }}"
-         data-liked="{% if request.user in notion.likes.all %}true{% else %}false{% endif %}">
-        {% if request.user in notion.likes.all %}
-            ❤️
+<div class="profile-picture-scroll">
+  {% for story in active_stories_users %}
+    <div class="profile-picture-container">
+      <a href="{% url 'user_profile:view_story' story_id=story.id %}">
+        {% if story.user.profile.profile_picture %}
+          <img src="{{ story.user.profile.profile_picture.url }}" alt="{{ story.user.username }}'s Profile Picture" class="profile-picture">
         {% else %}
-            ♡
+          <img src="{% static 'images/default-profile.jpg' %}" alt="Default Profile Picture" class="profile-picture">
         {% endif %}
-      </a> 
-      <span class="like-count">{{ notion.likes.count }}</span> likes
-    </div>    
-    <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">Comment</button>
-
-    <div class="comments">
-      <form method="post" action="{% url 'notion:post_comment' notion.id %}">
-        {% csrf_token %}
-        <textarea name="content" placeholder="Add a comment"></textarea>
-        <button type="submit">Post Comment</button>
-      </form>
+      </a>
     </div>
-  </div>
   {% endfor %}
 </div>
+
+<div class="uploads-section">
+  <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button>-->
+  <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id %}'">My Notions</button>
+</div>
+
+<div class="search-form">
+  <form method="GET" action="{% url 'notion:notion_explorer' %}">
+    <input type="text" name="q" placeholder="Search notions, hashtags, users">
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+{% for notion in notions %}
+<div class="notion-item">
+  <a href="{% url 'user_profile:profile' user_id=notion.user.id %}"><strong>{{ notion.user.username }}</strong></a><br><br>
+  <p>{{ notion.content|safe }}</p>
+  {% if notion.custom_group %}
+  <p><small>Group: {{ notion.custom_group.name }}</small></p>
+  {% endif %}
+  <p><small>{{ notion.created_at }}</small></p>
+  <div class="like-section">
+    <a href="{% url 'notion:like_notion' notion.id %}" 
+       class="like-link {% if request.user in notion.likes.all %}liked{% endif %}" 
+       data-url="{% url 'notion:like_notion' notion.id %}" 
+       data-csrf-token="{{ csrf_token }}"
+       data-liked="{% if request.user in notion.likes.all %}true{% else %}false{% endif %}">
+      {% if request.user in notion.likes.all %}
+          ❤️
+      {% else %}
+          ♡
+      {% endif %}
+    </a> 
+    <span class="like-count">{{ notion.likes.count }}</span>
+  </div>
+  <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>
+
+  <div class="comments mt-3">
+    <form method="post" action="{% url 'notion:post_comment' notion.id %}">
+      {% csrf_token %}
+      <textarea name="content" placeholder="Add a comment"></textarea>
+      <button type="submit">Post Comment</button>
+    </form>
+  </div>
+</div>
+{% endfor %}
+
 {% endblock %}
 
 {% block footer %}
-<footer class="bg-black text-white py-3">
-  <div class="bottom-strip d-flex justify-content-around">
-    <div class="home bg-white">
-      <a href="{% url 'only_card:landing_page' %}">
-        <i class="fas fa-home"></i>
-      </a>
-    </div>
-    <div class="my-notion">
-      {% block new_notion %}
-      <form action="{% url 'notion:post_notion' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <textarea name="content" required></textarea>
-        <button type="submit">Notify</button>
-      </form>
-      {% endblock %}
-    </div>
-    <div class="profile bg-white">
-      <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
-        <i class="fas fa-user-circle"></i>
-        {% comment %} alt="Profile Image" {% endcomment %}
-      </a>
-    </div>
+<footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+  <div class="d-flex justify-content-around align-items-center">
+    <a href="{% url 'only_card:landing_page' %}" style="color: #4F46E5; font-size: 1.8rem;">
+      <i class="fas fa-shield-alt"></i>
+    </a>
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_explorer' %}">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+    <a href="{% url 'user_profile:following_media' %}" style="color: #4F46E5; font-size: 1.8rem;">
+      <i class="fas fa-user-circle"></i>
+    </a>
   </div>
 </footer>
 {% endblock %}
 
 {% block notionHome_script %}
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.like-link').forEach(function(link) {
-        link.addEventListener('click', function(event) {
-            event.preventDefault();
-            const url = this.getAttribute('data-url');
-            const csrfToken = this.getAttribute('data-csrf-token');
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.like-link').forEach(function(link) {
+      link.addEventListener('click', function(event) {
+          event.preventDefault();
+          const url = this.getAttribute('data-url');
+          const csrfToken = this.getAttribute('data-csrf-token');
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                const likeCount = this.nextElementSibling;
-                likeCount.textContent = `${data.like_count} likes`;
+          fetch(url, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': csrfToken,
+                  'X-Requested-With': 'XMLHttpRequest',
+              },
+              body: JSON.stringify({})
+          })
+          .then(response => response.json())
+          .then(data => {
+              const likeCount = this.nextElementSibling;
+              likeCount.textContent = `${data.like_count}`;
 
-                // Update the UI
-                if (data.liked) {
-                    this.classList.add('liked');
-                    this.textContent = '❤️';
-                } else {
-                    this.classList.remove('liked');
-                    this.textContent = '♡';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
-    });
+              if (data.liked) {
+                  this.classList.add('liked');
+                  this.textContent = '❤️';
+              } else {
+                  this.classList.remove('liked');
+                  this.textContent = '♡';
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+          });
+      });
+  });
 });
-
 </script>
 {% endblock %}

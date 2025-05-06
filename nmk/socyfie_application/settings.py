@@ -51,7 +51,14 @@ environ.Env.read_env(env_path)  # Reads the .env file
 # # Read the encryption key from the environment
 ENCRYPTION_KEY = env('ENCRYPTION_KEY')
 SECRET_KEY = env('SECRET_KEY')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+#ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+#ALLOWED_HOSTS = ["socyfie.com","www.socyfie.com","ec2-13-235-125-150.ap-south-1.compute.amazonaws.com","13.235.125.150"]
+
+DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
+print(f"DEBUG: DJANGO_ALLOWED_HOSTS={DJANGO_ALLOWED_HOSTS}")  # Debugging line
+#ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost").split(",")
+ALLOWED_HOSTS = [host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",")]
+print(f"DEBUG: ALLOWED_HOSTS={ALLOWED_HOSTS}")  # Debugging line
 
 # Application definition
 INSTALLED_APPS = [
@@ -62,7 +69,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',    
-    'allauth.socialaccount.providers.google',    
+    #'allauth.socialaccount.providers.google',    
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
@@ -122,7 +129,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'asgi_redis.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [('localhost', 6379)],
+            'hosts': [('redis://:090399Akash%24@15.235.192.133:6379/0')],
         },
         'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
     }
@@ -132,7 +139,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': '127.0.0.1:6379/1',  # For Redis
+        'LOCATION': 'redis://:090399Akash%24@15.235.192.133:6379/1',  # For Redis
         # 'LOCATION': '127.0.0.1:11211',  # For Memcached
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
@@ -162,11 +169,13 @@ REST_FRAMEWORK = {
 
 # new29
 SECURE_SSL_REDIRECT = True
+USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 MIDDLEWARE = [
 
     "django.middleware.security.SecurityMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -188,6 +197,10 @@ SECURE_HSTS_PRELOAD = True
 # Secure cookies  new29
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
 
 
 
@@ -212,6 +225,8 @@ TEMPLATES = [
             os.path.join(BASE_DIR, "templates/notions"),
             os.path.join(BASE_DIR, "templates/user_profile"),
             os.path.join(BASE_DIR, "templates/only_message"),
+            os.path.join(BASE_DIR, "templates/partials"),
+
             ],
         #'DIRS': [os.path.join(BASE_DIR, 'templates')],
         "APP_DIRS": True,
@@ -232,7 +247,7 @@ COMPRESSED_MEDIA_STORAGE = {
     'storage': 'nmk.service_auth.storage.CompressedMediaStorage',
     'options': {
         'image_quality': 65,
-        'video_crf': 28,
+        #'video_crf': 28,
         'max_image_dimension': 1920,
         'audio_bitrate': '128k',
     },
@@ -258,8 +273,8 @@ LOGGING = {
 
 
 # Celery Configuration Options
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis is the broker for task queue
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Optional: Used to store task results
+CELERY_BROKER_URL = 'redis://:090399Akash%24@15.235.192.133:6379/0'  # Redis is the broker for task queue
+CELERY_RESULT_BACKEND = 'redis://:090399Akash%24@15.235.192.133:6379/0'  # Optional: Used to store task results
 CELERY_ACCEPT_CONTENT = ['json']  # Specifies allowed content types
 CELERY_TASK_SERIALIZER = 'json'   # Serialize task messages as JSON
 CELERY_RESULT_SERIALIZER = 'json'  # Serialize result data as JSON
@@ -282,9 +297,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",
         "NAME": "socyfiedev",
-        "USER": "postgres",
-        "PASSWORD": env('DATABASE_HOST_PASSWORD'),
-        "HOST": "localhost",
+        "USER": "testadmin",
+        "PASSWORD": "090399Akash$",
+        "HOST": "15.235.192.133",
         "PORT": "5432",
     }
 }
@@ -307,6 +322,9 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
+    {
+        'NAME': 'service_auth.only_card.validators.CustomUserAttributeSimilarityValidator',
+    },
 ]
 
 
@@ -314,12 +332,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Session settings
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or any other session backend you are using
+#SESSION_ENGINE = 'django.contrib.sessions.backends.db'  # Or any other session backend you are using
+#SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_CACHE_ALIAS = "default"
+
 SESSION_COOKIE_NAME = 'sessionid'
-SESSION_COOKIE_AGE = 36000  #seconds
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  #seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
-#SESSION_SAVE_EVERY_REQUEST = True
-#SESSION_COOKIE_SECURE = True  # Use HTTPS for session cookies (set to True in production)
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_COOKIE_SECURE = True  # Use HTTPS for session cookies (set to True in production)
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript from accessing the session cookie
 
 
@@ -330,10 +352,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-# EMAIL_HOST_USER = 'nmkfinancialservices@gmail.com'
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-# EMAIL_HOST_PASSWORD = 'zakh htez cvyq pgmr' #yadavvaibhav
-# EMAIL_HOST_PASSWORD = 'qbms zhou gdpm ludo' #nmkfinincial
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'no-reply@socyfie.com'  # Optional, sets the default sender address for emails
 
@@ -360,7 +379,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-MEDIA_URL = 'nmk/media/'
+#MEDIA_URL = 'nmk/media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 
@@ -370,19 +390,19 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CSRF_TRUSTED_ORIGINS = [
-    # 'https://localhost:8000', 
+    'http://localhost:8000', 
     'https://socyfie.com', 
-    'https://www.socyfie.com'
+    'https://www.socyfie.com',
+    'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com'
     ]
 
 
 AUTHENTICATION_BACKENDS = [
-    #'django.contrib.auth.backends.ModelBackend',
-    'allauth.account.auth_backends.AuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    #'allauth.account.auth_backends.AuthenticationBackend',
     #'social_core.backends.google.GoogleOAuth2',
 ]
 
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
-
+#SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
+#SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')

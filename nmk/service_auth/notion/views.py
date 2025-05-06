@@ -248,6 +248,15 @@ def post_comment(request, notion_id):
     return redirect('notion:notion_detail', notion_id=notion.id)
 
 
+@login_required
+def delete_notion(request, notion_id):
+    notion = get_object_or_404(Notion, id=notion_id)
+
+    if notion.user == request.user:
+        notion.delete()
+        return redirect('notion_list')  # or any page you want
+    else:
+        return HttpResponseForbidden("You are not allowed to delete this notion.")
 
 
 @login_required

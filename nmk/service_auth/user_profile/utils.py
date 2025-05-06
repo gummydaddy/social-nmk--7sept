@@ -43,7 +43,6 @@ def add_to_fifo_list(fifo_list, item, max_length=50):
         fifo_list.pop(0)
     return fifo_list
 
-
 def make_usernames_clickable(content):
     def replace_username(match):
         username = match.group(1)
@@ -60,3 +59,4 @@ def make_usernames_clickable(content):
     content = re.sub(r'(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
 
     return content
+

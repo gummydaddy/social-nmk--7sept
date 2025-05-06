@@ -4,6 +4,8 @@
 {% load custom_filters %}
 
 {% block main_content %}
+<h2>Add Story</h2>
+<h6>video upload facility is not currently availabe</h6>
 <div class="story-add-container">
     <form id="storyForm" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
@@ -31,7 +33,7 @@
         </div>
         
         <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary">Add Story</button>
+        <button type="button" class="btn btn-primary"disabled>Add Story</button>
     </form>
 </div>
 

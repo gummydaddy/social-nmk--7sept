@@ -26,6 +26,7 @@ urlpatterns = [
     # path('', views.home, name="home"),
     path('', views.login_view, name="home"),
     path("signup/", views.signup, name="signup"),
+    path("TermAndCondition/", views.TermAndCondition, name="TermAndCondition"),
     # path("check_email_verification/<int:user_id>/", views.check_email_verification, name="check_email_verification"),
     # path('email_verification/<str:token>/<str:email>/', views.email_verification, name='email_verification'),
     # path('activate/<uidb64>/<token>/', views.activate_account, name='activate_account'),    

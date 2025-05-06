@@ -1,100 +1,123 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <title>Socyfie - Sign Up</title>
+
+    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!-- Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #E0E7FF, #F0FDFA);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            background-color: transparent;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            animation: fadeInUp 1s ease-in-out;
+            overflow-x: hidden;
         }
-        h3 {
-            text-align: center;
-            margin-bottom: 30px;
-            animation: fadeInDown 1s ease-in-out;
-        }
-        label {
-            font-weight: bold;
-        }
-        .error {
-            color: red;
-            display: none;
-        }
-        .btn-submit {
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-            animation: fadeIn 1s ease-in-out;
-        }
-        .btn-submit:hover {
-            background-color: #0056b3;
-        }
-        .decoration {
-            position: absolute;
-            top: 0;
-            left: 0;
+
+        .signup-container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 40px 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             width: 100%;
-            height: 100%;
-            z-index: -1;
-            animation: rotate 10s linear infinite;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 1.2s ease;
         }
-        .decoration::before,
-        .decoration::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 200px;
-            height: 200px;
-            background: #007bff;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            animation: scale 10s linear infinite;
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .decoration::before {
-            background: #0056b3;
+
+        h1 {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4F46E5;
         }
-        @keyframes rotate {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
+
+        p.subtitle {
+            font-size: 16px;
+            color: #6B7280;
+            margin-bottom: 30px;
+        }
+
+        .form-control {
+            border-radius: 10px;
+            padding: 12px 15px;
+        }
+
+        .btn-primary {
+            background-color: #4F46E5;
+            border: none;
+            border-radius: 12px;
+            padding: 12px 20px;
+            width: 100%;
+            margin-top: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #4338CA;
+        }
+
+        .terms-text {
+            font-size: 12px;
+            color: #6B7280;
+            margin-top: 15px;
+        }
+
+        .terms-text a {
+            color: #4F46E5;
+            text-decoration: underline;
+        }
+
+        .terms-text a:hover {
+            color: #4338CA;
+        }
+
+        .alert {
+            font-size: 14px;
+        }
+
+        /* Make container a bit smaller on very small screens */
+        @media (max-width: 400px) {
+            .signup-container {
+                padding: 30px 20px;
             }
         }
-        @keyframes scale {
-            0% {
-                transform: scale(0);
+
+        @media (max-height: 600px) {
+            body {
+                align-items: flex-start;
+                padding-top: 40px;
+                padding-bottom: 40px;
             }
-            50% {
-                transform: scale(1);
-            }
-            100% {
-                transform: scale(0);
-            }
-        }       
+        }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h3>Socyfie Sign Up</h3>
+
+    <div class="signup-container">
+        <h1>Socyfie</h1>
+        <p class="subtitle">Create your account</p>
+
         {% if messages %}
         <div class="alert alert-danger" role="alert">
             {% for message in messages %}
@@ -102,167 +125,20 @@
             {% endfor %}
         </div>
         {% endif %}
-        <form method="post">
+
+        <form method="post" novalidate>
             {% csrf_token %}
             {{ form.as_p }}
-            <button type="submit" class="btn btn-primary btn-block btn-submit">Sign up</button>
+
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+
+            <div class="terms-text">
+                By signing up, you agree to our <a href="{% url 'only_card:TermAndCondition' %}">Terms and Conditions</a>.
+            </div>
         </form>
-        <div class="decoration"></div>
-    </div></p>
-    <div class="container">
-            Terms and Conditions for Socyfie<br>
-            <br>
-        Effective Date: [12 february, 2025]<br>
-        <br>
-        Socyfie prioritizes the privacy and security of its users and never requests access to your video camera or microphone under any circumstances. <br>
-        If you encounter any link or prompt claiming to be from Socyfie and asking for such access, do not grant permission as it is unauthorized and likely a malicious attempt at data phishing.<br>
-        Socyfie strongly advises users to remain vigilant and report such incidents immediately. <br>
-        Strict actions, including legal proceedings, will be taken against individuals or groups involved in such fraudulent activities to protect our users and maintain the integrity of the platform.<br>
-        Welcome to Socyfie (hereinafter referred to as "the Platform"). <br>
-        By accessing, registering for, or using the Platform, you agree to be bound by these Terms and Conditions.<br> 
-        These terms are designed to ensure a safe, respectful, and enjoyable experience for all users. <br>
-        Failure to comply may result in account suspension, deletion, or legal action.<br>
-
-        1. Acceptance of Terms<br>
-        By creating an account, accessing, or using the Platform, you agree to these Terms and Conditions, as well as our Privacy Policy.<br>
-        Continued use of the Platform signifies your acceptance of any updates to these Terms.<br>
-
-        2. General User Responsibilities<br>
-        Users must provide accurate, truthful, and up-to-date information when creating accounts or posting content.<br>
-        Users are responsible for securing their account credentials and must not share them with others.<br>
-        Users must comply with local, national, and international laws while using the Platform.<br>
-
-        3. Prohibited Activities<br>
-        To maintain a safe and respectful environment, the following activities are strictly prohibited:<br>
-
-        3.1 Identity Fraud<br>
-        Pretending to be someone else, whether to harm, disrespect, defame, or cause any kind of loss to the real person, is considered fraud.<br>
-        Strict actions will be taken against individuals engaging in such behavior, which may include account suspension, legal proceedings, and penalties under applicable laws.<br>
-        3.2 Scams and Fraudulent Activities<br>
-        Engaging in scams or any form of fraudulent activity is prohibited.<br>
-        Violators will face strict penalties, including account termination and legal action as per applicable laws.<br>
-        3.3 Sharing False Information<br>
-        Disseminating false, misleading, or inaccurate information is prohibited.<br>
-        Accounts involved in such activities will face immediate suspension or termination.<br>
-        3.4 Discrimination<br>
-        Content or actions that discriminate based on caste, creed, religion, race, gender, sexual orientation, nationality, ethnicity, or disability are strictly prohibited.<br>
-        Violators will face account deletion and may be subjected to legal action.<br>
-        3.5 Bullying and Harassment<br>
-        Bullying, harassment, or threatening behavior towards any individual or group is strictly prohibited.<br>
-        Use of derogatory language, hate speech, or abusive content is not allowed.<br>
-        Violations will result in account termination and possible further investigation.<br>
-        3.6 Privacy Violations<br>
-        Sharing, posting, or distributing others' personal or private information (e.g., contact details, addresses, financial data) without explicit consent is prohibited.<br>
-        Violations will result in strict penalties, including account deletion and possible legal action.<br>
-        3.7 Sexual Explicit Content<br>
-        Posting or sharing sexually explicit, pornographic, or other inappropriate content is prohibited.<br>
-        Content promoting violence, self-harm, or illegal activities is also not allowed.<br>
-        3.8 Cybersecurity and Data Integrity<br>
-        Sharing links, files, or data that may lead to cybersecurity threats, breaches, or harm to the Platform or its users is prohibited.<br>
-        Legal actions may be pursued against violators.<br>
-        3.9 Content Impacting Emotional, Spiritual, and Mental Sentiments<br>
-        Posting content that poses as god, spreads baseless claims, or is likely to harm the emotional, spiritual, or mental sentiments of the community is strictly prohibited.<br>
-        Such content may lead to temporary profile suspension or a permanent ban, depending on the severity of the violation.<br>
-
-        4. Intellectual Property<br>
-        Users must not share or distribute copyrighted material, trademarks, or intellectual property without proper authorization.<br>
-        Violations may result in content removal, account penalties, or legal actions.<br>
-
-        5. Community Guidelines<br>
-        Users must respect the Platform’s values of inclusivity, respect, and constructive communication.<br>
-        Activities such as spamming, excessive self-promotion, or disrupting others' experience are not allowed.<br>
-
-        6. Enforcement and Reporting<br>
-        The Platform reserves the right to monitor and review content shared by users.<br>
-        Any violations may result in warnings, content removal, account suspension, or banning.<br>
-        Users are encouraged to report violations through the Platform’s reporting system or by contacting support.<br>
-
-        7. Termination of Accounts<br>
-        The Platform may terminate or suspend access to accounts at its sole discretion, without prior notice, for any violation of these Terms.<br>
-        Termination may also occur for any behavior deemed harmful to the Platform or its users.<br>
-
-        8. Limitation of Liability<br>
-        The Platform is not responsible for user-generated content or actions. Users are solely accountable for their posts and behavior.<br>
-        The Platform is not liable for any damages arising from use or inability to use the Platform.<br>
-
-        9. Governing Law<br>
-        These Terms are governed by the laws of [Your Jurisdiction].<br>
-        Any disputes arising from these Terms will be resolved in the courts of [Your Jurisdiction].<br>
-
-        10. Changes to Terms<br>
-        The Platform reserves the right to amend these Terms at any time.<br>
-        Users will be notified of significant changes, and continued use of the Platform constitutes acceptance of the revised Terms.<br>
-
-        11. General Terms<br>
-        If any part of this agreement is deemed invalid or unenforceable, the remaining provisions will remain in full force and effect.<br>
-        Failure to enforce any part of this agreement does not constitute a waiver of the right to enforce such provisions in the future.<br>
-        Users agree that any cause of action related to the Platform must commence within one year after the cause of action arises.<br>
-
-
-        12. Modification of Terms of Use<br>
-        The Platform may amend these Terms of Use at any time and will notify users of significant updates via email or homepage notices.<br>
-        Users are responsible for reviewing the Terms periodically. Continued use of the Platform signifies agreement to the updated Terms.<br>
-        
-        13. Contact Us<br>
-        For any questions or concerns about these Terms and Conditions, please contact us at [support@socyfie.com].<br>
-        By using Socyfie, you acknowledge that you have read, understood, and agree to abide by these Terms and Conditions. Thank you for being part of our community!<br>
-
-        14. User-Generated Content<br>
-        Ownership: Users retain ownership of the content they upload but grant Socyfie a non-exclusive, worldwide, royalty-free license to use, display, reproduce, and distribute the content for Platform-related purposes (e.g., promoting user uploads).<br>
-        Responsibility: Users are solely responsible for the content they upload. The Platform is not liable for any user-generated content that violates third-party rights or applicable laws.<br>
-
-        15. Content Moderation and Takedown Policy<br>
-        Socyfie reserves the right to remove any content that violates these Terms or is deemed harmful, offensive, or inappropriate at its sole discretion.<br>
-        Users have the right to appeal content removal decisions through the Platform’s designated appeals process.<br>
-
-        16. Data Privacy and Security<br>
-        Socyfie employs industry-standard security measures to protect user data. However, users acknowledge that no method of transmission or storage is completely secure, and the Platform cannot guarantee absolute security.<br>
-        Users are responsible for keeping their account information private and secure.<br>
-        For details on how user data is collected, stored, and used, please refer to our Privacy Policy.<br>
-
-        17. Third-Party Links and Services<br>
-        Socyfie may include links to third-party websites or services. The Platform is not responsible for the content, policies, or practices of third-party sites and services.<br>
-        Users access third-party links at their own risk.<br>
-
-        18. Premium Features or Subscriptions (if applicable)<br>
-        Some features of Socyfie may require payment or subscription. By subscribing, users agree to the pricing, billing, and renewal policies outlined at the time of purchase.<br>
-        No refunds will be issued for unused portions of subscriptions unless required by applicable law.<br>
-
-        19. Disclaimers<br>
-        No Warranties: The Platform is provided on an "as-is" and "as-available" basis. Socyfie makes no warranties regarding the reliability, availability, or suitability of the Platform for specific purposes.<br>
-        No Liability for Damages: The Platform is not responsible for any direct, indirect, incidental, or consequential damages arising from its use, including loss of data or profits.<br>
-
-        20. Suspension and Termination of Service<br>
-        The Platform may suspend or terminate service to any user at its discretion, including for violations of these Terms, non-payment of subscription fees (if applicable), or any activity that disrupts the functionality of the Platform.<br>
-
-        21. Advertisement Policy<br>
-        Socyfie may display advertisements, promotions, or sponsored content.<br>
-        By using the Platform, users agree to the display of ads, which may be based on user data as described in the Privacy Policy.<br>
-
-        22. Sale and Purchase of Goods<br>
-        Socyfie does not currently promote or facilitate the sale and purchase of goods or services. At this initial stage, we are working on developing a transparent and trustworthy process for such transactions.<br>
-        In the event that users engage in the sale or purchase of goods through the Platform, Socyfie will not be liable for any losses, damages, or disputes arising from these transactions. Users are solely responsible for ensuring the safety, authenticity, and legitimacy of such activities.<br>
-
-        23. Children’s Online Privacy Protection<br>
-        Socyfie is not intended for users under the age of 13. Users under the age of 18 must obtain parental or guardian consent to use the Platform.<br>
-        The Platform will terminate accounts found to be operated by users below the minimum age.<br>
-
-        24. Force Majeure<br>
-        Socyfie is not liable for delays or failures in performance resulting from events beyond its reasonable control, including natural disasters, technical failures, cyberattacks, or government actions.<br>
-
-        25. User Feedback and Suggestions<br>
-        Any feedback or suggestions submitted to Socyfie become the property of the Platform. Socyfie may use such feedback to improve its services without compensating the user.<br>
-
-        26. Language<br>
-        These Terms and Conditions are provided in English. If translations are available, the English version will prevail in case of inconsistencies or disputes.<br>
-
-        27. Account Deletion<br>
-        Users can request account deletion at any time. Upon deletion, personal data will be permanently removed from the Platform, except for data required to comply with legal obligations.<br>
-
-        28. AI and Automated Systems <br>
-        If Socyfie uses AI or automated systems for moderation, recommendations, or analytics, users acknowledge and accept their role in the Platform’s functionality.<br>
-        Users agree that automated systems may occasionally make errors, and disputes about their decisions can be escalated for human review.<br>
-
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
 </body>
 </html>

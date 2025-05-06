@@ -2,123 +2,198 @@
 {% load static %}
 
 {% block main_content %}
-{% comment %} <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
-    <i class="fas fa-globe"></i>
-</button> {% endcomment %}
-
 <style>
-  .notions-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0rem;
-    border: 2px solid lightgray;
-    border-radius: 9px;
-    color: #123;
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #E0E7FF, #F0FDFA);
+    min-height: 100vh;
+    padding-top: 20px;
+    overflow-x: hidden;
   }
 
-  .content-area {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    align-items: flex-start;
-    margin: 20px 0;
+  .notions-container {
+    max-width: 800px;
+    margin: 0 auto;
     padding: 20px;
-    border: 4px solid lightgray;
-    border-radius: 4px;
-    background-color: white;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 1.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .notion-item {
-    margin-bottom: 20px;
-    padding: 15px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
     background-color: #f9f9f9;
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: box-shadow 0.3s ease;
+  }
+
+  .notion-item:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .notion-content {
+    margin: 10px 0;
+    color: #374151;
+    font-size: 1rem;
+  }
+
+  .notion-meta {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .notion-actions {
+    margin-top: 15px;
+  }
+
+  .like-link {
+    font-size: 1.2rem;
+    color: #4F46E5;
+    text-decoration: none;
+    margin-right: 8px;
+  }
+
+  .like-link.liked {
+    color: #EF4444; /* red heart if liked */
+  }
+
+  .like-count {
+    font-size: 0.9rem;
+    color: #6b7280;
+  }
+
+  h2 {
+    text-align: center;
+    color: #4F46E5;
+    margin-bottom: 20px;
+  }
+
+  nav.navbar {
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+
+  #globe-button, .openbtn, .messagebtn {
+    background-color: #4F46E5;
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 50px;
+    font-size: 18px;
+    margin: 0 5px;
+  }
+
+  #globe-button:hover, .openbtn:hover, .messagebtn:hover {
+    background-color: #4338CA;
+  }
+
+  form.search-form {
+    max-width: 500px;
+    margin: 20px auto;
+    display: flex;
+    gap: 10px;
+  }
+  form.search-form input {
+    flex-grow: 1;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+  }
+  form.search-form button {
+    background-color: #4F46E5;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 16px;
+  }
+  form.search-form button:hover {
+    background-color: #4338CA;
   }
 </style>
-<header>
-  {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
-      
-      <nav class="navbar navbar-expand-lg navbar-dark bg-black">
-          <div class="container">
-              <a href="{% url 'only_message:message_list_view' %}" class="button-link">
-                  <button class="messagebtn"> 💬 </button>
-              </a>
 
-              {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
-                  <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
-                  <button type="submit">Search</button>
-              </form> {% endcomment %}
-              <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
-                <i class="fas fa-globe"></i>
-              </button>
-              
-              <button class="openbtn" onclick="openNav()">☰ </button>
-          </div>
-      </nav>
-      
-      
-  <!-- Profile Picture Section -->
+<header>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+    <div class="container">
+      <a href="{% url 'only_message:message_list_view' %}">
+        <button class="messagebtn">💬</button>
+      </a>
+<!--      <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
+        🌐
+      </button>-->
+
+      <button class="openbtn" onclick="openNav()">☰</button>
+    </div>
+  </nav>
 </header>
 
 <!-- Search Form -->
-<form method="GET" action="{% url 'notion:notion_explorer' %}">
-    <input type="text" name="q" placeholder="Search notions, hashtags, users">
-    <button type="submit">Search</button>
+<form method="GET" action="{% url 'notion:notion_explorer' %}" class="search-form">
+  <input type="text" name="q" placeholder="Search notions, hashtags, users">
+  <button type="submit">Search</button>
 </form>
+
+<h2>Explore Notions</h2>
 
 <div class="notions-container">
   {% if notions %}
     {% for notion in notions %}
       <div class="notion-item">
         <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
-        <p>{{ notion.content|safe }}</p>
+        <div class="notion-content">{{ notion.content|safe }}</div>
         {% if notion.custom_group %}
-          <p>Group: {{ notion.custom_group.name }}</p>
+          <div class="notion-meta">Group: {{ notion.custom_group.name }}</div>
         {% endif %}
-        <p>{{ notion.created_at }}</p>
-        <a href="{% url 'notion:like_notion' notion.id %}" 
-           class="like-link {% if request.user in notion.likes.all %}liked{% endif %}" 
-           data-url="{% url 'notion:like_notion' notion.id %}" 
-           data-csrf-token="{{ csrf_token }}">
-          {% if request.user in notion.likes.all %}
+        <div class="notion-meta">{{ notion.created_at }}</div>
+
+        <div class="notion-actions">
+          <a href="{% url 'notion:like_notion' notion.id %}"
+             class="like-link {% if request.user in notion.likes.all %}liked{% endif %}"
+             data-url="{% url 'notion:like_notion' notion.id %}"
+             data-csrf-token="{{ csrf_token }}">
+            {% if request.user in notion.likes.all %}
               ❤️
-          {% else %}
+            {% else %}
               ♡
-          {% endif %}
-        </a> 
-        <span class="like-count">{{ notion.likes.count }}</span> likes
-        <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">Comment</button>
+            {% endif %}
+          </a>
+          <span class="like-count">{{ notion.likes.count }}</span> likes
+          <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">💬</button>
+        </div>
       </div>
     {% endfor %}
   {% else %}
-    <p>No notions to display.</p>
+    <p style="text-align:center;">No notions to display.</p>
   {% endif %}
 </div>
+
 {% endblock %}
 
 {% block footer %}
 <footer class="bg-black text-white py-3">
   <div class="bottom-strip d-flex justify-content-around">
-    <div class="home bg-white">
+    <div class="footer-icon">
       <a href="{% url 'only_card:landing_page' %}">
-        <i class="fas fa-home"></i>
+        <i class="fas fa-shield-alt"></i>
       </a>
     </div>
-    <div class="my-notion">
-      {% block new_notion %}
-      <form action="{% url 'notion:post_notion' %}" method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        <textarea name="content" required></textarea>
-        {% comment %} <input type="file" name="file" id="file" accept="image/*,video/*" required> {% endcomment %}
-        <button type="submit">Notify</button>
-      </form>
-      {% endblock %}
-    </div>
-    <div class="profile bg-white">
-      <a href="{% url 'user_profile:profile' user_id=request.user.id %}" class="profile-button">
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
+                    </div>
+
+    <div class="footer-icon">
+      <a href="{% url 'user_profile:following_media' %}">
         <i class="fas fa-user-circle"></i>
-        {% comment %} alt="Profile Image" {% endcomment %}
       </a>
     </div>
   </div>
@@ -127,45 +202,40 @@
 
 {% block notionHome_script %}
 <script>
-
   document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.like-link').forEach(function(link) {
-        link.addEventListener('click', function(event) {
-            event.preventDefault();
-            const url = this.getAttribute('data-url');
-            const csrfToken = this.getAttribute('data-csrf-token');
+      link.addEventListener('click', function(event) {
+        event.preventDefault();
+        const url = this.getAttribute('data-url');
+        const csrfToken = this.getAttribute('data-csrf-token');
 
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                const likeCount = this.nextElementSibling;
-                likeCount.textContent = `${data.like_count} likes`;
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+          const likeCount = this.nextElementSibling;
+          likeCount.textContent = `${data.like_count} likes`;
 
-                // Update the UI
-                if (data.liked) {
-                    this.classList.add('liked');
-                    this.textContent = '❤️';
-                } else {
-                    this.classList.remove('liked');
-                    this.textContent = '♡';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+          if (data.liked) {
+            this.classList.add('liked');
+            this.textContent = '❤️';
+          } else {
+            this.classList.remove('liked');
+            this.textContent = '♡';
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
         });
+      });
     });
-});
-
-
+  });
 </script>
 {% endblock %}
-

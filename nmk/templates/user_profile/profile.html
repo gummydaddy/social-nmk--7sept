@@ -23,7 +23,7 @@
         display: none;
         position: relative;
         right: 0;
-        background-color: white;
+        background-color: black;
         min-width: 160px;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         z-index: 1;
@@ -69,10 +69,10 @@
                 {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
                     <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
                     <button type="submit">Search</button>
-                </form> {% endcomment %}
+                </form> 
                 <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
                     <i class="fas fa-globe"></i>
-                </button>
+                </button>{% endcomment %}
                 
                 <button class="openbtn" onclick="openNav()">☰ </button>
             </div>
@@ -95,7 +95,7 @@
                 </h2>
                 {% if profile_user != request.user %}
                 <div class="dropdown" style="display: inline-block; margin-left: 2px;">
-                    <span style="cursor: pointer;">⋮</span>
+                    <span style="cursor: pointer;">☰</span>
                     <div class="dropdown-content">
                         {% if not is_blocked %}
                             <form method="post" action="{% url 'notion:block_user' profile_user.id %}">
@@ -195,29 +195,27 @@
 </div>
 
 <!-- Uploaded media with pagination -->
+<!--
 <div class="row row-cols-3 g-4">
     {% for upload in page_obj %}
     <div class="col">
         <div id="media-container-{{ upload.id }}" class="upload-item">
             <a href="{% url 'user_profile:media_detail_view' upload.id %}">
                 {% if upload.file.url|is_video %}
-                <!-- Video -->
                 <video controls class="img-fluid">
                     <source src="{{ upload.file.url }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
                 {% else %}
-                <!-- Image -->
                 <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
                 {% endif %}
             </a>
 
-            <!-- View Count -->
             <div class="view-count">
                 <p>Views: {{ upload.view_count }}</p>
                 
             </div>
-            {% comment %} <!-- Description with clickable links -->
+            {% comment %}
             <div class="description">
                 <p>{{ upload.description|safe }}</p>
             </div> {% endcomment %}
@@ -225,6 +223,42 @@
     </div>
     {% endfor %}
 </div>
+-->
+
+<div class="row row-cols-3 g-4">
+    {% for upload in page_obj %}
+    <div class="col">
+        <div id="media-container-{{ upload.id }}" class="upload-item">
+            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
+                {% if upload.file.url|is_video %}
+                <!-- Video Thumbnail -->
+                <video class="img-fluid lazyload" 
+                       data-src="{{ upload.file.url }}" 
+                       {% if upload.thumbnail %}
+                           poster="{{ upload.thumbnail.url }}"
+                       {% else %}
+                           poster="{{ upload.file.url }}"
+                       {% endif %} muted>
+                    Your browser does not support the video tag.
+                </video>
+                {% else %}
+                <!-- Image Thumbnail -->
+                <img src="{% if upload.thumbnail %}{{ upload.thumbnail.url }}{% else %}{{ upload.file.url }}{% endif %}" 
+                     data-src="{{ upload.file.url }}" 
+                     alt="Image" 
+                     class="img-fluid lazyload">
+                {% endif %}
+            </a>
+
+            <!-- View Count -->
+            <div class="view-count">
+                <p>Views: {{ upload.view_count }}</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
 
 <!-- Pagination controls -->
 <div class="pagination">
@@ -335,6 +369,49 @@
             });
         }
     });
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let lazyMedia = document.querySelectorAll(".lazyload");
+    
+        const lazyLoad = () => {
+            lazyMedia.forEach(media => {
+                if (media.getBoundingClientRect().top < window.innerHeight && media.dataset.src) {
+                    if (media.tagName === "IMG") {
+                        media.src = media.dataset.src;  // Replace thumbnail with full image
+                    } else if (media.tagName === "VIDEO") {
+                        let source = document.createElement("source");
+                        source.src = media.dataset.src;
+                        source.type = "video/mp4";
+                        media.appendChild(source);
+                        media.load();  // Load video
+                    }
+                    media.classList.remove("lazyload");
+                }
+            });
+        };
+    
+        window.addEventListener("scroll", lazyLoad);
+        window.addEventListener("resize", lazyLoad);
+        lazyLoad();  // Load visible media immediately
+    });
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const status = localStorage.getItem('upload_status');
+
+    if (status === 'processing') {
+        alert('Upload in process...');
+        localStorage.removeItem('upload_status');
+        // Optionally you can implement polling to check status here
+    }
+    if (status === 'failed') {
+        alert('Upload failed. Please try again.');
+        localStorage.removeItem('upload_status');
+    }
+});
 </script>
 
 {% endblock %}
