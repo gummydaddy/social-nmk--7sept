@@ -79,5 +79,90 @@ class ChatConsumer(WebsocketConsumer):
             'message': decrypted_message,
             'sender': sender,
         }))
+'''
 
+class ChatConsumer(WebsocketConsumer):
+    def connect(self):
+        self.user = self.scope["user"]
+        self.other_username = self.scope["url_route"]["kwargs"]["username"]
 
+        if self.user.is_authenticated:
+            try:
+                self.other_user = User.objects.get(username=self.other_username)
+            except User.DoesNotExist:
+                self.close()
+                return
+
+            # Define a unique chat group name using both user IDs in order
+            sorted_ids = sorted([self.user.id, self.other_user.id])
+            self.room_group_name = f"chat_{sorted_ids[0]}_{sorted_ids[1]}"
+
+            async_to_sync(self.channel_layer.group_add)(
+                self.room_group_name,
+                self.channel_name
+            )
+            self.accept()
+        else:
+            self.close()
+
+    def disconnect(self, close_code):
+        if hasattr(self, 'room_group_name'):
+            async_to_sync(self.channel_layer.group_discard)(
+                self.room_group_name,
+                self.channel_name
+            )
+
+    def receive(self, text_data):
+        data = json.loads(text_data)
+        action = data.get('action')
+
+        if action == 'send_message':
+            self.handle_send_message(data)
+
+    def handle_send_message(self, data):
+        sender = self.user
+        recipient_username = data.get('recipient')
+        content = data.get('content')
+
+        try:
+            recipient = User.objects.get(username=recipient_username)
+        except User.DoesNotExist:
+            self.send(text_data=json.dumps({'error': 'Recipient does not exist.'}))
+            return
+
+        # Encrypt the message
+        encrypted_content = encrypt_message(sender, recipient, content)
+
+        # Save the message
+        message = Message.objects.create(sender=sender, recipient=recipient, content=encrypted_content)
+
+        # Send to both users in the chat
+        sorted_ids = sorted([sender.id, recipient.id])
+        room_group = f"chat_{sorted_ids[0]}_{sorted_ids[1]}"
+
+        async_to_sync(self.channel_layer.group_send)(
+            room_group,
+            {
+                'type': 'chat_message',
+                'message': encrypted_content,
+                'sender': sender.username,
+            }
+        )
+
+    def chat_message(self, event):
+        encrypted_message = event['message']
+        sender_username = event['sender']
+
+        try:
+            sender = User.objects.get(username=sender_username)
+            decrypted_message = decrypt_message(self.user, sender, encrypted_message)
+        except Exception as e:
+            self.send(text_data=json.dumps({'error': f"Decryption failed: {str(e)}"}))
+            return
+
+        self.send(text_data=json.dumps({
+            'message': decrypted_message,
+            'sender': sender_username,
+        }))
+
+'''

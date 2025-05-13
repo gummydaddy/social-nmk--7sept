@@ -1,7 +1,7 @@
 import os
 import json
 from django.shortcuts import render, get_object_or_404, redirect
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageFilter, ImageOps, ExifTags
 from django.core.files.base import ContentFile
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -161,7 +161,7 @@ def upload_media(request):
 
             else:
                 logger.warning(f"Unknown file type uploaded: {file_name}")
-                media.save()
+                 media.save()
 
             # Redirect to user profile after successful upload
             return redirect('user_profile:profile', request.user.id)
@@ -193,17 +193,54 @@ def upload_media(request):
                 logger.warning(f"User {request.user.username} has no category assigned in their profile")
 
             # Escape the description to prevent XSS attacks
-            hashtags = set(re.findall(r'#(\w+)', media.description))
-            tagged_usernames = set(re.findall(r'@(\w+)', media.description))
-            media.description = escape(media.description)
+            hashtags = set(re.findall(r'#(\w+)', media.description or ''))
+            tagged_usernames = set(re.findall(r'@(\w+)', media.description or ''))
+            media.description = escape(media.description or '')
 
             # Determine if it's an image or video based on extension
             file_name = media.file.name.lower()
-            if file_name.endswith(('.jpg', '.jpeg', '.png')):
+            if file_name.endswith(('.jpg', '.jpeg', '.png', 'webp')):
                 logger.info(f"Image file detected: {file_name}")
                 media.media_type = 'image'
+
+
+                # Open image and auto-rotate based on EXIF
+                file_obj = request.FILES['file']
+                try:
+                    image = Image.open(file_obj)
+                    # Get orientation tag
+                    exif = image._getexif()
+                    if exif:
+                        orientation_key = next(
+                            (k for k, v in ExifTags.TAGS.items() if v == 'Orientation'), None
+                        )
+                        if orientation_key and orientation_key in exif:
+                            orientation = exif[orientation_key]
+                            rotate_values = {3: 180, 6: 270, 8: 90}
+                            if orientation in rotate_values:
+                                image = image.rotate(rotate_values[orientation], expand=True)
+                                logger.info(f"Rotated image by {rotate_values[orientation]}°")
+                                # Save rotated image back to file object
+                                img_io = io.BytesIO()
+                                image.save(img_io, format=image.format)
+                                media.file.save(file_obj.name, ContentFile(img_io.getvalue()), save=False)
+                except Exception as e:
+                    logger.warning(f"Image EXIF rotation failed: {e}")
+
                 media.save()
                 form.save_m2m()
+
+                # Send to Celery for image processing
+                process_media_upload.delay(
+                    media.id,
+                    #media.file.name,
+                    os.path.basename(media.file.name),  # just the filename
+
+                    'image',
+                    request.POST.get('filter')  # Optional filter
+                )
+                #return JsonResponse({'status': 'success'})
+
 
                 # Notify tagged usernames in description
                 for username in tagged_usernames:
@@ -234,12 +271,14 @@ def upload_media(request):
                         )
 
                 # Send to Celery for image processing
-                process_media_upload.delay(
-                    media.id,
-                    media.file.name,
-                    'image',
-                    request.POST.get('filter')  # Optional filter
-                )
+                #process_media_upload.delay(
+                    #media.id,
+                    #media.file.name,
+                    #os.path.basename(media.file.name),  # just the filename
+
+                    #'image',
+                    #request.POST.get('filter')  # Optional filter
+                #)
                 return JsonResponse({'status': 'success'})
 
             elif file_name.endswith(('.mp4', '.mov', '.avi', '.mkv')):
@@ -271,6 +310,126 @@ def upload_media(request):
     else:
         form = MediaForm()
         return render(request, 'upload.html', {'form': form})
+
+'''
+@login_required
+def upload_media(request):
+    logger.info(f"User {request.user.username} is uploading media")
+
+    if request.method == 'POST':
+        form = MediaForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            logger.info("MediaForm is valid.")
+            media = form.save(commit=False)
+            media.user = request.user
+
+            # Assign user's profile category (if exists)
+            user_profile = getattr(request.user, 'profile', None)
+            if user_profile and user_profile.category:
+                media.category = user_profile.category
+                logger.info(f"Assigned category '{media.category}' from profile to media.")
+            else:
+                logger.warning(f"User {request.user.username} has no category in profile.")
+
+            # Extract hashtags and mentions before escaping
+            raw_description = media.description
+            hashtags = set(re.findall(r'#(\w+)', raw_description))
+            tagged_usernames = set(re.findall(r'@(\w+)', raw_description))
+
+            # Escape description to prevent XSS
+            media.description = escape(raw_description)
+
+            # Determine media type by file extension
+            file_name = media.file.name.lower()
+            filter_name = request.POST.get('filter')  # Optional filter
+
+            if file_name.endswith(('.jpg', '.jpeg', '.png')):
+                logger.info(f"Image file detected: {file_name}")
+                media.media_type = 'image'
+                media.save()
+                form.save_m2m()
+
+             # Offload processing to Celery (e.g., filter, compression, thumbnail)
+                process_media_upload.delay(
+                    media_id=media.id,
+                    file_name=media.file.name,
+                    media_type='image',
+                    filter_name=filter_name
+                )
+                # Notify @mentioned users
+                for username in tagged_usernames:
+                    try:
+                        tagged_user = AuthUser.objects.get(username=username)
+                        if tagged_user != request.user:
+                            Notification.objects.create(
+                                user=tagged_user,
+                                content=f'{request.user.username} mentioned you in a media description: '
+                                        f'<a href="{reverse("user_profile:media_detail_view", args=[media.id])}">View Media</a>',
+                                type='mention',
+                                related_user=request.user,
+                                related_media=media
+                            )
+                    except AuthUser.DoesNotExist:
+                        logger.warning(f"Tagged user @{username} not found in database.")
+
+                # Notify tagged users (via many-to-many tags field)
+                for tagged_user in media.tags.all():
+                    if tagged_user != request.user:
+                        Notification.objects.create(
+                            user=tagged_user,
+                            content=f'{request.user.username} tagged you in a media: '
+                                    f'<a href="{reverse("user_profile:media_detail_view", args=[media.id])}">View Media</a>',
+                            type='tag',
+                            related_user=request.user,
+                            related_media=media
+                        )
+
+                # Offload processing to Celery (e.g., filter, compression, thumbnail)
+                #process_media_upload.delay(
+                    #media_id=media.id,
+                    #file_name=media.file.name,
+                    #media_type='image',
+                    #filter_name=filter_name
+                #)
+
+                messages.success(request, "Image uploaded successfully!")
+                return redirect('user_profile:profile', request.user.id)
+
+            elif file_name.endswith(('.mp4', '.mov', '.avi', '.mkv')):
+                logger.info(f"Video file detected: {file_name}")
+                messages.error(request, "Video uploads are not supported at the moment.")
+                return redirect('user_profile:upload_media')
+
+            else:
+                logger.warning(f"Unrecognized file type uploaded: {file_name}")
+                media.save()
+                form.save_m2m()
+
+                # Optional: Notify tagged users for other media types
+                for tagged_user in media.tags.all():
+                    if tagged_user != request.user:
+                        Notification.objects.create(
+                            user=tagged_user,
+                            content=f'{request.user.username} tagged you in a media: '
+                                    f'<a href="{reverse("user_profile:media_detail_view", args=[media.id])}">View Media</a>',
+                            type='tag',
+                            related_user=request.user,
+                            related_media=media
+                        )
+
+                messages.info(request, "Media uploaded, but file type is not fully supported.")
+                return redirect('user_profile:profile', request.user.id)
+
+        else:
+            logger.warning("Invalid MediaForm submission.")
+            messages.error(request, "There was an error with your upload. Please check the form.")
+
+    else:
+        form = MediaForm()
+
+    return render(request, 'upload.html', {'form': form})
+'''
 
 
 @login_required
@@ -981,9 +1140,6 @@ def explore_detail(request, media_id):
         'is_blocked_by_media_owner': is_blocked_by_media_owner,
     })
 
-
-
-
 @login_required
 def following_media(request):
     user = request.user
@@ -1105,9 +1261,16 @@ def following_media(request):
                 'file_url': m.file.url,
                 'is_video': m.file.url.endswith('.mp4'),
                 'user_username': user_username if m.user == user else m.user.username,
-                'description': m.description
+                'description': m.description,
+                #'user_id': m.user.id,
+                'likes_count': m.likes.count(),
+                'is_liked': request.user in m.likes.all(),
+                'media_detail_url': reverse('user_profile:media_detail_view', kwargs={'media_id': m.id}),
+                'profile_url': reverse('user_profile:profile', kwargs={'user_id': m.user.id}), # Add this line
+                'like_url': reverse('user_profile:like_media', kwargs={'media_id': m.id}), # Add this line
+
             })
-        return JsonResponse({'media': media_list})
+        return JsonResponse({'media': media_list, 'has_next': page_obj.has_next()})
 
     return render(request, 'following_media.html', {'page_obj': page_obj})
 

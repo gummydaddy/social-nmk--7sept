@@ -1,5 +1,5 @@
 {% extends 'landing_page.html' %}
-{% load static%}
+{% load static %}
 {% load custom_filters_message %}
 {% load media_filters %}
 
@@ -7,10 +7,10 @@
 <style>
     .message-container {
         width: 100%;
-        height: 60vh;  /* Set the height to 60% of the viewport height */
+        height: 60vh;
         border: 1px solid #ccc;
         background-color: #fff0ff;
-        overflow-y: scroll;  /* Enable vertical scrolling */
+        overflow-y: scroll;
         padding: 10px;
         margin-bottom: 20px;
         color: #123;
@@ -27,62 +27,33 @@
         padding: 10px;
         border-radius: 5px;
         max-width: 60%;
-        font-size: 12px; /* Set the text size for all messages */
+        font-size: 12px;
     }
 
     .sender-message {
         background-color: #e1ffc7;
         text-align: right;
         margin-left: auto;
-        font-size: 12px; /* Optional: Customize text size specifically for sender messages */
     }
 
     .recipient-message {
         background-color: #f1f1f1;
         text-align: left;
         margin-right: auto;
-        font-size: 12px; /* Optional: Customize text size specifically for recipient messages */
     }
 
     form {
-        width: auto;
         margin-top: 5px;
-        background-color: #fffff;
         margin-bottom: 5px;
     }
 </style>
 
-{% comment %} <h2>{{ recipient.username }}</h2>
-<div class="message-container">
-    <ul id="message-list">
-        <!-- Move the messages loop to the bottom -->
-        {% for message in messages %}
-        <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
-            <!-- Display the media if it is included in the message -->
-            {% if message.content|is_video %}
-                <video controls class="img-fluid">
-                    <source src="{{ message.content }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            {% elif message.content|is_image %}
-                <img src="{{ message.content }}" alt="media" class="img-fluid">
-            {% else %}
-                {{ message.content }}<br>
-            {% endif %}
-            <em>{{ message.timestamp }}</em>
-        </li>
-        {% endfor %}
-    </ul>
-</div> {% endcomment %}
 <h2>{{ recipient.username }}</h2>
 
-<div class="message-container">
+<div id="chat-box" class="message-container" data-recipient="{{ recipient.username }}">
     <ul id="message-list">
-        <!-- Messages are rendered starting from the bottom -->
         {% for message in messages %}
         <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
-
-            <!-- Check if the message has an attached file -->
             {% if message.file_url %}
                 {% if message.file_url|is_video %}
                     <video controls class="img-fluid">
@@ -92,172 +63,80 @@
                 {% elif message.file_url|is_image %}
                     <img src="{{ message.file_url }}" alt="media" class="img-fluid">
                 {% else %}
-                    <a href="{{ message.file_url }}" download>Download attached file</a><br>
+                    <a href="{{ message.file_url }}" download>Download file</a><br>
                 {% endif %}
             {% else %}
-                <!-- Display message content if no file is attached -->
                 {{ message.content|make_clickable }}<br>
             {% endif %}
-
             <em>{{ message.timestamp }}</em>
         </li>
         {% endfor %}
     </ul>
 </div>
 
-
-
-{% comment %} <form id="send-message-form" method="post" style="position: relative;">
+<form id="chat-message-form" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" style="position: absolute; top: 0; right: 0;">
-        Send➣➤
-    </button>
-</form> {% endcomment %}
-<form id="send-message-form" method="post" enctype="multipart/form-data" style="position: relative;">
-    {% csrf_token %}
-    {{ form.as_p }}
-    {% comment %} <label for="file-upload" style="margin-right: 10px;">Attach a file:</label> {% endcomment %}
-    {% comment %} <input type="file" name="file" id="file-upload"> {% endcomment %}
-    <button type="submit" style="position: absolute; top: 0; right: 0;">
-        Send➣➤
-    </button>
+    <button type="submit">Send ➣➤</button>
 </form>
-<h5>file sharing comming soon </h5>
 
-
+<h5>File sharing coming soon</h5>
 {% endblock %}
 
 {% block Message_script %}
 <script>
-    // Prevent back button navigation
-    (function () {
-      window.history.pushState(null, "", window.location.href);
-      window.onpopstate = function () {
-        window.history.pushState(null, "", window.location.href);
-      };
-    })();
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatBox = document.getElementById('chat-box');
+        const recipientUsername = chatBox.dataset.recipient;
+        const messageList = document.getElementById('message-list');
+        const messageForm = document.getElementById('chat-message-form');
+        const contentInput = document.getElementById('id_content');
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const chatSocket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/chat/${recipientUsername}/`);
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Scroll to the bottom of the message-container on page load
-        var messageContainer = document.querySelector('.message-container');
-        messageContainer.scrollTop = messageContainer.scrollHeight;
+        // Scroll to bottom on load
+        chatBox.scrollTop = chatBox.scrollHeight;
 
-        // WebSocket connection
-        var ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        var chatSocket = new WebSocket(ws_scheme + '://' + window.location.host + '/ws/chat/'); 
-
-        chatSocket.onmessage = function(e) {
-            var data = JSON.parse(e.data);
-            var message = data['message'];
-            var sender = data['sender'];
-            var recipient = "{{ recipient.username }}";
-
-            // Display the message
-            var messageElement = document.createElement('li');
-            messageElement.className = sender === recipient ? 'recipient-message' : 'sender-message';
-            messageElement.innerHTML = `${message} <em>${new Date().toLocaleTimeString()}</em>`;
-            document.querySelector('.message-container ul').appendChild(messageElement);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
+        chatSocket.onopen = function () {
+            console.log("WebSocket connection opened.");
         };
 
-        // Handle message sending
-        document.getElementById('send-message-form').onsubmit = function(e) {
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+
+            if (data.message && data.sender) {
+                const currentUser = "{{ request.user.username }}";
+                const messageElement = document.createElement('li');
+                messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
+                messageElement.innerHTML = `${data.message} <em>${new Date().toLocaleTimeString()}</em>`;
+                messageList.appendChild(messageElement);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else if (data.error) {
+                alert(data.error);
+            }
+        };
+
+        chatSocket.onerror = function (e) {
+            console.error("WebSocket error:", e);
+        };
+
+        chatSocket.onclose = function () {
+            console.warn("WebSocket connection closed.");
+        };
+
+        messageForm.addEventListener('submit', function (e) {
             e.preventDefault();
-            var content = document.getElementById('id_content').value;
+            const message = contentInput.value.trim();
+            if (!message) return;
 
             chatSocket.send(JSON.stringify({
-                'action': 'send_message',
-                'recipient': "{{ recipient.username }}",
-                'content': content,
+                action: "send_message",
+                recipient: recipientUsername,
+                content: message
             }));
 
-            fetch("{% url 'only_message:user_messages_view' recipient.username %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ 'content': content })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    document.getElementById('id_content').value = '';
-                } else {
-                    console.error('Error sending message:', data);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        };
-
-        // Infinite scroll to load more messages when scrolling up
-        var page = 1;  // Pagination variable
-        messageContainer.addEventListener('scroll', function() {
-            if (messageContainer.scrollTop === 0) {
-                page += 1;
-                fetch("{% url 'only_message:user_messages_view' recipient.username %}?page=" + page, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    var messageList = document.getElementById('message-list');
-                    data.messages.forEach(function(msg) {
-                        var messageElement = document.createElement('li');
-                        messageElement.className = msg.sender === "{{ recipient.username }}" ? 'recipient-message' : 'sender-message';
-                        messageElement.innerHTML = `${msg.content} <em>${new Date(msg.timestamp).toLocaleTimeString()}</em>`;
-                        messageList.insertBefore(messageElement, messageList.firstChild);
-                    });
-                    messageContainer.scrollTop = 10;  // Slightly adjust scroll to prevent continuous loading
-                });
-            }
+            contentInput.value = '';
         });
-
-        // Periodically fetch new messages
-        document.addEventListener('DOMContentLoaded', function() {
-            function fetchMessages() {
-                fetch(`/messages/{{ recipient.username }}/`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json' // Explicitly request JSON
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    const messageList = document.getElementById('message-list');
-                    if (messageList) {
-                        // Clear only if there are new messages to avoid unnecessary flickering
-                        messageList.innerHTML = '';
-        
-                        data.messages.forEach(message => {
-                            const newMessage = document.createElement('li');
-                            newMessage.className = message.sender === '{{ recipient.username }}' ? 'recipient-message' : 'sender-message';
-                            newMessage.innerHTML = `<strong>${message.sender}</strong>: ${message.content} <br><em>${message.timestamp}</em>`;
-                            messageList.appendChild(newMessage);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error fetching messages:', error));
-            }
-        
-            // Poll for new messages every 5 seconds
-            setInterval(fetchMessages, 5000);
-        
-            // Initial fetch on page load
-            fetchMessages();
-        });
-        
     });
 </script>
 {% endblock %}
-
-
-
-
-{% comment %} <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}"> {% endcomment %}

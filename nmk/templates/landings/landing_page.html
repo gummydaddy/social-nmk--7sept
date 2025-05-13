@@ -627,6 +627,7 @@
                                             <h5 class="card-title">{{ upload.file_name }}</h5>
                                             <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
                                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
+                                            <!--<button type="button" class="btn btn-primary view-file-btn" data-file-id="{{ upload.id }}" data-bs-toggle="modal" data-bs-target="#dynamicModal"> View File</button>-->
                                         </div>
                                     </div>
                                 </div>
@@ -639,7 +640,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+
                     <!-- Modals for each file -->
                     {% for upload in user_uploads %}
                         <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
@@ -658,18 +659,19 @@
                                                 <button type="submit" class="btn btn-danger">Delete</button>
                                             </form>
                         
-                                        <!-- Display the uploaded file -->
-                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower %}
-                                            <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".quicktime" in upload.file.name|lower or ".mpeg" in upload.file.name|lower %}
-                                            <video controls class="img-fluid">
-                                                <source src="{% url 'only_card:view_video_file' upload.id %}" type="video/mp4" >
+                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower or ".gif" in upload.file.name|lower %}
+                                           <!-- <img src="{% url 'only_card:view_media' upload.id %}" alt="{{ upload.file_name }}" style="max-width:100%; height:auto;" />-->
+                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Image</a>
+                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Image</a>
+
+                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".avi" in upload.file.name|lower or ".webm" in upload.file.name|lower %}
+                                           {% comment %}<video width="100%" height="auto" controls>
+                                                <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
                                                 Your browser does not support the video tag.
-                                            </video>
-                                            <a href="{% url 'only_card:view_video_file' upload.id %}" class="btn btn-primary">Preview video </a>
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
-                                        
+                                            </video>{% endcomment %}
+                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Video</a>
+                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Video</a>
+
                                         {% elif upload.is_folder %}
                                             <a href="{% url 'only_card:view_folder' upload.id %}">
                                                 <i class="fa fa-folder"></i> {{ upload.file_name }}
@@ -731,7 +733,6 @@
                                             <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
                                             <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                             {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
-    
                                         {% endif %}
                                     </div>
                                 </div>
@@ -774,7 +775,9 @@
                     </div>
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:following_media'  %}">
-                            <i class="fas fa-user-circle"></i>
+                            <!--<i class="fas fa-user-circle"></i>-->
+                            <i class="fas fa-home"></i>
+
                         </a>
                     </div>
 
@@ -857,6 +860,42 @@
                 window.history.pushState(null, "", window.location.href);
               };
             </script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const buttons = document.querySelectorAll('.view-file-btn');
+  buttons.forEach(button => {
+    button.addEventListener('click', function () {
+      const fileId = this.getAttribute('data-file-id');
+      const modalContent = document.getElementById('dynamic-modal-content');
+
+      // Show loading spinner
+      modalContent.innerHTML = `
+        <div class="modal-body text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      `;
+
+      fetch(`/only_card/fetch_file_modal/${fileId}/`)
+        .then(response => response.text())
+        .then(html => {
+          modalContent.innerHTML = html;
+        })
+        .catch(error => {
+          modalContent.innerHTML = `
+            <div class="modal-body">
+              <p class="text-danger">Failed to load file details.</p>
+            </div>
+          `;
+        });
+    });
+  });
+});
+</script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
