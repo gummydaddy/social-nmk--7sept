@@ -1,0 +1,10 @@
+[2025-05-26 08:33:01,302: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-05-26 08:33:01,309: INFO/MainProcess] mingle: searching for neighbors
+[2025-05-26 08:33:02,320: INFO/MainProcess] mingle: all alone
+[2025-05-26 08:33:02,334: INFO/MainProcess] celery1@worker1@vps-10ca135a,worker2@vps-10ca135a ready.
+[2025-05-26 08:34:00,637: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[fac7f83f-1fec-463a-bbc7-a661441c32a2] received
+[2025-05-26 08:35:45,083: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-05-26 08:35:45,088: INFO/MainProcess] mingle: searching for neighbors
+[2025-05-26 08:35:46,102: INFO/MainProcess] mingle: all alone
+[2025-05-26 08:35:46,123: INFO/MainProcess] celery1@worker1@vps-10ca135a,worker2@vps-10ca135a ready.
+[2025-05-26 08:36:42,227: INFO/MainProcess] Task service_auth.user_profile.tasks.process_media_upload[bbe7fd36-6ac0-4c8d-adae-b9b01567705e] received

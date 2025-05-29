@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from .models import UserUpload
 from service_auth.only_card.utils import is_storage_full
 
+#@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70, acks_late=True, queue='media_upload')
 @shared_task
 def process_file_upload(upload_id):
     try:

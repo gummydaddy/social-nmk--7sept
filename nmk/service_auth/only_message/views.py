@@ -15,6 +15,10 @@ from datetime import timedelta
 from django.utils.timezone import now
 
 
+#from .utils import encrypt_message, sign_message, get_or_create_conversation_key, create_user_encryption_keys # Make sure these are correctly imported
+from django.contrib.auth import get_user_model
+
+
 
 
 logger = logging.getLogger(__name__)
@@ -59,6 +63,7 @@ def get_online_users(request):
         if LoggedInUser.objects.filter(user=user).exists():
             online_users.append(user.id)
     return JsonResponse({'online_users': online_users})
+
 
 @login_required
 def send_message_view(request):

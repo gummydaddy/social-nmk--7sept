@@ -1,0 +1,8 @@
+[2025-05-26 08:33:02,065: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-05-26 08:33:02,073: INFO/MainProcess] mingle: searching for neighbors
+[2025-05-26 08:33:03,085: INFO/MainProcess] mingle: all alone
+[2025-05-26 08:33:03,099: INFO/MainProcess] celery2@worker1@vps-10ca135a,worker2@vps-10ca135a ready.
+[2025-05-26 08:35:45,615: INFO/MainProcess] Connected to redis://:**@15.235.192.133:6379/0
+[2025-05-26 08:35:45,620: INFO/MainProcess] mingle: searching for neighbors
+[2025-05-26 08:35:46,632: INFO/MainProcess] mingle: all alone
+[2025-05-26 08:35:46,649: INFO/MainProcess] celery2@worker1@vps-10ca135a,worker2@vps-10ca135a ready.

@@ -6,6 +6,8 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from .models import Profile, Story, Media
 
+#from django.core.cache import cache
+
 logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=User)
@@ -30,3 +32,14 @@ def delete_media_with_story(sender, instance, **kwargs):
             instance.media.delete()
         except Exception as e:
             logger.error(f"Error deleting media for story {instance.id}: {e}")
+
+'''
+@receiver([post_save, post_delete], sender=Media)
+def invalidate_user_feed(sender, instance, **kwargs):
+    user_id = instance.user.id
+    pattern = f"user_feed_v1:{user_id}:page:*"
+    from django_redis import get_redis_connection
+    con = get_redis_connection("default")
+    for key in con.scan_iter(pattern):
+        con.delete(key)
+'''

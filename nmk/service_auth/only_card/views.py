@@ -524,7 +524,7 @@ def view_media(request, upload_id):
 
 # Set up logging
 logger = logging.getLogger(__name__)
-'''
+
 @login_required
 def view_file(request, upload_id):
     try:
@@ -653,9 +653,9 @@ def view_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-
-
 '''
+
+
 @login_required
 def view_pdf_file(request, upload_id):
     try:
@@ -802,8 +802,9 @@ def view_pdf_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_pdf_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-
 '''
+
+
 @login_required
 def view_docx_file(request, upload_id):
     try:
@@ -953,7 +954,7 @@ def view_docx_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_docx_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-
+'''
 
 @login_required
 def view_pptx_file(request, upload_id):
@@ -1197,7 +1198,7 @@ def handle_xls_file(decrypted_file_path, upload):
         logger.error(f"Error reading Excel file (.xls): {e}")
         return HttpResponseServerError("Error reading Excel file (.xls).")
     
-'''
+
 @login_required
 def view_text_file(request, upload_id):
     try:
@@ -1256,8 +1257,8 @@ def view_text_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_text_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-'''
 
+'''
 @login_required
 def view_text_file(request, upload_id):
     try:
@@ -1333,7 +1334,7 @@ def view_text_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_text_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-
+'''
 
 """
 @login_required

@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 #         story.delete()
 #     return f"Deleted {count} expired stories."
 
-"""
+
 @shared_task
 def delete_expired_stories():
     expired_stories = Story.objects.filter(created_at__lt=now() - timezone.timedelta(hours=24))
@@ -61,7 +61,7 @@ def delete_expired_stories():
             story.delete()
 
     return f"Deleted {count} expired stories and their associated media."
-"""
+
 
 """
 #best w3orking yet5may
@@ -129,7 +129,9 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
         #if os.path.exists(temp_file_path):
             #os.remove(temp_file_path)
 """
+#@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70, acks_late=True, queue='media_upload')
 @shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70, acks_late=True)
+
 def process_media_upload(self, media_id, file_name, media_type, filter_name=None):
     temp_file_path = None  # Initialize variable for cleanup in finally block
 

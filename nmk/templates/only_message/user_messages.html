@@ -1,7 +1,5 @@
 {% extends 'landing_page.html' %}
-{% load static %}
-{% load custom_filters_message %}
-{% load media_filters %}
+{% load static %} {% load custom_filters_message %} {% load media_filters %}
 
 {% block main_content %}
 <style>
@@ -15,13 +13,11 @@
         margin-bottom: 20px;
         color: #123;
     }
-
     .message-container ul {
         list-style: none;
         padding: 0;
         margin: 0;
     }
-
     .message-container ul li {
         margin-bottom: 10px;
         padding: 10px;
@@ -29,47 +25,33 @@
         max-width: 60%;
         font-size: 12px;
     }
-
     .sender-message {
         background-color: #e1ffc7;
         text-align: right;
-        margin-left: auto;
+        margin-left: auto; /* Push to the right */
     }
-
     .recipient-message {
         background-color: #f1f1f1;
         text-align: left;
-        margin-right: auto;
+        margin-right: auto; /* Push to the left */
     }
-
     form {
         margin-top: 5px;
         margin-bottom: 5px;
     }
 </style>
 
-<h2>{{ recipient.username }}</h2>
+<h2>Chat with {{ recipient.username }}</h2>
 
 <div id="chat-box" class="message-container" data-recipient="{{ recipient.username }}">
     <ul id="message-list">
         {% for message in messages %}
-        <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
-            {% if message.file_url %}
-                {% if message.file_url|is_video %}
-                    <video controls class="img-fluid">
-                        <source src="{{ message.file_url }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                {% elif message.file_url|is_image %}
-                    <img src="{{ message.file_url }}" alt="media" class="img-fluid">
-                {% else %}
-                    <a href="{{ message.file_url }}" download>Download file</a><br>
-                {% endif %}
-            {% else %}
+            <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
+                {# Assuming you handle decryption on the client side if content is encrypted #}
+                {# For simplicity, displaying raw content for now. Real world: decrypt here. #}
                 {{ message.content|make_clickable }}<br>
-            {% endif %}
-            <em>{{ message.timestamp }}</em>
-        </li>
+                <em>{{ message.timestamp|date:"P" }}</em> {# Format timestamp as desired #}
+            </li>
         {% endfor %}
     </ul>
 </div>
@@ -90,12 +72,14 @@
         const recipientUsername = chatBox.dataset.recipient;
         const messageList = document.getElementById('message-list');
         const messageForm = document.getElementById('chat-message-form');
-        const contentInput = document.getElementById('id_content');
-        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        const chatSocket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/chat/${recipientUsername}/`);
-
+        const contentInput = document.getElementById('id_content'); // Assuming your form field is named 'content'
+        
         // Scroll to bottom on load
         chatBox.scrollTop = chatBox.scrollHeight;
+
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        // Ensure the WebSocket URL matches your routing configuration (e.g., /ws/chat/username/)
+        const chatSocket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/chat/${recipientUsername}/`);
 
         chatSocket.onopen = function () {
             console.log("WebSocket connection opened.");
@@ -103,16 +87,20 @@
 
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
-
             if (data.message && data.sender) {
                 const currentUser = "{{ request.user.username }}";
                 const messageElement = document.createElement('li');
                 messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
-                messageElement.innerHTML = `${data.message} <em>${new Date().toLocaleTimeString()}</em>`;
+                
+                // You might need to adjust how message content is displayed
+                // if it's encrypted and needs client-side decryption.
+                // For now, assuming the consumer sends the displayable content.
+                messageElement.innerHTML = `${data.message} <em>${new Date(data.timestamp).toLocaleTimeString()}</em>`; // Use data.timestamp
                 messageList.appendChild(messageElement);
                 chatBox.scrollTop = chatBox.scrollHeight;
             } else if (data.error) {
                 alert(data.error);
+                console.error("WebSocket error:", data.error);
             }
         };
 
@@ -124,18 +112,23 @@
             console.warn("WebSocket connection closed.");
         };
 
+        // --- Important: Prevent default form submission and send via WebSocket ---
         messageForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const message = contentInput.value.trim();
-            if (!message) return;
+            e.preventDefault(); // Prevent the default form submission (which causes page reload)
 
+            const message = contentInput.value.trim();
+            if (!message) {
+                return; // Don't send empty messages
+            }
+
+            // Send message via WebSocket
             chatSocket.send(JSON.stringify({
                 action: "send_message",
-                recipient: recipientUsername,
+                recipient: recipientUsername, // Pass recipient username
                 content: message
             }));
 
-            contentInput.value = '';
+            contentInput.value = ''; // Clear the input field after sending
         });
     });
 </script>

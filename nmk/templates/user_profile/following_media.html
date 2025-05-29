@@ -5,6 +5,29 @@
 {% block main_content %}
 
 <style>
+    .media-wrapper {
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2px;  
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        color: #123;
+    }
+
+    .media-content img,
+    .media-content video {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
+        display: block;
+        margin: 0 auto;
+    }
+
     .description {
         color: #123;
     }
@@ -127,6 +150,7 @@
                             </a>
 
                             <span class="like-count">{{ media.likes.count }}</span> likes
+
                             <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
                             <p>{{ media.description|safe }}</p>
                         </div>
@@ -138,23 +162,6 @@
         {% endif %}
     </div>
 </div>
-<!--
-     <div class="pagination" >
-        <span class="step-links">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="pagination-left-arrow">&#8592;</a>
-            {% else %}
-                <div></div>
-            {% endif %}
-
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="pagination-right-arrow">&#8594;</a>
-            {% else %}
-                <div></div>
-            {% endif %}
-        </span>
-    </div>
--->
 
     <!-- Loading Message -->
     <div id="loading-spinner" style="display: none; text-align: center; margin-top: 10px; font-size: 14px;">
@@ -206,6 +213,8 @@
 {% endblock %}
 
 {% block following_media_script %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.1/purify.min.js"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const mediaContainer = document.getElementById('media-container');
@@ -375,6 +384,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     const isLiked = item.is_liked ? 'liked' : '';
                     const likeSymbol = item.is_liked ? '❤️' : '♡';
 
+                    const cleanDescription = DOMPurify.sanitize(item.description || '');
+
                     let mediaContent = `
                         <a href="${profileUrl}">
                             ${item.user_username}
@@ -397,12 +408,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </a>
                                 <span class="like-count">${item.likes_count || 0}</span> likes
                                 <a href="${commentUrl}">Comment</a>
-                                <p>${item.description || ''}</p>
+                                <div class="description-paragraph-container"></div>
+
                             </div>
                         </div>
                     `;
 
                     mediaDiv.innerHTML = mediaContent;
+
+                    const descriptionDiv = mediaDiv.querySelector('.description-paragraph-container');
+                    const descriptionParagraph = document.createElement('p');
+                    descriptionParagraph.innerHTML = cleanDescription;
+                    descriptionDiv.appendChild(descriptionParagraph);
+
                     mediaContainer.appendChild(mediaDiv);
                 });
 
@@ -450,4 +468,60 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', checkScroll);
 });
 </script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Function to protect an image or video
+    function protectMediaElement(el) {
+        if (el.dataset.protected) return; // Avoid duplicate bindings
+
+        el.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+        });
+
+        let pressTimer;
+
+        el.addEventListener('touchstart', function (e) {
+            pressTimer = setTimeout(() => {
+                e.preventDefault();
+            }, 600);
+        });
+
+        el.addEventListener('touchend', function () {
+            clearTimeout(pressTimer);
+        });
+
+        el.addEventListener('touchmove', function () {
+            clearTimeout(pressTimer);
+        });
+
+        el.dataset.protected = 'true'; // Mark as protected
+    }
+
+    // Protect initial media
+    document.querySelectorAll('img, video').forEach(protectMediaElement);
+
+    // Observe DOM changes for new images/videos
+    const observer = new MutationObserver((mutationsList) => {
+        mutationsList.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType !== 1) return; // Only process element nodes
+                if (node.matches('img, video')) {
+                    protectMediaElement(node);
+                }
+                // Also check inside containers
+                node.querySelectorAll?.('img, video').forEach(protectMediaElement);
+            });
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
+</script>
+
+
 {% endblock %}

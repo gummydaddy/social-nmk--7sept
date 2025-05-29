@@ -99,7 +99,7 @@
 </div>
 
 <div class="dropdown">
-    <span>⋮</span>
+    <span>☰</span>
     <div class="dropdown-content">  
         {% if request.user == story.media.user %}
             <form method="POST" action="{% url 'user_profile:delete_media' story.media.id %}">
@@ -121,6 +121,7 @@
         {% endif %}
     </div>
 </div>
+<br>
 {% if request.user == story.media.user %}
     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:add_story' %}'">Add Story</button>
 {% endif %}

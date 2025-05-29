@@ -1,6 +1,19 @@
 {% load media_filters %}
 {% load static %}
 
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("{% static 'service-worker.js' %}")  // This becomes "/static/service-worker.js"
+      .then((reg) => {
+        console.log("Service Worker registered:", reg.scope);
+      })
+      .catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
+  }
+</script>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,9 +21,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socyfie</title>
 
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Socyfie">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <!--apple-->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-title" content="Socyfie">
+    <meta name="mobile-web-app-status-bar-style" content="default">
 
     <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
 
@@ -763,6 +777,12 @@
                 <div class="bottom-strip d-flex justify-content-around align-items-center">
 
                     <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
                         <a href="{% url 'only_card:landing_page' %}">
                             <i class="fas fa-shield-alt"></i>
                         </a>
@@ -773,14 +793,6 @@
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:following_media'  %}">
-                            <!--<i class="fas fa-user-circle"></i>-->
-                            <i class="fas fa-home"></i>
-
-                        </a>
-                    </div>
-
                 </div>
             </footer>
 
@@ -861,6 +873,36 @@
               };
             </script>
 
+<!--for dissabling right click and long press-->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('img').forEach(function (img) {
+      // Disable right-click context menu
+      img.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      // Prevent long-press menu on mobile (without blocking scrolling)
+      let pressTimer;
+
+      img.addEventListener('touchstart', function (e) {
+        // Start a timer on touchstart
+        pressTimer = setTimeout(() => {
+          e.preventDefault(); // Only prevent default if held long enough
+        }, 600); // Adjust delay as needed (600ms is common)
+      });
+
+      img.addEventListener('touchend', function () {
+        clearTimeout(pressTimer);
+      });
+
+      img.addEventListener('touchmove', function () {
+        clearTimeout(pressTimer); // Cancel if user scrolls
+      });
+    });
+  });
+</script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -920,6 +962,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block edit_profile_script%}
 {% endblock %}
+
 
 {% block explore_detail_script %}
 {% endblock %}

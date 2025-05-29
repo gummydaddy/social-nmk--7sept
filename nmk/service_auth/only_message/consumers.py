@@ -79,8 +79,8 @@ class ChatConsumer(WebsocketConsumer):
             'message': decrypted_message,
             'sender': sender,
         }))
-'''
 
+"""
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
         self.user = self.scope["user"]
@@ -165,4 +165,4 @@ class ChatConsumer(WebsocketConsumer):
             'sender': sender_username,
         }))
 
-'''
+"""

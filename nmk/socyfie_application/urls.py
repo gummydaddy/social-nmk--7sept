@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from django.views.generic import TemplateView
 
 
 
@@ -40,7 +41,10 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
 
     # path('following/', auth_views.following_list, name='following_list'),
-
+    #path("service-worker.js", TemplateView.as_view(
+        #template_name="service-worker.js",
+        #content_type="application/javascript"
+    #)),
 
 
 

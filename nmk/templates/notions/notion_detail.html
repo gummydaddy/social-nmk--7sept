@@ -123,7 +123,7 @@
 <div class="related-notions-wrapper">
     {% for related_notion in related_notions %}
     <div class="related-notion-item">
-        <p>{{ related_notion.content }}</p>
+        <p>{{ related_notion.content |safe }}</p>
         <p>{{ related_notion.created_at }}</p>
         <a href="{% url 'notion:notion_detail' related_notion.id %}">View</a>
     </div>

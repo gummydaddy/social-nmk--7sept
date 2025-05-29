@@ -116,7 +116,7 @@ def post_notion(request):
 
         # Create the notion
         try:
-            deletion_date = timezone.now() + timedelta(days=2)
+            deletion_date = timezone.now() + timedelta(days=7)
             notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
             logging.info(f"Notion created with ID: {notion.id}")
         except Exception as e:

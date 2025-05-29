@@ -5,7 +5,10 @@
 <ul>
     {% for buddy in buddies %}
         <li>
-            {{ buddy.buddy.username }}
+            <a href="{% url 'user_profile:profile' user_id=buddy.buddy.id %}">
+                {{ buddy.buddy.username }}
+            </a>
+            <!--{{ buddy.buddy.username }}-->
             <form method="post" action="{% url 'user_profile:remove_from_buddy_list' buddy.buddy.id %}" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit">Remove from Buddy List</button>
