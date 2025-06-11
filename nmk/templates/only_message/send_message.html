@@ -3,7 +3,7 @@
 <style>
   color: #123;
 </style>
-
+<!--
 {% block main_content %}
   <h2>Send Message</h2>
   <form id="send-message-form" method="post">
@@ -13,7 +13,6 @@
   </form>
   <h2>Messages</h2>
   <ul id="messages">
-    <!-- Incoming messages will be appended here by JavaScript -->
   </ul>
 {% endblock %}
 
@@ -53,4 +52,53 @@
       document.getElementById('id_content').value = '';
     };
   </script>
+-->
+{% block main_content %}
+  <h2>Send message</h2>
+  <form id="send-message-ajax-form">
+    {% csrf_token %}
+    <input type="text" name="recipient" value="{{ form.recipient.value|default_if_none:'' }}" placeholder="Recipient Username">
+    <textarea name="content" placeholder="Type your message..."></textarea>
+    <input type="file" name="file"> {# If you want to send files via AJAX too #}
+    <button type="submit">Send</button>
+  </form>
+  <div id="messages-display">
+      </div>
+{% endblock %}
+
+{% block script %}
+<script>
+    document.getElementById('send-message-ajax-form').addEventListener('submit', function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        const form = event.target;
+        const formData = new FormData(form); // Gathers all form fields, including files
+
+        fetch(form.action, { // Use the form's action URL
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                // 'X-Requested-With': 'XMLHttpRequest' // Optional, but good practice for Django AJAX detection
+            },
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Dynamically add message to chat UI
+                const messageDisplay = document.getElementById('messages-display');
+                const newMessageDiv = document.createElement('div');
+                newMessageDiv.textContent = `You: ${data.message_content}`; // Assuming data contains message_content
+                messageDisplay.appendChild(newMessageDiv);
+                form.reset(); // Clear form
+            } else {
+                alert(data.error); // Display error message
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while sending the message.');
+        });
+    });
+</script>
 {% endblock %}

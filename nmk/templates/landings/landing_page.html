@@ -21,6 +21,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socyfie</title>
 
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
     <!--apple-->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-title" content="Socyfie">
@@ -37,7 +39,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
 
 
-    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <!--<link rel="manifest" href="{% static 'manifest.json' %}">-->
 
 
     <!--<link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">-->
@@ -605,7 +607,7 @@
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
             <header>
-              <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+              <nav class="navbar navbar-expand-lg navbar-dark bg-white">
                 <div class="container">
                   <a href="{% url 'only_message:message_list_view' %}">
                     <button class="messagebtn">💬</button>
@@ -619,6 +621,7 @@
             <main id="main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
+                <br>
         
                 <a href="{% url 'only_card:upload_document' %}" >
                     <button type="button">Upload Documents</button>

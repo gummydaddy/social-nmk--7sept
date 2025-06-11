@@ -1,8 +1,11 @@
 {% extends 'landing_page.html' %}
-{% load static %} {% load custom_filters_message %} {% load media_filters %}
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
 
 {% block main_content %}
 <style>
+    /* Keep your existing CSS styles */
     .message-container {
         width: 100%;
         height: 60vh;
@@ -39,6 +42,30 @@
         margin-top: 5px;
         margin-bottom: 5px;
     }
+    /* Styles for files */
+    .message-file {
+        margin-top: 5px;
+        border-top: 1px dashed #bbb; /* Separator for file content */
+        padding-top: 5px;
+    }
+    .message-file img {
+        max-width: 100%; /* Make images responsive within the message bubble */
+        height: auto;
+        display: block; /* Remove extra space below image */
+        margin-bottom: 5px;
+    }
+    .message-file a {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        text-decoration: none;
+        font-size: 11px;
+    }
+    .message-file a:hover {
+        background-color: #0056b3;
+    }
 </style>
 
 <h2>Chat with {{ recipient.username }}</h2>
@@ -46,11 +73,35 @@
 <div id="chat-box" class="message-container" data-recipient="{{ recipient.username }}">
     <ul id="message-list">
         {% for message in messages %}
-            <li class="{% if message.sender.username == recipient.username %}recipient-message{% else %}sender-message{% endif %}">
-                {# Assuming you handle decryption on the client side if content is encrypted #}
-                {# For simplicity, displaying raw content for now. Real world: decrypt here. #}
-                {{ message.content|make_clickable }}<br>
-                <em>{{ message.timestamp|date:"P" }}</em> {# Format timestamp as desired #}
+            <li class="{% if message.sender == request.user %}sender-message{% else %}recipient-message{% endif %}">
+                {# Display message content if it exists #}
+                {% if message.content %}
+                    <p>{{ message.content|make_clickable }}</p>
+                {% endif %}
+
+                {# Display file if it exists #}
+                {% if message.file_url %}
+                    <div class="message-file">
+                        {% if message.file_url|ends_with:".jpg" or message.file_url|ends_with:".jpeg" or message.file_url|ends_with:".png" or message.file_url|ends_with:".gif" or message.file_url|ends_with:".webp" %}
+                            <img src="{{ message.file_url }}" alt="Uploaded Image">
+                        {% elif message.file_url|ends_with:".mp4" or message.file_url|ends_with:".webm" or message.file_url|ends_with:".ogg" %}
+                            <video controls style="max-width: 100%; height: auto; display: block; margin-bottom: 5px;">
+                                <source src="{{ message.file_url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <p><a href="{{ message.file_url }}" target="_blank" download>Download File: {{ message.file_url|basename }}</a></p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# Display timestamp and signature validity #}
+                <em>{{ message.timestamp|date:"P" }}</em>
+                {% if message.signature_valid %}
+                    <span style="color: green;">(Signature Valid)</span>
+                {% else %}
+                    <span style="color: red;">(Signature INVALID!)</span>
+                {% endif %}
             </li>
         {% endfor %}
     </ul>
@@ -62,7 +113,6 @@
     <button type="submit">Send ➣➤</button>
 </form>
 
-<h5>File sharing coming soon</h5>
 {% endblock %}
 
 {% block Message_script %}
@@ -71,14 +121,15 @@
         const chatBox = document.getElementById('chat-box');
         const recipientUsername = chatBox.dataset.recipient;
         const messageList = document.getElementById('message-list');
-        const messageForm = document.getElementById('chat-message-form');
-        const contentInput = document.getElementById('id_content'); // Assuming your form field is named 'content'
-        
+        const messageForm = document.getElementById('chat-message-form'); // Make sure this ID matches your form
+        const contentInput = document.getElementById('id_content');
+        const fileInput = document.getElementById('id_file'); // Get the file input element
+
         // Scroll to bottom on load
         chatBox.scrollTop = chatBox.scrollHeight;
 
+        // WebSocket setup (for receiving messages and potentially sending text messages)
         const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
-        // Ensure the WebSocket URL matches your routing configuration (e.g., /ws/chat/username/)
         const chatSocket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/chat/${recipientUsername}/`);
 
         chatSocket.onopen = function () {
@@ -87,17 +138,8 @@
 
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
-            if (data.message && data.sender) {
-                const currentUser = "{{ request.user.username }}";
-                const messageElement = document.createElement('li');
-                messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
-                
-                // You might need to adjust how message content is displayed
-                // if it's encrypted and needs client-side decryption.
-                // For now, assuming the consumer sends the displayable content.
-                messageElement.innerHTML = `${data.message} <em>${new Date(data.timestamp).toLocaleTimeString()}</em>`; // Use data.timestamp
-                messageList.appendChild(messageElement);
-                chatBox.scrollTop = chatBox.scrollHeight;
+            if (data.message || data.file_url) {
+                addMessageToChat(data, "{{ request.user.username }}");
             } else if (data.error) {
                 alert(data.error);
                 console.error("WebSocket error:", data.error);
@@ -112,24 +154,111 @@
             console.warn("WebSocket connection closed.");
         };
 
-        // --- Important: Prevent default form submission and send via WebSocket ---
-        messageForm.addEventListener('submit', function (e) {
-            e.preventDefault(); // Prevent the default form submission (which causes page reload)
+        // Helper function to add a message (text or file) to the chat UI
+        function addMessageToChat(data, currentUser) {
+            const messageElement = document.createElement('li');
+            messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
 
-            const message = contentInput.value.trim();
-            if (!message) {
-                return; // Don't send empty messages
+            let messageHtml = '';
+            if (data.message) {
+                messageHtml += `<p>${data.message}</p>`;
             }
 
-            // Send message via WebSocket
-            chatSocket.send(JSON.stringify({
-                action: "send_message",
-                recipient: recipientUsername, // Pass recipient username
-                content: message
-            }));
+            if (data.file_url) {
+                messageHtml += `<div class="message-file">`;
+                const fileExtension = data.file_url.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                    messageHtml += `<img src="${data.file_url}" alt="Uploaded Image">`;
+                } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                    messageHtml += `<video controls style="max-width: 100%; height: auto; display: block; margin-bottom: 5px;">
+                                        <source src="${data.file_url}" type="video/${fileExtension}">
+                                        Your browser does not support the video tag.
+                                    </video>`;
+                } else {
+                    const fileName = data.file_url.split('/').pop().split('?')[0];
+                    messageHtml += `<p><a href="${data.file_url}" target="_blank" download>${fileName}</a></p>`;
+                }
+                messageHtml += `</div>`;
+            }
 
-            contentInput.value = ''; // Clear the input field after sending
+            messageHtml += `<em>${new Date(data.timestamp).toLocaleTimeString()}</em>`;
+            messageElement.innerHTML = messageHtml;
+            messageList.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- Handle form submission via AJAX (no page reload) ---
+        messageForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // <--- THIS IS THE CRUCIAL LINE! Make sure it's hit.
+
+            const message = contentInput.value.trim();
+            const file = fileInput.files[0];
+
+            if (!message && !file) {
+                // If both are empty, prevent submission and do nothing
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            formData.append('recipient', recipientUsername);
+            if (message) {
+                formData.append('content', message);
+            }
+            if (file) {
+                formData.append('file', file);
+            }
+
+            // The URL for the POST request must match the URL pattern for user_messages_view
+            // and should be the current URL or the one you explicitly define.
+            // Using window.location.href or the current URL (if it's the chat page) is good.
+            // Or explicitly use the Django URL tag as shown previously.
+            fetch("{% url 'only_message:user_messages_view' username=recipient.username %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest' // Helps Django identify AJAX requests
+                }
+            })
+            .then(response => {
+                // Check if the response is JSON. If not, something went wrong (e.g., HTML error page).
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    // If it's not JSON, it might be an HTML error page.
+                    // Read it as text and log it for debugging.
+                    return response.text().then(text => {
+                        console.error("Server returned non-JSON response:", text);
+                        throw new Error("Server did not return JSON. See console for details.");
+                    });
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Message sent via AJAX. Waiting for WebSocket confirmation.');
+                    messageForm.reset(); // Clear form fields
+                    fileInput.value = ''; // Clear file input explicitly
+                } else {
+                    alert('Error sending message: ' + (data.error || 'Unknown error.'));
+                    if (data.errors) {
+                        console.error("Form errors:", data.errors);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Network error or server issue. Could not send message.');
+            });
         });
+
+        // Prevent back button (if still desired)
+        (function () {
+            window.history.pushState(null, "", window.location.href);
+            window.onpopstate = function () {
+                window.history.pushState(null, "", window.location.href);
+            };
+        })();
     });
 </script>
 {% endblock %}

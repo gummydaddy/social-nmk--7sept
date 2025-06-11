@@ -140,7 +140,7 @@ class Media(models.Model):
 
 class Audio(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='audio')
-    file = models.FileField(upload_to='media/', storage=CompressedMediaStorage())
+    file = models.FileField(upload_to='media/audio', storage=CompressedMediaStorage())
     description = models.TextField(blank=True, null=True)
     category = models.CharField(max_length=50, blank=True, null=True, help_text="Category of the audio.")
     is_paid = models.BooleanField(default=False)

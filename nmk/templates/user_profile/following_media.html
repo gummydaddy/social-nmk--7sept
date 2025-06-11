@@ -93,7 +93,7 @@
 <header>
     {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
 
-        <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-white">
             <div class="container">
                 <a href="{% url 'only_message:message_list_view' %}" class="button-link">
                     <button class="messagebtn"> 💬 </button>
@@ -110,7 +110,7 @@
 
     <!-- Profile Picture Section -->
 </header>
-
+<br>
 <div class="uploads-section">
     <div class="row row-cols-2 g-4">
        {% comment %} <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:profile' user_id=request.user.id %}'">Profile</button> {% endcomment %}
@@ -118,7 +118,7 @@
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
     </div>
 </div>
-
+<!--
 <div class="media-wrapper">
     <div class="row row-cols-1 g-4" id="media-container">
         {% if page_obj %}
@@ -130,11 +130,11 @@
                     <div class="media-content">
                         {% if media.file.url|is_video %}
                             <video controls class="img-fluid autoplay-video" unmute>
-                                <source src="{{ media.file.url }}" type="video/mp4">
+                                <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
                                 Your browser does not support the video tag.
                             </video>
                         {% else %}
-                            <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+                            <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
                         {% endif %}
                         <div class="description">
                             <a href="{% url 'user_profile:like_media' media.id %}"
@@ -162,6 +162,56 @@
         {% endif %}
     </div>
 </div>
+-->
+
+<div class="media-wrapper">
+    <div class="row row-cols-1 g-4" id="media-container">
+        {% if page_obj %}
+            {% for media in page_obj %}
+                <div class="col media-item" data-id="{{ media.id }}"> {# Removed data-url here as the <a> tag will handle it #}
+                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
+                        {{ media.user.username }}
+                    </a>
+                    {# Wrap the media-content div with an anchor tag #}
+                    <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content-link">
+                        <div class="media-content">
+                            {% if media.file.url|is_video %}
+                                <video controls class="img-fluid autoplay-video" unmute>
+                                    <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% else %}
+                                <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
+                            {% endif %}
+                            <div class="description">
+                                <a href="{% url 'user_profile:like_media' media.id %}"
+                                   class="like-link {% if request.user in media.likes.all %}liked{% endif %}"
+                                   data-url="{% url 'user_profile:like_media' media.id %}"
+                                   data-media-id="{{ media.id }}"
+                                   data-csrf-token="{{ csrf_token }}"
+                                   onclick="event.stopPropagation();"> {# Crucial: Stop propagation for like button #}
+                                    {% if request.user in media.likes.all %}
+                                        ❤️
+                                    {% else %}
+                                        ♡
+                                    {% endif %}
+                                </a>
+
+                                <span class="like-count">{{ media.likes.count }}</span> likes
+
+                                <a href="{% url 'user_profile:media_detail_view' media.id %}" onclick="event.stopPropagation();">Comment</a> {# Crucial: Stop propagation for comment link #}
+                                <p>{{ media.description|safe }}</p>
+                            </div>
+                        </div>
+                    </a> {# Close the anchor tag #}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No media available from followed users. Showing recommended content based on your preferences, if you are new click on the green globe at the top.</p>
+        {% endif %}
+    </div>
+</div>
+
 
     <!-- Loading Message -->
     <div id="loading-spinner" style="display: none; text-align: center; margin-top: 10px; font-size: 14px;">
@@ -208,7 +258,6 @@
             </footer>
 
             {% endblock %}
-
 
 {% endblock %}
 
@@ -381,6 +430,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const likeUrl = item.like_url; // Use like_url from JSON
                     const commentUrl = item.media_detail_url; // Use media_detail_url for comment link
 
+                    // Assuming item.media_detail_url from your JSON corresponds to 'user_profile:explore_detail'
+                    const exploreDetailUrl = item.explore_detail_url; // Assign to a clearer variable name
+
                     const isLiked = item.is_liked ? 'liked' : '';
                     const likeSymbol = item.is_liked ? '❤️' : '♡';
 
@@ -390,6 +442,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         <a href="${profileUrl}">
                             ${item.user_username}
                         </a>
+
+                        <a href="${exploreDetailUrl}" class="media-content-link"> {# THIS IS THE KEY CHANGE #}
+
                         <div class="media-content">
                             ${item.is_video ?
                                 `<video controls class="img-fluid autoplay-video" unmute>
@@ -412,6 +467,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                             </div>
                         </div>
+                        </a> {# Closing tag for the new media-content-link #}
+
                     `;
 
                     mediaDiv.innerHTML = mediaContent;
@@ -522,6 +579,4 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-
-
 {% endblock %}

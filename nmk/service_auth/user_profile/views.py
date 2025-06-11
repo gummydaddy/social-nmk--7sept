@@ -173,6 +173,7 @@ def upload_media(request):
     return render(request, 'upload.html', {'form': form})
 '''
 
+#@csrf_exempt
 @login_required
 def upload_media(request):
     logger.info(f"User {request.user.username} is uploading media")
@@ -239,8 +240,6 @@ def upload_media(request):
                     'image',
                     request.POST.get('filter')  # Optional filter
                 )
-                #return JsonResponse({'status': 'success'})
-
 
                 # Notify tagged usernames in description
                 for username in tagged_usernames:
@@ -449,6 +448,8 @@ def profile(request, user_id):
 
     # Check if the user has an active story
     active_story = Story.objects.filter(user=profile_user, created_at__gt=timezone.now() - timezone.timedelta(hours=24)).first()
+    #active_story = Story.objects.filter(user=profile_user, created_at__gt=timezone.now() - timezone.timedelta(hours=24))
+
 
     # Fetch media (thumbnails only) and exclude active story media
     media_qs = Media.objects.filter(user=profile_user).order_by('-created_at')
@@ -1199,6 +1200,7 @@ def following_media(request):
                 'likes_count': m.likes.count(),
                 'is_liked': request.user in m.likes.all(),
                 'media_detail_url': reverse('user_profile:media_detail_view', kwargs={'media_id': m.id}),
+                'explore_detail_url': reverse('user_profile:explore_detail', kwargs={'media_id':m.id}),
                 'profile_url': reverse('user_profile:profile', kwargs={'user_id': m.user.id}),
                 'like_url': reverse('user_profile:like_media', kwargs={'media_id': m.id}),
             })

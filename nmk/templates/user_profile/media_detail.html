@@ -107,11 +107,11 @@
     <div class="media-detail">
         {% if media.file.url|is_video %}
             <video controls class="img-fluid autoplay-video" unmute>
-                <source src="{{ media.file.url }}" type="video/mp4">
+                <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
                 Your browser does not support the video tag.
             </video>
         {% else %}
-            <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+            <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
         {% endif %}
         <div class="description">
             <p>{{ description|safe }}</p>
@@ -257,20 +257,19 @@
                         {% if upload.thumbnail %}
                             <img src="{{ upload.thumbnail.url }}" alt="video thumbnail" 
                                  class="img-fluid video-thumbnail" 
-                                 data-video="{{ upload.file.url }}">
+                                 data-video="{{ upload.file.url }}" loading="lazy">
                         {% else %}
                             <img src="{{ upload.file.url }}" alt="video fallback" 
-                                 class="img-fluid video-thumbnail">
+                                 class="img-fluid video-thumbnail" loading="lazy">
                         {% endif %}
                     {% else %}
                         {% if upload.thumbnail %}
-                            <img src="{{ upload.thumbnail.url }}" alt="image thumbnail" class="img-fluid">
+                            <img src="{{ upload.thumbnail.url }}" alt="image thumbnail" class="img-fluid" loading="lazy">
                         {% else %}
-                            <img src="{{ upload.file.url }}" alt="image fallback" class="img-fluid">
+                            <img src="{{ upload.file.url }}" alt="image fallback" class="img-fluid" loading="lazy">
                         {% endif %}
                     {% endif %}
                 </a>
-
                 <!-- View Count -->
                 <div class="view-count">
                     <p>Views: {{ upload.view_count }}</p>

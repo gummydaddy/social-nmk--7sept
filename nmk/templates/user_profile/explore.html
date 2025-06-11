@@ -40,9 +40,9 @@
         <div class="col media-item">
             <a href="{% url 'user_profile:explore_detail' media.id %}">
                 {% if media.thumbnail %}
-                    <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid">
+                    <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid" loading="lazy">
                 {% else %}
-                    <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+                    <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
                 {% endif %}
             </a>
         </div>

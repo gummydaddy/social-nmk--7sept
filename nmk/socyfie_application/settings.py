@@ -124,7 +124,7 @@ SOCIALACCOUNT_PROVIDERS = {
 # new29
 ASGI_APPLICATION = 'socyfie_application.asgi.application'  
 
-
+"""
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'asgi_redis.RedisChannelLayer',
@@ -134,6 +134,32 @@ CHANNEL_LAYERS = {
         'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
     }
 }
+
+
+"""
+CHANNEL_LAYERS = {
+    "default": {
+        # 'asgi_redis.RedisChannelLayer' is also an older backend.
+        # The modern and recommended backend is 'channels_redis.core.RedisChannelLayer'.
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        #'BACKEND': 'asgi_redis.RedisChannelLayer',
+        "CONFIG": {
+            # Your Redis host string is correct, including auth.
+            "hosts": ["redis://:090399Akash%24@15.235.192.133:6379/0"],
+            # If you were previously using a list of (host, port) tuples,
+            # you can also do:
+            # "hosts": [
+            #     {
+            #         "address": "redis://15.235.192.133:6379/0",
+            #         "password": "090399Akash$",
+            #     }
+            # ]
+            # But the single URL string is generally preferred if it works for your setup.
+        },
+        # Remove the 'ROUTING' key entirely. It's no longer needed here.
+    },
+}
+
 
 
 CACHES = {
