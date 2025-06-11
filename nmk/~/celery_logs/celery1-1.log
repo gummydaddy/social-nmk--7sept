@@ -1,0 +1,8 @@
+[2025-05-26 08:34:00,676: INFO/ForkPoolWorker-1] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-05-26 08:34:00,729: INFO/ForkPoolWorker-1] Saving file: media/5DB9FD65-31A0-4D96-8AF4-1A639B5DB760_yBnzAv4.jpeg with extension: .jpeg
+[2025-05-26 08:34:00,735: INFO/ForkPoolWorker-1] Image 5DB9FD65-31A0-4D96-8AF4-1A639B5DB760.jpeg processed and uploaded successfully.
+[2025-05-26 08:34:00,740: INFO/ForkPoolWorker-1] Task service_auth.user_profile.tasks.process_media_upload[fac7f83f-1fec-463a-bbc7-a661441c32a2] succeeded in 0.09999749576672912s: None
+[2025-05-26 08:36:42,261: INFO/ForkPoolWorker-1] CompressedMediaStorage initialized with image_quality=85, audio_bitrate=128k
+[2025-05-26 08:36:42,310: INFO/ForkPoolWorker-1] Saving file: media/5DB9FD65-31A0-4D96-8AF4-1A639B5DB760_jJCccMv_QGNweZG.jpeg with extension: .jpeg
+[2025-05-26 08:36:42,315: INFO/ForkPoolWorker-1] Image 5DB9FD65-31A0-4D96-8AF4-1A639B5DB760_jJCccMv.jpeg processed and uploaded successfully.
+[2025-05-26 08:36:42,319: INFO/ForkPoolWorker-1] Task service_auth.user_profile.tasks.process_media_upload[bbe7fd36-6ac0-4c8d-adae-b9b01567705e] succeeded in 0.08996160374954343s: None

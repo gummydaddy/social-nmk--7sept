@@ -21,6 +21,7 @@ from django.apps import apps  # Lazy import
 from .storage import CompressedMediaStorage
 import numpy as np
 from django.conf import settings
+from celery.exceptions import SoftTimeLimitExceeded
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ logger = logging.getLogger(__name__)
 #         story.delete()
 #     return f"Deleted {count} expired stories."
 
-"""
+
 @shared_task
 def delete_expired_stories():
     expired_stories = Story.objects.filter(created_at__lt=now() - timezone.timedelta(hours=24))
@@ -60,7 +61,7 @@ def delete_expired_stories():
             story.delete()
 
     return f"Deleted {count} expired stories and their associated media."
-"""
+
 
 """
 #best w3orking yet5may
@@ -128,13 +129,19 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
         #if os.path.exists(temp_file_path):
             #os.remove(temp_file_path)
 """
+#@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70, acks_late=True, queue='media_upload')
+@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70, acks_late=True)
 
-@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70)
 def process_media_upload(self, media_id, file_name, media_type, filter_name=None):
     temp_file_path = None  # Initialize variable for cleanup in finally block
 
     try:
         media = Media.objects.get(id=media_id)
+
+        if media.is_processed:
+            logger.info(f"Media {media_id} already processed. Skipping.")
+            return
+
         storage = CompressedMediaStorage()
 
         # Save media to a temporary file
@@ -176,6 +183,9 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
             with open(temp_file_path, 'rb') as original_file:
                 media.file.save(file_name, ContentFile(original_file.read()), save=True)
 
+        media.is_processed = True
+        media.save(update_fields=['is_processed'])
+
         logger.info(f"{media_type.capitalize()} {file_name} processed and uploaded successfully.")
 
     except SoftTimeLimitExceeded:
@@ -194,6 +204,86 @@ def process_media_upload(self, media_id, file_name, media_type, filter_name=None
                 os.remove(temp_file_path)
             except Exception as e:
                 logger.error(f"Failed to delete temporary file {temp_file_path}: {e}")
+
+"""
+
+@shared_task(bind=True, max_retries=3, soft_time_limit=60, time_limit=70)
+def process_media_upload(self, media_id, file_name, media_type, filter_name=None):
+    temp_file_path = None
+
+    try:
+        media = Media.objects.get(id=media_id)
+        if media.is_processed:
+            logger.info(f"Media {media_id} already processed. Skipping.")
+            return
+
+        storage = CompressedMediaStorage()
+
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            for chunk in media.file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+
+        if media_type == 'image':
+            image = Image.open(temp_file_path)
+
+            # Optional filter
+            if filter_name:
+                filter_map = {
+                    'clarendon': ImageFilter.EMBOSS,
+                    'sepia': 'sepia',
+                    'grayscale': 'grayscale',
+                    'invert': ImageOps.invert,
+                }
+                if filter_name == 'sepia':
+                    image = ImageOps.colorize(image.convert("L"), "#704214", "#C0C090")
+                elif filter_name == 'grayscale':
+                    image = ImageOps.grayscale(image)
+                else:
+                    image = image.filter(filter_map.get(filter_name, ImageFilter.BLUR))
+
+            # Compress and re-save image
+            byte_io = io.BytesIO()
+            image = storage.resize_image(image)
+            if image.mode == 'RGBA':
+                image = image.convert('RGB')
+            image.save(byte_io, format='JPEG', quality=storage.image_quality)
+            media.file.save(file_name, ContentFile(byte_io.getvalue()), save=True)
+
+            # --- Generate thumbnail ---
+            thumb_io = io.BytesIO()
+            thumbnail = image.copy()
+            thumbnail.thumbnail((250, 150))
+            thumbnail.save(thumb_io, format='JPEG', quality=85)
+            thumb_name = f"thumb_{os.path.basename(file_name)}"
+            media.thumbnail.save(thumb_name, ContentFile(thumb_io.getvalue()), save=False)
+
+        elif media_type == 'video':
+            with open(temp_file_path, 'rb') as original_file:
+                media.file.save(file_name, ContentFile(original_file.read()), save=True)
+            # Add future: extract video thumbnail here
+
+        media.is_processed = True
+        media.save(update_fields=['file', 'thumbnail', 'is_processed'])
+
+        logger.info(f"{media_type.capitalize()} {file_name} processed and uploaded successfully.")
+
+    except SoftTimeLimitExceeded:
+        logger.error(f"Task exceeded soft time limit for media: {file_name}")
+        return
+
+    except Exception as e:
+        logger.error(f"Failed to process {media_type} {file_name}: {e}")
+        self.retry(exc=e)
+
+    finally:
+        if temp_file_path and os.path.exists(temp_file_path):
+            try:
+                os.remove(temp_file_path)
+            except Exception as e:
+                logger.error(f"Failed to delete temp file {temp_file_path}: {e}")
+"""
+
 
 
 '''

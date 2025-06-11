@@ -34,39 +34,15 @@
 
 
 <br>
-<!--
-
-<div class="row row-cols-3 g-4" id="media-container">
-    {% for media in page_obj %}
-        <div class="col media-item">
-            <a href="{% url 'user_profile:explore_detail' media.id %}">
-                {% if media.file.url|is_video %}
-                    <video controls class="img-fluid">
-                        <source src="{{ media.file.url }}" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
-                {% else %}
-                    <img src="{{ media.file.url }}" alt="media" class="img-fluid">
-                {% endif %}
-            </a>
-            {% comment %} <p>
-                <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-                    {{ media.user.username }}
-                </a>
-            </p> {% endcomment %}
-        </div>
-    {% endfor %}
-</div>
--->
 
 <div class="row row-cols-3 g-4" id="media-container">
     {% for media in page_obj %}
         <div class="col media-item">
             <a href="{% url 'user_profile:explore_detail' media.id %}">
                 {% if media.thumbnail %}
-                    <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid">
+                    <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid" loading="lazy">
                 {% else %}
-                    <img src="{{ media.file.url }}" alt="media" class="img-fluid">
+                    <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
                 {% endif %}
             </a>
         </div>
@@ -120,6 +96,7 @@
 {% endblock %}
 
 {% block script %}
+<!--
 <script>
     const mediaContainer = document.getElementById('media-container');
     const loadingSpinner = document.getElementById('loading-spinner');
@@ -206,12 +183,113 @@
     }
 
     window.addEventListener('scroll', handleScroll);
+</script>-->
+<script>
+    const mediaContainer = document.getElementById('media-container');
+    const loadingSpinner = document.getElementById('loading-spinner');
+    let page = {{ page_obj.number }};
+    let loading = false;
+    let hasNext = {{ page_obj.has_next|yesno:"true,false,false" }};
+    const scrollThreshold = 200; // Load when within 200px of the bottom
+
+    function log(message, ...args) {
+        console.log('[InfiniteScroll]', message, ...args);
+    }
+
+    function fetchMoreMedia() {
+        if (loading || !hasNext) {
+            log('fetchMoreMedia called, but returning early', { loading, hasNext });
+            return;
+        }
+        loading = true;
+        page += 1;
+
+        const url = new URL(window.location.href);
+        const q = url.searchParams.get('q') || '';
+
+        log('Fetching page:', page, 'with query:', q);
+        loadingSpinner.style.display = 'block';
+
+        fetch(`?page=${page}&q=${q}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                log('fetchMoreMedia response not OK:', response.status);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            loadingSpinner.style.display = 'none';
+            log('fetchMoreMedia success:', data);
+
+            if (data.media && data.media.length > 0) {
+                data.media.forEach(media => {
+                    const col = document.createElement('div');
+                    col.classList.add('col', 'media-item');
+
+                    const link = document.createElement('a');
+                    link.href = `/user_profile/explore_detail/${media.id}/`;
+
+                    if (media.is_video) {
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.classList.add('img-fluid');
+                        const source = document.createElement('source');
+                        source.src = media.file_url;
+                        source.type = 'video/mp4';
+                        video.appendChild(source);
+                        video.loading = 'lazy'; // Lazy load video (browser support varies)
+                        link.appendChild(video);
+                    } else {
+                        const img = document.createElement('img');
+                        img.src = media.file_url;
+                        img.alt = 'media';
+                        img.classList.add('img-fluid');
+                        img.loading = 'lazy'; // Lazy load image
+                        link.appendChild(img);
+                    }
+
+                    col.appendChild(link);
+                    mediaContainer.appendChild(col);
+                });
+                hasNext = data.has_next;
+                log('hasNext updated:', hasNext);
+            } else {
+                log('No more media received or data.media is empty');
+                hasNext = false;
+                window.removeEventListener('scroll', handleScroll);
+                const endMessage = document.createElement('div');
+                endMessage.classList.add('col-12', 'text-center', 'my-4');
+                endMessage.textContent = 'No more media to load.';
+                mediaContainer.appendChild(endMessage);
+            }
+        })
+        .catch(error => {
+            log('fetchMoreMedia error:', error);
+            loadingSpinner.style.display = 'none';
+            loading = false;
+        });
+    }
+
+    function handleScroll() {
+        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
+        const bottomReachedRaw = scrollTop + clientHeight;
+        const scrollBottomThreshold = scrollHeight - scrollThreshold;
+        const bottomReached = bottomReachedRaw >= scrollBottomThreshold;
+
+        log('Scroll Event:', { scrollTop, scrollHeight, clientHeight, bottomReachedRaw, scrollBottomThreshold, bottomReached, loading, hasNext });
+
+        if (bottomReached && !loading && hasNext) {
+            log('Bottom of page reached, calling fetchMoreMedia');
+            fetchMoreMedia();
+        }
+    }
+
+    window.addEventListener('scroll', handleScroll);
+    log('Scroll event listener attached');
 </script>
-            <script>
-              // Replace current history so back button won't return to login
-              window.history.pushState(null, "", window.location.href);
-              window.onpopstate = function() {
-                window.history.pushState(null, "", window.location.href);
-              };
-            </script>
 {% endblock %}

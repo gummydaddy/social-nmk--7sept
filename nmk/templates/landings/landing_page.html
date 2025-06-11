@@ -1,6 +1,19 @@
 {% load media_filters %}
 {% load static %}
 
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("{% static 'service-worker.js' %}")  // This becomes "/static/service-worker.js"
+      .then((reg) => {
+        console.log("Service Worker registered:", reg.scope);
+      })
+      .catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
+  }
+</script>
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,9 +21,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socyfie</title>
 
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Socyfie">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!--apple-->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-title" content="Socyfie">
+    <meta name="mobile-web-app-status-bar-style" content="default">
 
     <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
 
@@ -23,7 +39,7 @@
     <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
 
 
-    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <!--<link rel="manifest" href="{% static 'manifest.json' %}">-->
 
 
     <!--<link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">-->
@@ -591,7 +607,7 @@
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
             <header>
-              <nav class="navbar navbar-expand-lg navbar-dark bg-black">
+              <nav class="navbar navbar-expand-lg navbar-dark bg-white">
                 <div class="container">
                   <a href="{% url 'only_message:message_list_view' %}">
                     <button class="messagebtn">💬</button>
@@ -605,6 +621,7 @@
             <main id="main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
+                <br>
         
                 <a href="{% url 'only_card:upload_document' %}" >
                     <button type="button">Upload Documents</button>
@@ -627,6 +644,7 @@
                                             <h5 class="card-title">{{ upload.file_name }}</h5>
                                             <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
                                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
+                                            <!--<button type="button" class="btn btn-primary view-file-btn" data-file-id="{{ upload.id }}" data-bs-toggle="modal" data-bs-target="#dynamicModal"> View File</button>-->
                                         </div>
                                     </div>
                                 </div>
@@ -639,7 +657,7 @@
                             </div>
                         {% endif %}
                     </div>
-                    
+
                     <!-- Modals for each file -->
                     {% for upload in user_uploads %}
                         <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
@@ -658,18 +676,19 @@
                                                 <button type="submit" class="btn btn-danger">Delete</button>
                                             </form>
                         
-                                        <!-- Display the uploaded file -->
-                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower %}
-                                            <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".quicktime" in upload.file.name|lower or ".mpeg" in upload.file.name|lower %}
-                                            <video controls class="img-fluid">
-                                                <source src="{% url 'only_card:view_video_file' upload.id %}" type="video/mp4" >
+                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower or ".gif" in upload.file.name|lower %}
+                                           <!-- <img src="{% url 'only_card:view_media' upload.id %}" alt="{{ upload.file_name }}" style="max-width:100%; height:auto;" />-->
+                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Image</a>
+                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Image</a>
+
+                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".avi" in upload.file.name|lower or ".webm" in upload.file.name|lower %}
+                                           {% comment %}<video width="100%" height="auto" controls>
+                                                <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
                                                 Your browser does not support the video tag.
-                                            </video>
-                                            <a href="{% url 'only_card:view_video_file' upload.id %}" class="btn btn-primary">Preview video </a>
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a> 
-                                        
+                                            </video>{% endcomment %}
+                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Video</a>
+                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Video</a>
+
                                         {% elif upload.is_folder %}
                                             <a href="{% url 'only_card:view_folder' upload.id %}">
                                                 <i class="fa fa-folder"></i> {{ upload.file_name }}
@@ -731,7 +750,6 @@
                                             <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
                                             <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
                                             {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
-    
                                         {% endif %}
                                     </div>
                                 </div>
@@ -762,6 +780,12 @@
                 <div class="bottom-strip d-flex justify-content-around align-items-center">
 
                     <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
                         <a href="{% url 'only_card:landing_page' %}">
                             <i class="fas fa-shield-alt"></i>
                         </a>
@@ -772,12 +796,6 @@
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:following_media'  %}">
-                            <i class="fas fa-user-circle"></i>
-                        </a>
-                    </div>
-
                 </div>
             </footer>
 
@@ -858,6 +876,72 @@
               };
             </script>
 
+<!--for dissabling right click and long press-->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('img').forEach(function (img) {
+      // Disable right-click context menu
+      img.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      // Prevent long-press menu on mobile (without blocking scrolling)
+      let pressTimer;
+
+      img.addEventListener('touchstart', function (e) {
+        // Start a timer on touchstart
+        pressTimer = setTimeout(() => {
+          e.preventDefault(); // Only prevent default if held long enough
+        }, 600); // Adjust delay as needed (600ms is common)
+      });
+
+      img.addEventListener('touchend', function () {
+        clearTimeout(pressTimer);
+      });
+
+      img.addEventListener('touchmove', function () {
+        clearTimeout(pressTimer); // Cancel if user scrolls
+      });
+    });
+  });
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const buttons = document.querySelectorAll('.view-file-btn');
+  buttons.forEach(button => {
+    button.addEventListener('click', function () {
+      const fileId = this.getAttribute('data-file-id');
+      const modalContent = document.getElementById('dynamic-modal-content');
+
+      // Show loading spinner
+      modalContent.innerHTML = `
+        <div class="modal-body text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      `;
+
+      fetch(`/only_card/fetch_file_modal/${fileId}/`)
+        .then(response => response.text())
+        .then(html => {
+          modalContent.innerHTML = html;
+        })
+        .catch(error => {
+          modalContent.innerHTML = `
+            <div class="modal-body">
+              <p class="text-danger">Failed to load file details.</p>
+            </div>
+          `;
+        });
+    });
+  });
+});
+</script>
+
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const message = sessionStorage.getItem('uploadMessage');
@@ -881,6 +965,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 {% block edit_profile_script%}
 {% endblock %}
+
 
 {% block explore_detail_script %}
 {% endblock %}

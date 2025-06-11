@@ -6,6 +6,21 @@
     .select2-container {
         width: 100% !important;
     }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .progress-bar {
+        background-color: #4CAF50; /* Green */
+        color: white;
+        text-align: center;
+        line-height: 20px; /* Adjust to your progress bar height */
+        width: 0%;
+        height: 20px; /* Adjust as needed */
+        border-radius: 5px;
+        margin-top: 5px;
+    }
 
 </style>
 
@@ -50,9 +65,20 @@
         {% endfor %}
         <div id="descriptionPreview" class="mt-3"></div>
     </div>
-    <button type="submit" class="btn btn-primary">Upload</button>
-</form>
+    <button type="submit" class="btn btn-primary" id="submitButton">Upload</button>
+    <div id="uploadSpinner" style="display:none;">Uploading...</div>
+    <div id="uploadProgress" style="display:none;">
+        <div class="progress-bar" style="width: 0%;">0%</div>
+    </div>
+    <div id="uploadStatus"></div>
 
+</form>
+<!--
+<div id="uploadingSpinner" style="display:none; text-align: center; margin-top: 10px;">
+    <div class="spinner" style="width: 40px; height: 40px; border: 5px solid #f3f3f3; border-top: 5px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    <p style="margin-top: 10px; color: #007bff;">Uploading... Please wait.</p>
+</div>
+-->
                     <div class="home bg-white">
                         <a href="{% url 'user_profile:add_story' %}">
                             <i class="fas fa-upload"></i>
@@ -122,174 +148,58 @@
     }
 </script>
 
-<script>
-$(document).ready(function() {
-    $('#uploadForm').on('submit', function(e) {
-        e.preventDefault();  // Stop normal form submission
-
-        const formData = new FormData(this);
-
-        $.ajax({
-            url: '{% url "user_profile:upload_media" %}',  // Your media upload view
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'  // So Django knows it's AJAX
-            },
-            success: function(response) {
-                // You could handle response if needed
-            },
-            error: function(xhr, status, error) {
-                alert("Upload in progress. Try wait.");
-            }
-        });
-
-        // Instantly redirect (doesn't wait for success)
-        window.location.href = "{% url 'user_profile:profile' request.user.id %}";
-    });
-});
-</script>
 
 <script>
 $(document).ready(function() {
     $('#uploadForm').on('submit', function(e) {
-        e.preventDefault();  // Prevent normal form
+        e.preventDefault(); // Stop normal form submission
 
+        $('#uploadSpinner').show();        // Show spinner
+        $('#submitButton').prop('disabled', true); // Disable button
+        $('#uploadProgress').show();       // Show progress bar
+        $('#uploadStatus').text('');       // Clear any previous status
+
+        const form = this;
         const formData = new FormData(this);
 
-        // Show localStorage flag so profile page can show "Uploading..."
-        localStorage.setItem('upload_status', 'processing');
-
         $.ajax({
-            url: '{% url "user_profile:upload_media" %}',
-            type: 'POST',
+            xhr: function() {
+                const xhr = new window.XMLHttpRequest();
+                xhr.upload.addEventListener("progress", function(evt) {
+                    if (evt.lengthComputable) {
+                        const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                        $('#uploadProgress .progress-bar').css('width', percentComplete + '%').text(percentComplete + '%');
+                    }
+                }, false);
+                return xhr;
+            },
+            url: '{% url "user_profile:upload_media" %}', // Your media upload view
+            method: 'POST',
             data: formData,
             processData: false,
             contentType: false,
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'  
+
             },
             success: function(response) {
-                // Regardless of success, redirect
+                console.log('Upload successful:', response);
+                alert("Upload successful!");
                 window.location.href = "{% url 'user_profile:profile' request.user.id %}";
             },
             error: function(xhr, status, error) {
-                // Set failed flag
-                localStorage.setItem('upload_status', 'failed');
-                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+                $('#uploadSpinner').hide();           // Hide spinner
+                $('#uploadProgress').hide();          // Hide progress bar
+                $('#submitButton').prop('disabled', false); // Re-enable button
+                $('#uploadStatus').text("Upload failed. Please try again.");
+                console.error("Upload error:", error);
             }
         });
     });
 });
 </script>
-
 
 {% endblock %}
 
 
-<!--
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-<script>
-    $(document).ready(function() {
-        // Initialize the Select2 widget for tagging users
-        $('#id_tags').select2({
-            ajax: {
-                url: '{% url "user_profile:tag_user_search" %}',  // This URL matches the new AJAX search endpoint
-                dataType: 'json',
-                delay: 250,
-                data: function(params) {
-                    return {
-                        q: params.term, // The search term
-                    };
-                },
-                processResults: function(data) {
-                    return {
-                        results: data.results,
-                    };
-                },
-                cache: true
-            },
-            minimumInputLength: 1,
-            placeholder: 'Search for users to tag...',
-            allowClear: true,
-        });
-    });
-
-    function previewFile(event) {
-        const input = event.target;
-        const previewContainer = document.getElementById('filePreview');
-        
-        // Clear the previous preview
-        previewContainer.innerHTML = '';
-
-        const file = input.files[0];
-        if (file) {
-            const fileType = file.type;
-            const previewElement = document.createElement(fileType.startsWith('image/') ? 'img' : 'video');
-            
-            previewElement.src = URL.createObjectURL(file);
-            previewElement.style.maxWidth = '100%';
-            previewElement.style.maxHeight = '400px';
-            
-            if (fileType.startsWith('video/')) {
-                previewElement.controls = true;
-                document.getElementById('videoOptions').style.display = 'block';
-            } else {
-                document.getElementById('videoOptions').style.display = 'none';
-            }
-
-            previewContainer.appendChild(previewElement);
-        }
-    }
-
-    function convertLinks(event) {
-        const input = event.target;
-        const previewContainer = document.getElementById('descriptionPreview');
-        
-        // Clear the previous preview
-        previewContainer.innerHTML = '';
-
-        const text = input.value;
-        const linkifiedText = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
-
-        previewContainer.innerHTML = linkifiedText;
-    }
-</script>
-
-
-<script>
-$(document).ready(function() {
-    $('#uploadForm').on('submit', function(e) {
-        e.preventDefault();  // Prevent normal form
-
-        const formData = new FormData(this);
-
-        // Show localStorage flag so profile page can show "Uploading..."
-        localStorage.setItem('upload_status', 'processing');
-
-        $.ajax({
-            url: '{% url "user_profile:upload_media" %}',
-            type: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            success: function(response) {
-                // Regardless of success, redirect
-                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
-            },
-            error: function(xhr, status, error) {
-                // Set failed flag
-                localStorage.setItem('upload_status', 'failed');
-                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
-            }
-        });
-    });
-});
-</script>
--->

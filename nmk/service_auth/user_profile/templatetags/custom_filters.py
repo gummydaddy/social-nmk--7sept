@@ -38,3 +38,9 @@ def make_clickable(value):
     value = make_usernames_clickable(value)
     value = linkify(value)
     return value
+
+@register.filter(name='startswith')
+def startswith(text, prefix):
+    if not isinstance(text, str):
+        return False
+    return text.startswith(prefix)

@@ -59,6 +59,8 @@ class Media(models.Model):
     tags = models.ManyToManyField(AuthUser, related_name='tagged_media', blank=True)  # New field for tagging users
     is_private = models.BooleanField(default=False)  # New field to track privacy
     is_story = models.BooleanField(default=False)  # New field to differentiate story media
+    is_processed = models.BooleanField(default=False)
+
     
     def __str__(self):
         return self.description if self.description else "Media"
@@ -71,7 +73,9 @@ class Media(models.Model):
         is_new = self.pk is None  # Check if it's a new object
         super().save(*args, **kwargs)
         if is_new:  # Run the Celery task only for new media
-            generate_thumbnail_task.delay(self.id)
+            process_media_upload.delay(self.id, self.file.name, self.media_type)
+
+            #generate_thumbnail_task.delay(self.id)
     '''
     def save(self, *args, **kwargs):
         if not self.thumbnail:  # Generate only if not already created
@@ -101,6 +105,7 @@ class Media(models.Model):
             self.thumbnail.save(thumb_name, ContentFile(thumb_io.getvalue()), save=False)
         except Exception as e:
             print(f"Error creating image thumbnail: {e}")
+
     '''
     def create_video_thumbnail(self):
         """Generate a thumbnail for videos without FFmpeg."""
@@ -135,7 +140,7 @@ class Media(models.Model):
 
 class Audio(models.Model):
     user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='audio')
-    file = models.FileField(upload_to='media/', storage=CompressedMediaStorage())
+    file = models.FileField(upload_to='media/audio', storage=CompressedMediaStorage())
     description = models.TextField(blank=True, null=True)
     category = models.CharField(max_length=50, blank=True, null=True, help_text="Category of the audio.")
     is_paid = models.BooleanField(default=False)

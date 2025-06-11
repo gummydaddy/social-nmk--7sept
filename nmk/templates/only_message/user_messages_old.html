@@ -1,0 +1,227 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
+
+{% block main_content %}
+<style>
+    .message-container {
+        width: 100%;
+        height: 60vh;
+        border: 1px solid #ccc;
+        background-color: #fff0ff;
+        overflow-y: scroll;
+        padding: 10px;
+        margin-bottom: 20px;
+        color: #123;
+    }
+    .message-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .message-container ul li {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 60%;
+        font-size: 12px;
+    }
+    .sender-message {
+        background-color: #e1ffc7;
+        text-align: right;
+        margin-left: auto; /* Push to the right */
+    }
+    .recipient-message {
+        background-color: #f1f1f1;
+        text-align: left;
+        margin-right: auto; /* Push to the left */
+    }
+    form {
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    /* Styles for files */
+    .message-file {
+        margin-top: 5px;
+        border-top: 1px dashed #bbb; /* Separator for file content */
+        padding-top: 5px;
+    }
+    .message-file img {
+        max-width: 100%; /* Make images responsive within the message bubble */
+        height: auto;
+        display: block; /* Remove extra space below image */
+        margin-bottom: 5px;
+    }
+    .message-file a {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        text-decoration: none;
+        font-size: 11px;
+    }
+    .message-file a:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+<h2>Chat with {{ recipient.username }}</h2>
+
+<div id="chat-box" class="message-container" data-recipient="{{ recipient.username }}">
+    <ul id="message-list">
+        {% for message in messages %}
+            <li class="{% if message.sender == recipient %}recipient-message{% else %}sender-message{% endif %}">
+                {# Display message content if it exists #}
+                {% if message.content %}
+                    <p>{{ message.content|make_clickable }}</p>
+                {% endif %}
+
+                {# Display file if it exists #}
+                {% if message.file_url %}
+                    <div class="message-file">
+                        {% comment %}
+                            You might want to add more sophisticated file type detection here
+                            using a custom filter or JS, but for now, we'll check common image extensions.
+                            A more robust solution involves checking content-type from the server or storing it in the DB.
+                        {% endcomment %}
+                        {% if message.file_url|ends_with:".jpg" or message.file_url|ends_with:".jpeg" or message.file_url|ends_with:".png" or message.file_url|ends_with:".gif" or message.file_url|ends_with:".webp" %}
+                            <img src="{{ message.file_url }}" alt="Uploaded Image">
+                        {% elif message.file_url|ends_with:".mp4" or message.file_url|ends_with:".webm" or message.file_url|ends_with:".ogg" %}
+                            <video controls style="max-width: 100%; height: auto; display: block; margin-bottom: 5px;">
+                                <source src="{{ message.file_url }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <p><a href="{{ message.file_url }}" target="_blank" download>Download File: {{ message.file_url|basename }}</a></p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# Display timestamp and signature validity #}
+                <em>{{ message.timestamp|date:"P" }}</em>
+                {% if message.signature_valid %}
+                    <span style="color: green;">(Signature Valid)</span>
+                {% else %}
+                    <span style="color: red;">(Signature INVALID!)</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<form id="chat-message-form" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Send ➣➤</button>
+</form>
+
+{% endblock %}
+
+{% block Message_script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatBox = document.getElementById('chat-box');
+        const recipientUsername = chatBox.dataset.recipient;
+        const messageList = document.getElementById('message-list');
+        const messageForm = document.getElementById('chat-message-form');
+        const contentInput = document.getElementById('id_content');
+        const fileInput = document.getElementById('id_file'); // Get the file input element
+
+        // Scroll to bottom on load
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const chatSocket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/chat/${recipientUsername}/`);
+
+        chatSocket.onopen = function () {
+            console.log("WebSocket connection opened.");
+        };
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            if (data.message || data.file_url) { // Check for either message content or file URL
+                const currentUser = "{{ request.user.username }}";
+                const messageElement = document.createElement('li');
+                messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
+
+                let messageHtml = '';
+                if (data.message) {
+                    messageHtml += `<p>${data.message}</p>`;
+                }
+
+                if (data.file_url) {
+                    messageHtml += `<div class="message-file">`;
+                    const fileExtension = data.file_url.split('.').pop().toLowerCase();
+                    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                        messageHtml += `<img src="${data.file_url}" alt="Uploaded Image">`;
+                    } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                        messageHtml += `<video controls style="max-width: 100%; height: auto; display: block; margin-bottom: 5px;">
+                                            <source src="${data.file_url}" type="video/${fileExtension}">
+                                            Your browser does not support the video tag.
+                                        </video>`;
+                    } else {
+                        messageHtml += `<p><a href="${data.file_url}" target="_blank" download>Download File: ${data.file_url.split('/').pop()}</a></p>`;
+                    }
+                    messageHtml += `</div>`;
+                }
+
+                messageHtml += `<em>${new Date(data.timestamp).toLocaleTimeString()}</em>`; // Use data.timestamp
+
+                messageElement.innerHTML = messageHtml;
+                messageList.appendChild(messageElement);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            } else if (data.error) {
+                alert(data.error);
+                console.error("WebSocket error:", data.error);
+            }
+        };
+
+        chatSocket.onerror = function (e) {
+            console.error("WebSocket error:", e);
+        };
+
+        chatSocket.onclose = function () {
+            console.warn("WebSocket connection closed.");
+        };
+
+        // --- Handle form submission for messages and files ---
+        messageForm.addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const message = contentInput.value.trim();
+            const file = fileInput.files[0]; // Get the selected file
+
+            // Only send if there's a message or a file
+            if (!message && !file) {
+                return;
+            }
+
+            // If you want to use WebSockets for files, you'd need to send them
+            // as binary data or pre-upload them via AJAX and send the URL.
+            // For now, let's revert to standard form submission for files
+            // if you intend to use the existing Django view logic for file saving.
+            // If you're only using WebSockets for text, keep the current WS logic.
+
+            // Given your current backend, the easiest way to ensure files are saved
+            // is to let the form submit normally if a file is selected.
+            // If only text, you can send via WebSocket.
+
+            if (file) {
+                // If a file is selected, let the form submit normally to Django view
+                messageForm.submit();
+            } else {
+                // If only text, send via WebSocket
+                chatSocket.send(JSON.stringify({
+                    action: "send_message",
+                    recipient: recipientUsername,
+                    content: message
+                }));
+                contentInput.value = ''; // Clear text input after sending
+            }
+        });
+    });
+</script>
+{% endblock %}
+

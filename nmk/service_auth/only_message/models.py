@@ -61,7 +61,12 @@ class Message(models.Model):
     content = models.TextField()  # Encrypted content
     signature = models.TextField(null=True)  # Store the message signature
     timestamp = models.DateTimeField(auto_now_add=True)
-    file = models.FileField(upload_to='messages/files/', storage=fs, null=True, blank=True)  # New file field
+    file = models.FileField(upload_to='messages/files/', null=True, blank=True)  # New file field
+    #is_read = models.BooleanField(default=False) # <--- ADD THIS FIELD
+
+
+    #class Meta:
+        #ordering = ['timestamp']
     
     def __str__(self):
         return f"{self.sender} -> {self.recipient}: {self.content[:20]}"

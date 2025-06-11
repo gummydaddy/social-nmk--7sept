@@ -50,18 +50,22 @@ echo "PYTHONPATH set to: $PYTHONPATH"
 # Run Django's SSL server in the background
 #python3 manage.py runserver 0.0.0.0:8000 &
 
-#gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 &
-
 gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 &
+
+#gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 &
+
 
 # Start Celery worker and beat services in the background
 echo "Starting Celery worker and beat services..."
-celery -A socyfie_application worker --loglevel=info -n worker1@%h &
+#celery -A socyfie_application worker --loglevel=info -n worker1@%h &
 
-#celery -A socyfie_application worker --loglevel=info -Q media_worker -n media_worker@%h &
+#celery -A socyfie_application worker --pool=gevent --autoscale=100,10 --loglevel=info -E --pidfile=/tmp/celery_worker.pid -n worker1@%h &
 
+#celery -A socyfie_application worker --pool=prefork --loglevel=info --pidfile=/tmp/celery_worker.pid -n worker1@%h &
 
-#celery -A socyfie_application worker --loglevel=info -Q media_worker &
+celery -A socyfie_application worker --pool=prefork --autoscale=6,2 --loglevel=info --pidfile=/tmp/celery_worker.pid -n worker1@%h &
+
+#celery multi start 2 -A socyfie_application --autoscale=6,2 --pool=prefork --loglevel=info --logfile=~/celery_logs/%n%I.log --pidfile=~/celery_pids/%n.pid -n worker1@%h,worker2@%h &
 
 celery -A socyfie_application beat --loglevel=info &
 

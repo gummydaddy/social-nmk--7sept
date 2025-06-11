@@ -68,7 +68,7 @@ class UserUpload(models.Model):
 
         # Check the user's storage usage
         user_storage, created = UserStorage.objects.get_or_create(user=self.user)
-        if user_storage.total_storage_used + file_size > 512 * 1024 * 1024:  # 512 MB limit
+        if user_storage.total_storage_used + file_size > 100 * 1024 * 1024:  # 100 MB limit
             raise ValueError("Storage limit exceeded")
 
         if not self.encryption_key:

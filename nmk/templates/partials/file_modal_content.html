@@ -1,0 +1,101 @@
+{% load media_filters %}
+{% load static %}
+
+                    <!-- Modals for each file -->
+                    {% for upload in user_uploads %}
+                        <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="fileModal{{ upload.id }}Label">{{ upload.file_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Uploaded on: {{ upload.upload_date }}</p>
+                                        <p>Document Type: {{ upload.document_type }}</p>
+                                        <p>Country: {{ upload.country }}</p>
+                                            <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+
+                                        <!-- Display the uploaded file -->
+                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower %}
+                                            <img src="{% url 'only_card:view_file' upload.id %}" class="img-fluid" alt="{{ upload.file_name }}">
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".quicktime" in upload.file.name|lower or ".mpeg" in upload.file.name|lower %}
+                                            <video controls class="img-fluid">
+                                                <source src="{% url 'only_card:view_video_file' upload.id %}" type="video/mp4" >
+                                                Your browser does not support the video tag.
+                                            </video>
+                                            <a href="{% url 'only_card:view_video_file' upload.id %}" class="btn btn-primary">Preview video </a>
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+
+                                        {% elif upload.is_folder %}
+                                            <a href="{% url 'only_card:view_folder' upload.id %}">
+                                                <i class="fa fa-folder"></i> {{ upload.file_name }}
+                                            </a>
+
+                                        {% elif ".pdf" in upload.file.name|lower %}
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="500px" />
+                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
+                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
+
+                                        {% elif ".docx" in upload.file.name|lower or ".doc" in upload.file.name|lower %}
+                                            <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
+
+                                        {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
+                                            <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
+                                            <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
+                                            <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
+                                            <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                            <!-- Button to download the Excel file -->
+                                            <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
+
+
+                                        {% elif ".xml" in upload.file.name|lower %}
+                                            <!-- XML files -->
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="500px" />
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+
+                                        {% elif ".zip" in upload.file.name|lower or ".xlsx" in upload.file.name|lower %}
+                                            <!-- ZIP and XLSX files (served as ZIP) -->
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+
+
+                                        {% elif ".pptx" in upload.file.name|lower %}
+                                            <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
+                                            {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>
+
+                                        {% elif ".txt" in upload.file.name|lower or ".py" in upload.file.name|lower or ".js" in upload.file.name|lower %}
+                                            <!-- Handle .py, .js, and .txt files -->
+                                            <pre class="
+                                            {% if '.py' in upload.file.name|lower %}
+                                                        language-python
+                                                    {% elif '.js' in upload.file.name|lower %}
+                                                        language-javascript
+                                                    {% elif '.txt' in upload.file.name|lower %}
+                                                        language-text
+                                                    {% endif %}
+                                                ">
+                                                    {{ upload.file.read|escape }}
+
+                                            </pre>
+                                            <!-- Download option for these files -->
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{ upload.file_name }}</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+
+                                        {% else %}
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                            {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
+
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}

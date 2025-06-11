@@ -1,18 +1,26 @@
 {% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters %}
 
 {% block title %}
-    View Video - {{ upload.file_name }}
+    {{ file_name }} - Media Preview
 {% endblock %}
 
-{% block content %}
-    <div class="container">
-        <h1>{{ upload.file_name }}</h1>
-        <video controls class="img-fluid">
-            <source src="{{ temp_file_url }}" type="{{ mime_type }}">
+{% block main_content %}
+<div class="container text-center">
+    <h1>Media Preview: {{ file_name }}</h1>
+
+    {% if mime_type|startswith:"image/" %}
+        <img src="{% url 'only_card:view_media' upload.id %}" alt="Uploaded Image" style="max-width: 100%; height: auto; margin-top: 20px;">
+    
+    {% elif mime_type|startswith:"video/" %}
+        <video controls style="width: 100%; max-width: 720px; margin-top: 20px;">
+            <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
             Your browser does not support the video tag.
         </video>
-        <a href="{{ temp_file_url }}" download="{{ upload.file_name }}" class="btn btn-secondary mt-3">
-            Download {{ upload.file_name }}
-        </a>
-    </div>
+
+    {% else %}
+        <p>This file type cannot be displayed as media.</p>
+    {% endif %}
+</div>
 {% endblock %}
