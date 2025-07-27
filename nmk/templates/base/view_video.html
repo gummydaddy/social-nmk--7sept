@@ -11,11 +11,11 @@
     <h1>Media Preview: {{ file_name }}</h1>
 
     {% if mime_type|startswith:"image/" %}
-        <img src="{% url 'only_card:view_media' upload.id %}" alt="Uploaded Image" style="max-width: 100%; height: auto; margin-top: 20px;">
+        <img src="{% url 'only_card:view_media' upload.id %}" alt="Uploaded Image" loading="lazy" style="max-width: 100%; height: auto; margin-top: 20px;">
     
     {% elif mime_type|startswith:"video/" %}
         <video controls style="width: 100%; max-width: 720px; margin-top: 20px;">
-            <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
+            <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}" loading="lazy">
             Your browser does not support the video tag.
         </video>
 

@@ -69,13 +69,17 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',    
+
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "drf_spectacular",
+
     #'allauth.socialaccount.providers.google',    
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # 'django-select2',
-    "rest_framework",
     'channels',
     'social_django',
     'sslserver',
@@ -97,15 +101,15 @@ INSTALLED_APPS = [
     'twilio',
     'six',
 
-
+    "django.contrib.sitemaps",
 
     # 'service_auth.only_coin',
     'nmk_chain',
     "service_auth.only_card",
     'service_auth.notion',
-    'service_auth.user_profile',
+    #'service_auth.user_profile',
+    'service_auth.user_profile.apps.UserProfileConfig',
     'service_auth.only_message',
-
 
 ]
 
@@ -434,3 +438,23 @@ AUTHENTICATION_BACKENDS = [
 
 #SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env('SOCIAL_AUTH_GOOGLE_OAUTH2_KEY')
 #SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env('SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET')
+
+
+# REST Framework settings
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/day',
+        'anon': '100/day',
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}

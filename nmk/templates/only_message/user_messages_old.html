@@ -5,12 +5,14 @@
 
 {% block main_content %}
 <style>
+    /* Keep your existing CSS styles */
     .message-container {
         width: 100%;
         height: 60vh;
         border: 1px solid #ccc;
         background-color: #fff0ff;
         overflow-y: scroll;
+        overflow-x: hidden;
         padding: 10px;
         margin-bottom: 20px;
         color: #123;
@@ -27,16 +29,29 @@
         max-width: 60%;
         font-size: 12px;
     }
+
+    .sender-message,
+    .recipient-message {
+        background-color: #e1ffc7; /* keep specific background if needed */
+        max-width: 60%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
+        display: block;
+    }
+
     .sender-message {
         background-color: #e1ffc7;
         text-align: right;
         margin-left: auto; /* Push to the right */
     }
+
     .recipient-message {
         background-color: #f1f1f1;
         text-align: left;
         margin-right: auto; /* Push to the left */
     }
+
     form {
         margin-top: 5px;
         margin-bottom: 5px;
@@ -72,7 +87,7 @@
 <div id="chat-box" class="message-container" data-recipient="{{ recipient.username }}">
     <ul id="message-list">
         {% for message in messages %}
-            <li class="{% if message.sender == recipient %}recipient-message{% else %}sender-message{% endif %}">
+            <li class="{% if message.sender == request.user %}sender-message{% else %}recipient-message{% endif %}">
                 {# Display message content if it exists #}
                 {% if message.content %}
                     <p>{{ message.content|make_clickable }}</p>
@@ -81,11 +96,6 @@
                 {# Display file if it exists #}
                 {% if message.file_url %}
                     <div class="message-file">
-                        {% comment %}
-                            You might want to add more sophisticated file type detection here
-                            using a custom filter or JS, but for now, we'll check common image extensions.
-                            A more robust solution involves checking content-type from the server or storing it in the DB.
-                        {% endcomment %}
                         {% if message.file_url|ends_with:".jpg" or message.file_url|ends_with:".jpeg" or message.file_url|ends_with:".png" or message.file_url|ends_with:".gif" or message.file_url|ends_with:".webp" %}
                             <img src="{{ message.file_url }}" alt="Uploaded Image">
                         {% elif message.file_url|ends_with:".mp4" or message.file_url|ends_with:".webm" or message.file_url|ends_with:".ogg" %}
@@ -116,8 +126,8 @@
     {{ form.as_p }}
     <button type="submit">Send ➣➤</button>
 </form>
-
 {% endblock %}
+
 
 {% block Message_script %}
 <script>
@@ -125,13 +135,15 @@
         const chatBox = document.getElementById('chat-box');
         const recipientUsername = chatBox.dataset.recipient;
         const messageList = document.getElementById('message-list');
-        const messageForm = document.getElementById('chat-message-form');
+        const messageForm = document.getElementById('chat-message-form'); // Make sure this ID matches your form
         const contentInput = document.getElementById('id_content');
         const fileInput = document.getElementById('id_file'); // Get the file input element
 
         // Scroll to bottom on load
         chatBox.scrollTop = chatBox.scrollHeight;
 
+
+        // WebSocket setup (for receiving messages and potentially sending text messages)
         const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
         const chatSocket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/chat/${recipientUsername}/`);
 
@@ -141,37 +153,8 @@
 
         chatSocket.onmessage = function (e) {
             const data = JSON.parse(e.data);
-            if (data.message || data.file_url) { // Check for either message content or file URL
-                const currentUser = "{{ request.user.username }}";
-                const messageElement = document.createElement('li');
-                messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
-
-                let messageHtml = '';
-                if (data.message) {
-                    messageHtml += `<p>${data.message}</p>`;
-                }
-
-                if (data.file_url) {
-                    messageHtml += `<div class="message-file">`;
-                    const fileExtension = data.file_url.split('.').pop().toLowerCase();
-                    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
-                        messageHtml += `<img src="${data.file_url}" alt="Uploaded Image">`;
-                    } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
-                        messageHtml += `<video controls style="max-width: 100%; height: auto; display: block; margin-bottom: 5px;">
-                                            <source src="${data.file_url}" type="video/${fileExtension}">
-                                            Your browser does not support the video tag.
-                                        </video>`;
-                    } else {
-                        messageHtml += `<p><a href="${data.file_url}" target="_blank" download>Download File: ${data.file_url.split('/').pop()}</a></p>`;
-                    }
-                    messageHtml += `</div>`;
-                }
-
-                messageHtml += `<em>${new Date(data.timestamp).toLocaleTimeString()}</em>`; // Use data.timestamp
-
-                messageElement.innerHTML = messageHtml;
-                messageList.appendChild(messageElement);
-                chatBox.scrollTop = chatBox.scrollHeight;
+            if (data.message || data.file_url) {
+                addMessageToChat(data, "{{ request.user.username }}");
             } else if (data.error) {
                 alert(data.error);
                 console.error("WebSocket error:", data.error);
@@ -186,41 +169,112 @@
             console.warn("WebSocket connection closed.");
         };
 
-        // --- Handle form submission for messages and files ---
+        // Helper function to add a message (text or file) to the chat UI
+        function addMessageToChat(data, currentUser) {
+            const messageElement = document.createElement('li');
+            messageElement.className = data.sender === currentUser ? 'sender-message' : 'recipient-message';
+
+            let messageHtml = '';
+            if (data.message) {
+                messageHtml += `<p>${data.message}</p>`;
+            }
+
+            if (data.file_url) {
+                messageHtml += `<div class="message-file">`;
+                const fileExtension = data.file_url.split('.').pop().toLowerCase();
+                if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension)) {
+                    messageHtml += `<img src="${data.file_url}" alt="Uploaded Image">`;
+                } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                    messageHtml += `<video controls style="max-width: 100%; height: auto; display: block; margin-bottom: 5px;">
+                                        <source src="${data.file_url}" type="video/${fileExtension}">
+                                        Your browser does not support the video tag.
+                                    </video>`;
+                } else {
+                    const fileName = data.file_url.split('/').pop().split('?')[0];
+                    messageHtml += `<p><a href="${data.file_url}" target="_blank" download>${fileName}</a></p>`;
+                }
+                messageHtml += `</div>`;
+            }
+
+            messageHtml += `<em>${new Date(data.timestamp).toLocaleTimeString()}</em>`;
+            messageElement.innerHTML = messageHtml;
+            messageList.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // --- Handle form submission via AJAX (no page reload) ---
         messageForm.addEventListener('submit', function (e) {
-            e.preventDefault(); // Prevent default form submission
+            e.preventDefault(); // <--- THIS IS THE CRUCIAL LINE! Make sure it's hit.
 
             const message = contentInput.value.trim();
-            const file = fileInput.files[0]; // Get the selected file
+            const file = fileInput.files[0];
 
-            // Only send if there's a message or a file
             if (!message && !file) {
+                // If both are empty, prevent submission and do nothing
                 return;
             }
 
-            // If you want to use WebSockets for files, you'd need to send them
-            // as binary data or pre-upload them via AJAX and send the URL.
-            // For now, let's revert to standard form submission for files
-            // if you intend to use the existing Django view logic for file saving.
-            // If you're only using WebSockets for text, keep the current WS logic.
-
-            // Given your current backend, the easiest way to ensure files are saved
-            // is to let the form submit normally if a file is selected.
-            // If only text, you can send via WebSocket.
-
-            if (file) {
-                // If a file is selected, let the form submit normally to Django view
-                messageForm.submit();
-            } else {
-                // If only text, send via WebSocket
-                chatSocket.send(JSON.stringify({
-                    action: "send_message",
-                    recipient: recipientUsername,
-                    content: message
-                }));
-                contentInput.value = ''; // Clear text input after sending
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            formData.append('recipient', recipientUsername);
+            if (message) {
+                formData.append('content', message);
             }
+            if (file) {
+                formData.append('file', file);
+            }
+
+            // The URL for the POST request must match the URL pattern for user_messages_view
+            // and should be the current URL or the one you explicitly define.
+            // Using window.location.href or the current URL (if it's the chat page) is good.
+            // Or explicitly use the Django URL tag as shown previously.
+            fetch("{% url 'only_message:user_messages_view' username=recipient.username %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest' // Helps Django identify AJAX requests
+                }
+            })
+            .then(response => {
+                // Check if the response is JSON. If not, something went wrong (e.g., HTML error page).
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    return response.json();
+                } else {
+                    // If it's not JSON, it might be an HTML error page.
+                    // Read it as text and log it for debugging.
+                    return response.text().then(text => {
+                        console.error("Server returned non-JSON response:", text);
+                        throw new Error("Server did not return JSON. See console for details.");
+                    });
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    console.log('Message sent via AJAX. Waiting for WebSocket confirmation.');
+                    messageForm.reset(); // Clear form fields
+                    fileInput.value = ''; // Clear file input explicitly
+                } else {
+                    alert('Error sending message: ' + (data.error || 'Unknown error.'));
+                    if (data.errors) {
+                        console.error("Form errors:", data.errors);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Network error or server issue. Could not send message.');
+            });
         });
+
+        // Prevent back button (if still desired)
+        (function () {
+            window.history.pushState(null, "", window.location.href);
+            window.onpopstate = function () {
+                window.history.pushState(null, "", window.location.href);
+            };
+        })();
+
     });
 </script>
 {% endblock %}

@@ -1,0 +1,978 @@
+{% load media_filters %}
+{% load static %}
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("{% static 'service-worker.js' %}")  // This becomes "/static/service-worker.js"
+      .then((reg) => {
+        console.log("Service Worker registered:", reg.scope);
+      })
+      .catch((err) => {
+        console.error("Service Worker registration failed:", err);
+      });
+  }
+</script>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socyfie</title>
+
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!--apple-->
+    <!--<meta name="mobile-web-app-capable" content="yes">-->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <meta name="apple-mobile-web-app-title" content="Socyfie">
+    <!--<meta name="mobile-web-app-status-bar-style" content="default">-->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+
+    <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
+
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
+    <link rel="apple-touch-icon-precomposed" href="{% static 'images/apple-touch-icon-precomposed.png' %}">
+
+    <!--<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">-->
+
+
+    <!--<link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">-->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+
+
+    <!-- Add this in the <head> of your base template or specific template  for upload search -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+    <style>
+        
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css");
+
+        @keyframes colorMove {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 100% 50%;
+            }
+        }
+
+        main {
+            transition: margin-right 0.5s;
+            padding: 24px;
+        }
+        
+
+        .profile-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .profile-section {
+            position: relative;
+            {% comment %} text-align: center; {% endcomment %}
+        }
+
+        .cover-photo-container {
+            width: 100%;
+            height: 265px;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+
+        .cover-photo {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            {% comment %} background-size: cover; {% endcomment %}
+            {% comment %} background-position: center; {% endcomment %}
+            {% comment %} margin-bottom: 20px; {% endcomment %}
+            {% comment %} position: relative; {% endcomment %}
+        }
+
+        .profile-picture-container {
+            position: absolute;
+            bottom: 178px;
+            left: 11.062%;
+            transform: translateX(-50%);
+            z-index: 1;
+        }
+
+        .profile-picture {
+            position: fixed;
+            width: 150px;
+            {% comment %} height: 150px; {% endcomment %}
+            border-radius: 40%;
+            object-fit: cover;
+            {% comment %} position: absolute; {% endcomment %}
+            bottom: 3px;  /* Half the height of the profile picture */
+            left: 50%;
+            transform: translateX(-25%);
+            border: 4px solid #fff;  /* Optional: adds a white border around the profile picture */
+            {% comment %} margin-bottom: 20px; {% endcomment %}
+        }
+
+        .profile-info {
+            margin-top: auto;  /* To account for the overlapping profile picture */
+            text-align: left;
+        }
+
+        .bio {
+            margin-top: 20px;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 60px; /* Add padding equal to the footer height */
+        }
+
+        .content-container {
+            max-width: 710px;
+            {% comment %} width: 80%; {% endcomment %}
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            position: relative;
+            top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Night mode styles */
+        .night-mode {
+            background-color: black;
+        }
+        
+        .night-mode > * {
+            color: white;
+        }
+
+        
+        {% comment %} new {% endcomment %}
+        #globe-button {
+            position: relative;
+            top: 0px;
+            right: 18px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 24px;
+            animation: rotateGlobe 5s linear infinite;
+        }
+          
+        @keyframes rotateGlobe {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+        }
+          
+        #globe-button i {
+        color: #35DDC7; /* Adjust the color as needed */
+        }{% comment %} }    new {% endcomment %}
+
+
+
+        .home a, .notion a, .profile a {
+            color: #333;
+            text-decoration: none;
+            padding: 10px;
+        }
+
+        .home a:hover, .notion a:hover, .profile a:hover {
+            color: #000;
+        }
+
+        .card {
+            width: 60.8mm;
+            height: 53.98mm;
+            background: linear-gradient(to right, #4169E1, #1e90ff, #4169E1, #1e90ff, #4169E1);
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            position: relative;
+            perspective: 1000px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            animation: colorMove 2s infinite alternate;
+            margin-top: 5px;
+
+        }
+
+        .card:hover .card-inner {
+            transform: rotateY(180deg);
+        }
+
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            transform: rotateY(180deg);
+            background-color: #f0f0f0;
+            z-index: 2;
+        }
+
+        .magnetic-strip {
+            width: 100%;
+            height: 10px;
+            background-color: #000;
+            position: absolute;
+            top: 0;
+        }
+
+        header{
+            position: fixed; 
+            top: 1px;
+            height: 15px;
+            max-width: 710px;
+            {% comment %} width: 80%; {% endcomment %}
+            margin: auto;
+            left: 0;
+            right: 0;        
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 710px;
+            {% comment %} width: 80%; {% endcomment %}
+            margin: 0 auto;
+            background-color: #007bff;
+        }
+
+        .footer-icon {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: background 0.3s ease, transform 0.3s ease;
+        }
+
+        .footer-icon a {
+            color: #4F46E5;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-icon:hover {
+            background: #e0e7ff;
+            transform: translateY(-4px);
+        }
+        .bottom-strip {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            box-shadow: 0px -2px 6px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+            height: 22px;
+        }
+
+        .content-area {
+            display: flex;
+            flex-wrap: wrap; /* Allow items to wrap to the next row */
+            justify-content: space-around; /* Distribute items evenly */
+            align-items: flex-start; /* Align items to the top of the container */
+            margin: 20px 0;
+            padding: 20px;
+            border: 4px solid lightgray;
+            border-radius: 4px;
+            background-color: white;
+            z-index: 999;
+        }
+                  
+
+        .upload-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            {% comment %} padding: 20px; {% endcomment %}
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    
+        .upload-item + .upload-item {
+            margin-top: 20px;
+        }
+
+        .g-4, .gy-4 {
+            --bs-gutter-y: 1.rem;
+        }
+    
+        .upload-item img,
+        .upload-item video {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .actions {
+            margin-top: 10px;
+        }
+
+        .description {
+            margin-top: 10px;
+        }
+
+        .comments {
+            margin-top: 10px;
+        }
+
+        .comment {
+            margin-bottom: 10px;
+        }
+
+        .notions-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            border: 4px solid lightgray;
+        }
+
+        /* Sidebar styling */
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            top: 0;
+            right: 0;
+            background-color: #343a40;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+            z-index: 9999; /* Highest z-index for the sidebar */
+        }
+
+        /* Backdrop styling */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Semi-transparent black backdrop */
+            z-index: 9998; /* Just below the sidebar */
+            display: none; /* Hidden by default */
+        }
+
+
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: #ffffff;
+            display: block;
+            transition: 0.3s;
+    
+        }
+    
+
+        .sidebar a:hover {
+            color: #f1f1f1;
+        }
+
+        .sidebar .closebtn {
+            position: absolute;
+            top: 0;
+            right: 25px;
+            font-size: 36px;
+        }
+
+        main {
+            transition: margin-left .5s;
+            padding: 2px;
+        }
+
+        .openbtn {
+            font-size: 15px;
+            cursor: pointer;
+            background-color: #fffff0;
+            color: black;
+            border: 1px;
+        }
+          
+        form {
+            width: auto;
+            margin-top: 5px;
+            background-color: #fffff;
+            margin-bottom: 5px;
+            
+        } 
+        
+        {% comment %} following media {% endcomment %}
+        .media-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    
+        .media-item {
+            background-color: white;
+            border: 0px solid #ddd;
+            padding: 1px;
+            border-radius: 2px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .row>*{ 
+            margin-top: initial
+        }
+    
+        {% comment %} .media-item + .media-item {
+            margin-top: 20px;
+        } {% endcomment %}
+    
+        .media-content img,
+        .media-content video {
+            Display":flex;
+            width: 90%;
+            {% comment %} height: auto; {% endcomment %}
+            height: 400px;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+        }
+    
+        .text-center {
+            text-align: center;
+        }
+
+        .textarea {
+            margin: 0;
+            font-family: inherit;
+            font-size: small;
+            {% comment %} line-height: inherit; {% endcomment %}
+          }
+          /* style.css */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff; /* Background color for splash screen */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 9999; /* Ensure it appears above other content */
+        }
+
+        .splash-logo {
+            width: 150px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        #splash-content {
+            display: none; /* Hide main content initially */
+        }
+        nav.navbar {
+           border-radius: 12px;
+           margin-bottom: 20px;
+        }
+        .navbar-dark .navbar-nav .nav-link {
+          color: white;
+        }
+
+        #globe-button, .openbtn, .messagebtn {
+          background-color: #4F46E5;
+          border: none;
+          color: white;
+          padding: 8px 12px;
+          border-radius: 50px;
+          font-size: 18px;
+          margin: 0 5px;
+        }
+
+
+        
+    </style>
+    {% load static %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let lazyImages = document.querySelectorAll("img.lazyload");
+        
+            const lazyLoad = () => {
+                lazyImages.forEach(img => {
+                    if (img.getBoundingClientRect().top < window.innerHeight && img.dataset.src) {
+                        img.src = img.dataset.src;  // Replace thumbnail with full media
+                        img.classList.remove("lazyload");
+                    }
+                });
+            };
+        
+            // Load images when scrolling
+            window.addEventListener("scroll", lazyLoad);
+            window.addEventListener("resize", lazyLoad);
+            lazyLoad();  // Load visible images immediately
+        });
+    </script>        
+
+    <!-- Include Vue.js from a CDN -->
+    {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}
+</head>
+<body style="padding-bottom: 60px;">
+    <!-- Splash Screen Container-->
+    <div id="splash-screen">
+        <img src="{% static 'images/logo.png' %}" alt="App Logo" class="splash-logo">
+        <h1>Welcome to Socyfie</h1>
+    </div> 
+
+    <!-- Main Content -->
+    <div id="splash-content" style="display: none;">
+        {% block splash %}
+        <div class="content-container">
+
+            <div id="mySidebar" class="sidebar">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+                <a>
+                    <div>
+                        <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+                        <i class="fas fa-bell"></i>
+                        </button>
+                    </div>
+                </a>
+                <a>
+                    <form method="GET" action="{% url 'user_profile:search_users' %}">
+                        <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                        <button type="submit">Search</button>
+                    </form>
+                </a>
+
+
+                <a href="{% url 'user_profile:buddy_list' %}">
+                    <button type="button">View Buddies</button>
+                </a>
+                <a href="{% url 'user_profile:blocked_user_list' %}">
+                    <button type="button">View Blocked Users</button>
+                </a>
+                <a>
+                    <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
+                </a>
+                
+                <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
+            </div>
+            <header>
+              <nav class="navbar navbar-expand-lg navbar-dark bg-white">
+                <div class="container">
+                  <a href="{% url 'only_message:message_list_view' %}">
+                    <button class="messagebtn">💬</button>
+                  </a>
+                  <button class="openbtn" onclick="openNav()">☰</button>
+                </div>
+              </nav>
+            </header>
+
+    
+            <main id="main">
+                {% block main_content %}
+                <!-- card_snippet.html -->
+                <br>
+        
+                <a href="{% url 'only_card:upload_document' %}" >
+                    <button type="button">Upload Documents</button>
+                </a>
+                                <p>we are still working on the display of excel data appologies for the inconivience </p>
+                                <p>images, video and document uploaded in this section is only accessible to you, not even socyfie have the access to view you data in the vault  </p>
+
+                <div class="container my-5">
+                    <div class="row">
+                        <div class="col-12 text-center">
+                            <!--<h1>Welcome, {{ user_username }}!</h1>-->
+                        </div>
+                    </div>
+                    <div class="row my-3">
+                        {% if user_uploads %}
+                            {% for upload in user_uploads %}
+                                <div class="col-md-4 mb-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ upload.file_name }}</h5>
+                                            <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
+                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
+                                            <!--<button type="button" class="btn btn-primary view-file-btn" data-file-id="{{ upload.id }}" data-bs-toggle="modal" data-bs-target="#dynamicModal"> View File</button>-->
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if forloop.counter|divisibleby:3 %}
+                                    </div>
+                                    <div class="row">
+                                {% endif %}
+                            {% endfor %}
+                            <div class="col-12 text-center">
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Modals for each file -->
+                    {% for upload in user_uploads %}
+                        <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="fileModal{{ upload.id }}Label">{{ upload.file_name }}</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Uploaded on: {{ upload.upload_date }}</p>
+                                        <p>Document Type: {{ upload.document_type }}</p>
+                                        <p>Country: {{ upload.country }}</p>
+                                            <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            </form>
+                        
+                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower or ".gif" in upload.file.name|lower %}
+                                           <!-- <img src="{% url 'only_card:view_media' upload.id %}" alt="{{ upload.file_name }}" style="max-width:100%; height:auto;" />-->
+                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Image</a>
+                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Image</a>
+
+                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".avi" in upload.file.name|lower or ".webm" in upload.file.name|lower %}
+                                           {% comment %}<video width="100%" height="auto" controls>
+                                                <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
+                                                Your browser does not support the video tag.
+                                            </video>{% endcomment %}
+                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Video</a>
+                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Video</a>
+
+                                        {% elif upload.is_folder %}
+                                            <a href="{% url 'only_card:view_folder' upload.id %}">
+                                                <i class="fa fa-folder"></i> {{ upload.file_name }}
+                                            </a>
+                                        
+                                        {% elif ".pdf" in upload.file.name|lower %}
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="500px" />
+                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
+                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
+    
+                                        {% elif ".docx" in upload.file.name|lower or ".doc" in upload.file.name|lower %}
+                                            <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
+    
+                                        {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
+                                            <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
+                                            <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
+                                            <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
+                                            <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                            <!-- Button to download the Excel file -->
+                                            <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
+    
+                                        
+                                        {% elif ".xml" in upload.file.name|lower %}
+                                            <!-- XML files -->
+                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="500px" />
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        
+                                        {% elif ".zip" in upload.file.name|lower or ".xlsx" in upload.file.name|lower %}
+                                            <!-- ZIP and XLSX files (served as ZIP) -->
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+                                        
+    
+                                        {% elif ".pptx" in upload.file.name|lower %}
+                                            <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
+                                            {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
+                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
+    
+                                        {% elif ".txt" in upload.file.name|lower or ".py" in upload.file.name|lower or ".js" in upload.file.name|lower %}
+                                            <!-- Handle .py, .js, and .txt files -->
+                                            <pre class="
+                                            {% if '.py' in upload.file.name|lower %}
+                                                        language-python
+                                                    {% elif '.js' in upload.file.name|lower %}
+                                                        language-javascript
+                                                    {% elif '.txt' in upload.file.name|lower %}
+                                                        language-text
+                                                    {% endif %}
+                                                ">
+                                                    {{ upload.file.read|escape }}
+                                                    
+                                            </pre>
+                                            <!-- Download option for these files -->
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{ upload.file_name }}</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                        
+                                        {% else %}
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
+                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
+                                            {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+    
+                    
+            <!-- Main content of landing_page.html goes here -->
+                {% endblock %}
+    
+                {% comment %} subgroup {% endcomment %}
+                {% block Subgroup %}
+    
+                {% endblock %}
+    
+                {% comment %} messages {% endcomment %}
+                {% block content %}
+                
+                {% endblock %}
+    
+                {% block media_detail_content%}
+                {% endblock %}
+                
+            </main>
+            {% block footer %}
+            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+                <div class="bottom-strip d-flex justify-content-around align-items-center">
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'only_card:landing_page' %}">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
+                    </div>
+                </div>
+            </footer>
+
+            {% endblock %}
+    
+        {% endblock %}
+    </div>
+
+    {% comment %} <script src="{% static 'js/script.js' %}"></script> {% endcomment %}
+
+    <script>
+        window.addEventListener('load', function() {
+            const splashScreen = document.getElementById('splash-screen');
+            const mainContent = document.getElementById('splash-content');
+        
+            // Hide splash screen after 1 seconds, then display main content
+            setTimeout(() => {
+                splashScreen.style.display = 'none';
+                mainContent.style.display = 'block';
+            }, 200); // Adjust timing as needed
+        });
+    </script>
+
+            
+
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+            {% comment %} navigation bar {% endcomment %}
+            <script>
+                function openNav() {
+                    document.getElementById("mySidebar").style.width = "250px";
+                    document.getElementById("main").style.marginRight = "250px"; // Add margin to main content
+                }
+        
+                function closeNav() {
+                    document.getElementById("mySidebar").style.width = "0";
+                    document.getElementById("main").style.marginRight = "0"; // Remove margin from main content
+                }
+            </script>
+
+            {% comment %} container-color {% endcomment %}
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Check the saved mode in localStorage
+                    var currentMode = localStorage.getItem('mode');
+                    var container = document.querySelector('.content-container');
+                    var button = document.getElementById('toggleButton');
+            
+                    if (currentMode === 'night') {
+                        container.classList.add('night-mode');
+                        button.textContent = 'Switch to Day Mode🌒';
+                    } else {
+                        container.classList.remove('night-mode');
+                        button.textContent = 'Switch to Night Mode🌒';
+                    }
+            
+                    // Toggle background mode and save to localStorage
+                    window.toggleBackground = function () {
+                        if (container.classList.contains('night-mode')) {
+                            container.classList.remove('night-mode');
+                            button.textContent = 'Switch to Night Mode🌒';
+                            localStorage.setItem('mode', 'day');
+                        } else {
+                            container.classList.add('night-mode');
+                            button.textContent = 'Switch to Day Mode🌒';
+                            localStorage.setItem('mode', 'night');
+                        }
+                    };
+                });
+            </script>
+            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+            <script>
+              // Replace current history so back button won't return to login
+              window.history.pushState(null, "", window.location.href);
+              window.onpopstate = function() {
+                window.history.pushState(null, "", window.location.href);
+              };
+            </script>
+
+<!--for dissabling right click and long press-->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('img').forEach(function (img) {
+      // Disable right-click context menu
+      img.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      // Prevent long-press menu on mobile (without blocking scrolling)
+      let pressTimer;
+
+      img.addEventListener('touchstart', function (e) {
+        // Start a timer on touchstart
+        pressTimer = setTimeout(() => {
+          e.preventDefault(); // Only prevent default if held long enough
+        }, 600); // Adjust delay as needed (600ms is common)
+      });
+
+      img.addEventListener('touchend', function () {
+        clearTimeout(pressTimer);
+      });
+
+      img.addEventListener('touchmove', function () {
+        clearTimeout(pressTimer); // Cancel if user scrolls
+      });
+    });
+  });
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const buttons = document.querySelectorAll('.view-file-btn');
+  buttons.forEach(button => {
+    button.addEventListener('click', function () {
+      const fileId = this.getAttribute('data-file-id');
+      const modalContent = document.getElementById('dynamic-modal-content');
+
+      // Show loading spinner
+      modalContent.innerHTML = `
+        <div class="modal-body text-center">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      `;
+
+      fetch(`/only_card/fetch_file_modal/${fileId}/`)
+        .then(response => response.text())
+        .then(html => {
+          modalContent.innerHTML = html;
+        })
+        .catch(error => {
+          modalContent.innerHTML = `
+            <div class="modal-body">
+              <p class="text-danger">Failed to load file details.</p>
+            </div>
+          `;
+        });
+    });
+  });
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const message = sessionStorage.getItem('uploadMessage');
+    if (message) {
+        alert(message);
+        sessionStorage.removeItem('uploadMessage');
+    }
+});
+</script>
+
+
+{% block media_detail_script %}
+<script>
+ // Replace current history so back button won't return to login
+ window.history.pushState(null, "", window.location.href);
+ window.onpopstate = function() {
+   window.history.pushState(null, "", window.location.href);
+ };
+</script>
+{% endblock %}
+
+{% block edit_profile_script%}
+{% endblock %}
+
+
+{% block explore_detail_script %}
+{% endblock %}
+
+{% block following_media_script %}
+{%endblock%}
+
+{% block upload_script %}
+{% endblock %}
+
+{% block notionHome_script %}
+{% endblock %}
+
+{% block my_notion_script%}
+{% endblock %}
+
+{%block buddy_script%}
+{% endblock %}
+
+{% block extra_js %}
+{% endblock %}
+
+{% block vault_doc_script%}
+{% endblock %}
+
+    </body>
+</html>

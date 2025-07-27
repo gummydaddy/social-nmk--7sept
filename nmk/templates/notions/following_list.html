@@ -1,14 +1,25 @@
 {% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters %}
 
 {% block main_content %}
+<br>
 <div class="following">
   <h2>{{ profile_user.username }} is Following</h2>
   <ul>
       {% for follow in following %}
       <li>
-          <a href="{% url 'user_profile:profile' follow.following.id %}">
-              {{ follow.following.username }}
-          </a>
+
+                    <a href="{% url 'user_profile:profile' follow.following.id %}" class="mention-with-avatar">
+                        <img src="{{ notion.user.profile|profile_picture_url }}"
+                             class="mention-avatar"
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ follow.following.username }}</h5>
+                    </a>
+
+          <!--<a href="{% url 'user_profile:profile' follow.following.id %}">
+             <h5> {{ follow.following.username }}<h5>
+          </a>-->
       </li>
       {% endfor %}
   </ul>

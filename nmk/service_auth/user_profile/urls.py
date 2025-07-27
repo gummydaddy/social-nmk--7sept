@@ -8,7 +8,7 @@ from service_auth.only_message import views as only_message_views
 
 
 app_name = 'user_profile'
-
+#add <str:username>/ tp profile to display username in the navigation bar 
 urlpatterns = [
     path('profile/<int:user_id>/', views.profile, name='profile'),
     
@@ -30,6 +30,10 @@ urlpatterns = [
     # path('media/tags/', views.media_tags, name='media_tags'),  # New URL for tagged media
     path('media/tags/<int:user_id>/', views.media_tags, name='media_tags'),  # New URL for user's tagged media
     path('explore/', views.explore, name='explore'),
+
+    path('log_interaction/', views.log_interaction, name='log_interaction'),
+
+
     path('search_uploads/', views.search_uploads, name='search_uploads'),
     path('explore_detail/<int:media_id>/', views.explore_detail, name='explore_detail'),
     path('following_media/', views.following_media, name='following_media'),

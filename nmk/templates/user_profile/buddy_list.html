@@ -1,12 +1,13 @@
 {% extends 'landing_page.html' %}
 
 {% block main_content %}
+<br>
 <h2>Your Buddies</h2>
 <ul>
     {% for buddy in buddies %}
         <li>
             <a href="{% url 'user_profile:profile' user_id=buddy.buddy.id %}">
-                {{ buddy.buddy.username }}
+               <h5> {{ buddy.buddy.username }}</h5>
             </a>
             <!--{{ buddy.buddy.username }}-->
             <form method="post" action="{% url 'user_profile:remove_from_buddy_list' buddy.buddy.id %}" style="display:inline;">

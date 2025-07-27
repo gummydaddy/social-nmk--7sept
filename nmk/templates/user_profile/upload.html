@@ -187,6 +187,7 @@ $(document).ready(function() {
                 console.log('Upload successful:', response);
                 alert("Upload successful!");
                 window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+
             },
             error: function(xhr, status, error) {
                 $('#uploadSpinner').hide();           // Hide spinner

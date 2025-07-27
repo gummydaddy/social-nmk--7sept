@@ -75,7 +75,15 @@
 
 <div class="notion-detail-container">
     <div class="notion-detail">
-        <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
+        <!--<a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>-->
+
+      <a href="{% url 'user_profile:profile' user_id=notion.user.id %}" class="mention-with-avatar">
+          <img src="{{ notion.user.profile|profile_picture_url }}"
+               class="mention-avatar"
+               alt="{{ notion.user.username }}'s profile picture">
+          <h5>{{ notion.user.username }}</h5>
+      </a><br>
+
         <p>{{ notion.content|safe }}</p>
         <p>{{ notion.created_at }}</p>
         <div class="actions">

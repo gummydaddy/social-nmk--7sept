@@ -1,14 +1,24 @@
 {% extends 'landing_page.html' %}
 {% load static %}
+{% load custom_filters %}
+
 
 {% block main_content %}
+<br>
 <div class="search-results">
     <h2>Search Results</h2>
     <ul>
         {% for user in users %}
         <li>
+                    <a href="{% url 'user_profile:profile' user_id %}" class="mention-with-avatar">
+                        <img src="{{ media.user.profile|profile_picture_url }}"
+                             class="mention-avatar"
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ media.user.username }}</h5>
+                    </a>
+
             <a href="{% url 'user_profile:profile' user.id %}">
-                {{ user.username }}
+               <h5> {{ user.username }}</h5>
             </a>
         </li>
         {% endfor %}

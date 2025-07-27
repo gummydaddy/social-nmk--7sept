@@ -1,5 +1,6 @@
 {% extends 'landing_page.html' %}
 {% load static %}
+{% load custom_filters%}
 
 {% block main_content %}
 <style>
@@ -147,7 +148,15 @@
   {% if notions %}
     {% for notion in notions %}
       <div class="notion-item">
-        <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
+        <!--<a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>-->
+
+      <a href="{% url 'user_profile:profile' user_id=notion.user.id %}" class="mention-with-avatar">
+          <img src="{{ notion.user.profile|profile_picture_url }}"
+               class="mention-avatar"
+               alt="{{ notion.user.username }}'s profile picture">
+          <h5>{{ notion.user.username }}</h5>
+      </a><br>
+
         <div class="notion-content">{{ notion.content|safe }}</div>
         {% if notion.custom_group %}
           <div class="notion-meta">Group: {{ notion.custom_group.name }}</div>

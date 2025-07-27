@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html lang="en">
 {% load media_filters %}
 {% load static %}
 
@@ -13,20 +15,19 @@
   }
 </script>
 
-
-<!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Socyfie</title>
 
+
     <link rel="manifest" href="{% static 'manifest.json' %}">
 
-    <!--apple-->
-    <meta name="mobile-web-app-capable" content="yes">
+    <!--apple
+    <meta name="apple-mobile-web-app-capable" content="yes">-->
     <meta name="mobile-web-app-title" content="Socyfie">
     <meta name="mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
 
     <link rel="icon" href="{% static 'images/favicon.svg' %}" type="image/svg+xml">
 
@@ -35,12 +36,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
     <link rel="apple-touch-icon-precomposed" href="{% static 'images/apple-touch-icon-precomposed.png' %}">
 
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">
-
-
-    <!--<link rel="manifest" href="{% static 'manifest.json' %}">-->
-
+    <!--<link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/favicon-32x32.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/favicon-16x16.png' %}">-->
+    <!--
+    <script>
+      const isAndroid = /android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = "{% static 'manifest.json' %}";
+        document.head.appendChild(link);
+      }
+    </script>
+    -->
 
     <!--<link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
@@ -280,8 +288,9 @@
         }
 
         .footer-icon a {
-            color: #4F46E5;
-            font-size: 1.8rem;
+           /* color: #4F46E5;*/
+            color: #343434;
+            font-size: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -518,11 +527,79 @@
 
         
     </style>
+
+<!--for pull-to-refresh gesture-->
+<style>
+#pull-to-refresh {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    background: #f1f1f1;
+    text-align: center;
+    overflow: hidden;
+    font-family: sans-serif;
+    font-size: 14px;
+    color: #555;
+    transition: height 0.3s ease;
+    z-index: 9999;
+}
+
+#pull-to-refresh .spinner {
+    margin: 10px auto;
+    width: 24px;
+    height: 24px;
+    border: 3px solid #ccc;
+    border-top: 3px solid #555;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: none;
+}
+
+#pull-to-refresh.show-spinner .spinner {
+    display: inline-block;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+<!--profile image with user name -->
+<style>
+.mention-with-avatar {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.mention-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+</style>
+<!--disable dragging-->
+<style>
+img {
+  pointer-events: none;       /* Prevent clicks, drag */
+  user-select: none;          /* Prevent selection */
+  -webkit-user-drag: none;    /* Disable image dragging in Safari */
+}
+body {
+  user-select: none;          /* Disable selection globally */
+}
+</style>
+
+
     {% load static %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <!--script for including lazy loading-->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             let lazyImages = document.querySelectorAll("img.lazyload");
@@ -544,7 +621,7 @@
     </script>        
 
     <!-- Include Vue.js from a CDN -->
-    {% comment %} <script src="https://cdn.jsdelivr.net/npm/vue@2"></script> {% endcomment %}
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 </head>
 <body style="padding-bottom: 60px;">
     <!-- Splash Screen Container-->
@@ -584,25 +661,6 @@
                 <a>
                     <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
                 </a>
-                <a>
-                    {% comment %} <a href="{% url 'only_card:upload_folder' %}">Upload folders</a> {% endcomment %}
-
-                    {% comment %} <a href="{% url 'only_card:create_kyc' %}">Submit kyc</a> {% endcomment %}
-                    {% comment %} <button type="button" >Submit kyc<br>comming soon </button> {% endcomment %}
-
-                    {% comment %} <a href="{% url 'only_card:subgroup_signup' %}">ASSOCIATION SIGN UP</a> {% endcomment %}
-                    {% comment %} <button type="button" >ASSOCIATION SIGN UP<br>comming soon </button> {% endcomment %}
-                    {% comment %} <a href="{% url 'only_card:RegistrationForm' %}">Register as Service Provider</a> {% endcomment %}
-                    {% comment %} <button type="button"  >Register as Service Provider<br>comming soon </button> {% endcomment %}
-    
-                    {% comment %} <a href="/groupbase/" class="btn btn-outline-primary">subgroup creation</a> {% endcomment %}
-                    {% comment %} <a href="{% url 'only_card:send_file' %}">Send File</a> {% endcomment %}
-                    {% comment %} <a href="{% url 'only_card:create_card' %}">Create Card</a> {% endcomment %}
-                </a>
-    
-                
-                
-                
                 
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
@@ -904,6 +962,80 @@
       });
     });
   });
+</script>
+
+<!--dissabling dragging behaviour-->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Disable drag behavior on all images
+  document.querySelectorAll('img').forEach(img => {
+    img.setAttribute('draggable', 'false');
+    img.addEventListener('dragstart', e => e.preventDefault());
+    img.addEventListener('contextmenu', e => e.preventDefault()); // disables right-click
+  });
+
+  // Optional: Block text/image selection
+  document.body.addEventListener('selectstart', e => e.preventDefault());
+});
+</script>
+
+<!--for pull-to-refresh gesture-->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isInStandaloneMode = () => ('standalone' in window.navigator) && window.navigator.standalone;
+
+    if (!(isIos() && isInStandaloneMode())) return;
+
+    let startY = 0;
+    let pulling = false;
+    const threshold = 80;
+
+    const refreshEl = document.createElement('div');
+    refreshEl.id = 'pull-to-refresh';
+    refreshEl.innerHTML = `
+        <div class="spinner"></div>
+        <div class="message">↓ Pull to refresh</div>
+    `;
+    document.body.prepend(refreshEl);
+
+    const messageEl = refreshEl.querySelector('.message');
+    const spinnerEl = refreshEl.querySelector('.spinner');
+
+    document.addEventListener('touchstart', function (e) {
+        if (window.scrollY === 0) {
+            startY = e.touches[0].clientY;
+            pulling = true;
+        }
+    });
+
+    document.addEventListener('touchmove', function (e) {
+        if (!pulling) return;
+
+        const distance = e.touches[0].clientY - startY;
+        if (distance > 0) {
+            e.preventDefault();
+            refreshEl.style.height = Math.min(distance, threshold) + 'px';
+            messageEl.textContent = distance > threshold ? '↻ Release to refresh' : '↓ Pull to refresh';
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', function (e) {
+        if (!pulling) return;
+
+        const distance = e.changedTouches[0].clientY - startY;
+        pulling = false;
+
+        if (distance > threshold) {
+            refreshEl.style.height = '60px';
+            refreshEl.classList.add('show-spinner');
+            messageEl.textContent = 'Refreshing...';
+            setTimeout(() => location.reload(), 800);
+        } else {
+            refreshEl.style.height = '0';
+        }
+    });
+});
 </script>
 
 

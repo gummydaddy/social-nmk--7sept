@@ -20,6 +20,7 @@ from django.contrib.auth import get_user_model
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
+from django.views.decorators.http import require_http_methods
 
 
 
@@ -212,6 +213,7 @@ def message_list_view(request):
     return render(request, 'message_list.html', {'users': users})
 
 
+#sending message update that included sending files 
 @login_required
 def user_messages_view(request, username):
     user = get_object_or_404(AuthUser, username=username)
@@ -306,6 +308,7 @@ def user_messages_view(request, username):
 
 
 """
+#old message sending function 
 @login_required
 def user_messages_view(request, username):
     user = get_object_or_404(AuthUser, username=username)
@@ -476,3 +479,14 @@ def get_messages_api(request, username):
             })
 
     return JsonResponse({'messages': decrypted_messages})
+
+
+
+
+
+
+
+#new update for message sending
+
+
+
