@@ -12,6 +12,7 @@
         border: 1px solid #ccc;
         background-color: #fff0ff;
         overflow-y: scroll;
+        overflow-x: hidden;
         padding: 10px;
         margin-bottom: 20px;
         color: #123;
@@ -28,16 +29,29 @@
         max-width: 60%;
         font-size: 12px;
     }
+
+    .sender-message,
+    .recipient-message {
+        background-color: #e1ffc7; /* keep specific background if needed */
+        max-width: 60%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
+        display: block;
+    }
+
     .sender-message {
         background-color: #e1ffc7;
         text-align: right;
         margin-left: auto; /* Push to the right */
     }
+
     .recipient-message {
         background-color: #f1f1f1;
         text-align: left;
         margin-right: auto; /* Push to the left */
     }
+
     form {
         margin-top: 5px;
         margin-bottom: 5px;
@@ -112,8 +126,8 @@
     {{ form.as_p }}
     <button type="submit">Send ➣➤</button>
 </form>
-
 {% endblock %}
+
 
 {% block Message_script %}
 <script>
@@ -127,6 +141,7 @@
 
         // Scroll to bottom on load
         chatBox.scrollTop = chatBox.scrollHeight;
+
 
         // WebSocket setup (for receiving messages and potentially sending text messages)
         const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
@@ -259,6 +274,7 @@
                 window.history.pushState(null, "", window.location.href);
             };
         })();
+
     });
 </script>
 {% endblock %}

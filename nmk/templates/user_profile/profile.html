@@ -84,11 +84,7 @@
 <div class="profile-container">
     {% block profile_header_content %}
     <div class="profile-section">
-        {% comment %} <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
-            <i class="fas fa-globe"></i>
-        </button> {% endcomment %}
         <div class="profile-info">
-            {% comment %} <h2>{{ profile_user.username }}</h2> {% endcomment %}
             <p>
                 <h2 style="display: inline;">
                     <span>{{ profile_user.username }} </span>
@@ -183,7 +179,6 @@
             <div class="uploads-section">
                 <div class="row row-cols-3 g-4">
                     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>
-                    {% comment %} <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:following_media' %}'">Following Media</button> {% endcomment %}
                     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>
                     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:voices' user_id=request.user.id %}'">Voices</button>
                 </div>

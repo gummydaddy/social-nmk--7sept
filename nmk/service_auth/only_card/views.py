@@ -45,7 +45,9 @@ import shutil
 from .tasks import process_file_upload  # import your Celery task
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
-
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import cache_page
+from django.views.decorators.cache import cache_control
 
 
 
@@ -126,6 +128,8 @@ def signup(request):
     return render(request, 'signup.html', {'form': form})
 
 
+"""
+@csrf_exempt
 @never_cache
 def login_view(request):
     if request.user.is_authenticated:
@@ -173,19 +177,12 @@ def login_view(request):
 
                     response = redirect('/following_media')  # Default redirect
 
-                    # Set session cookie and cache the username
-                    #response = HttpResponse("You're logged in.")
-                    #response.set_cookie('username', username)
-                    #cache.set(f'user_{user.id}', user.username)
-
                     # Redirect based on user roles
                     if CustomGroupAdmin.objects.filter(user=user).exists():
                         return redirect('/subgroup_landing_page')
                     elif user.is_staff:
                         return redirect('/super_user_landing_page')
-                    #else:
-                        # return redirect('/landing_page')
-                        #return redirect('/following_media')
+
                     # Set session/cookie/cache
                     response.set_cookie('username', username)
                     cache.set(f'user_{user.id}', username)
@@ -203,10 +200,6 @@ def login_view(request):
 
         except User.DoesNotExist:
             messages.error(request, 'Invalid username or email')
-
-        #except Exception as e:
-            # Handle any other errors
-            #messages.error(request, f"Failed to log in: {str(e)}")
 
         # Group-based authentication (if necessary)
         try:
@@ -228,6 +221,83 @@ def login_view(request):
             #pass
             messages.error(request, 'Invalid username, email, or group name.')
 
+        except Exception as e:
+            messages.error(request, f"Login failed: {str(e)}")
+
+        return render(request, 'login_view.html')
+
+    else:
+        return render(request, 'login_view.html')
+"""
+
+
+@csrf_exempt
+@never_cache
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('/following_media')
+
+    if request.method == 'POST':
+        username_or_email = request.POST.get('username', '').strip()
+        password = request.POST.get('pass1', '')
+        remember_me = request.POST.get('remember_me')
+
+        try:
+            # Determine if input is email or username
+            if '@' in username_or_email:
+                user = User.objects.get(email=username_or_email)
+                username = user.username
+            else:
+                user = User.objects.get(username=username_or_email)
+                username = username_or_email
+
+            # Authenticate using Django's built-in system
+            user = authenticate(request, username=username, password=password)
+
+            if user is not None:
+                login(request, user)
+                update_session_auth_hash(request, user)
+
+                # Session expiry logic
+                if not remember_me:
+                    request.session.set_expiry(0)  # Expires on browser close
+                else:
+                    request.session.set_expiry(60 * 60 * 24 * 14)  # 14 days
+
+                response = redirect('/following_media')
+
+                # Redirect for admin or staff users
+                if CustomGroupAdmin.objects.filter(user=user).exists():
+                    return redirect('/subgroup_landing_page')
+                elif user.is_staff:
+                    return redirect('/super_user_landing_page')
+
+                response.set_cookie('username', username)
+                cache.set(f'user_{user.id}', username)
+                return response
+            else:
+                messages.error(request, "Invalid password. Please try again.")
+        except User.DoesNotExist:
+            messages.error(request, "Invalid username or email.")
+
+        # Group-based login attempt
+        try:
+            group = CustomGroup.objects.get(name=username_or_email)
+            user = group.users.first()
+            if user:
+                login(request, user)
+
+                if not remember_me:
+                    request.session.set_expiry(0)
+                else:
+                    request.session.set_expiry(60 * 60 * 24 * 14)
+
+                request.session['association_name'] = username_or_email
+                request.session['user_id'] = user.id
+                cache.set(f'user_{user.id}', username_or_email)
+                return redirect('/landing_page')
+        except CustomGroup.DoesNotExist:
+            messages.error(request, 'Invalid username, email, or group name.')
         except Exception as e:
             messages.error(request, f"Login failed: {str(e)}")
 
@@ -304,8 +374,9 @@ def password_reset(request):
 
 
 
-# Landing
-@login_required   
+@cache_control(public=True, max_age=60, s_maxage=120, must_revalidate=True)
+#@cache_control(public=True, max_age=120, s_maxage=120)
+#@login_required   
 def landing_page(request):
     cache_key = f'user_{request.user.id}_username'
     user_username = cache.get(cache_key)
@@ -362,6 +433,8 @@ def buy_storage(request):
     return render(request, 'buy_storage.html')
 
 
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120)
 def upload_document(request):
     if request.method == 'POST':
         form = UserUploadForm(request.POST, request.FILES)
@@ -381,6 +454,7 @@ def upload_document(request):
     return render(request, 'upload_document.html', {'form': UserUploadForm()})
 
 
+
 """
 def fetch_file_modal(request, file_id):
     upload = get_object_or_404(Upload, id=file_id)
@@ -388,23 +462,11 @@ def fetch_file_modal(request, file_id):
         'upload': upload
     })
 """
-'''
-@login_required
-def view_video_page(request, upload_id):
-    upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-    mime_type, _ = mimetypes.guess_type(upload.file.path)
-    if not mime_type:
-        mime_type = "application/octet-stream"
-
-    return render(request, 'view_video.html', {
-        'upload': upload,
-        'file_name': upload.file_name,
-        'mime_type': mime_type,
-    })
-'''
 
 
+
+@cache_control(public=True, max_age=60, s_maxage=120, must_revalidate=True)
+#@cache_control(public=True, max_age=120, s_maxage=120)
 @login_required
 def view_video_page(request, upload_id):
     try:
@@ -449,8 +511,9 @@ def view_video_page(request, upload_id):
         logger.error(f"Error in view_video_page: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
 
-
 @login_required
+@cache_control(public=True, max_age=60, s_maxage=120, must_revalidate=True)
+#@cache_control(public=True, max_age=120, s_maxage=120)
 def view_media(request, upload_id):
     try:
 
@@ -524,8 +587,8 @@ def view_media(request, upload_id):
 
 # Set up logging
 logger = logging.getLogger(__name__)
-
 @login_required
+@cache_control(public=True, max_age=60, s_maxage=120, must_revalidate=True)
 def view_file(request, upload_id):
     try:
 
@@ -580,83 +643,12 @@ def view_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-'''
 
-@login_required
-def view_file(request, upload_id):
-    try:
-        user_id = request.user.id
 
-        # Cache keys
-        cache_key_username = f'user_{user_id}_username'
-        cache_key_mime = f'user_{user_id}_upload_{upload_id}_mime'
-        cache_key_filename = f'user_{user_id}_upload_{upload_id}_filename'
-
-        # Username caching
-        user_username = cache.get(cache_key_username)
-        if not user_username:
-            user_username = request.user.username
-            cache.set(cache_key_username, user_username, timeout=60 * 60 * 24)  # 1 day
-
-        # Get uploaded file record for user
-        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-        # Encryption key check
-        if not upload.encryption_key:
-            logger.error(f"Encryption key not found for file with ID {upload_id}")
-            return HttpResponseServerError("Encryption key not found for this file.")
-
-        # Fernet initialization
-        try:
-            fernet = Fernet(upload.encryption_key.encode('utf-8'))
-        except Exception as e:
-            logger.error(f"Error initializing Fernet cipher: {e}")
-            return HttpResponseServerError("Failed to initialize decryption.")
-
-        # File path check
-        file_path = upload.file.path
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return HttpResponseNotFound("File not found.")
-
-        # MIME type caching
-        mime_type = cache.get(cache_key_mime)
-        if not mime_type:
-            mime_type, _ = mimetypes.guess_type(file_path)
-            if not mime_type:
-                mime_type = 'application/octet-stream'
-            cache.set(cache_key_mime, mime_type, timeout=60 * 60)  # 1 hour
-
-        # Filename caching (optional, safe)
-        file_name = cache.get(cache_key_filename)
-        if not file_name:
-            file_name = upload.file_name or os.path.basename(file_path)
-            cache.set(cache_key_filename, file_name, timeout=60 * 60 * 12)  # 12 hours
-
-        # File decryption and streaming
-        with open(file_path, 'rb') as encrypted_file:
-            encrypted_file_data = encrypted_file.read()
-
-        try:
-            decrypted_file_data = fernet.decrypt(encrypted_file_data)
-        except Exception as e:
-            logger.error(f"Error during file decryption: {e}")
-            return HttpResponseServerError("Error decrypting file.")
-
-        response = StreamingHttpResponse(
-            iter([decrypted_file_data]),
-            content_type=mime_type
-        )
-        response['Content-Disposition'] = f'attachment; filename="{file_name}"'
-        return response
-
-    except Exception as e:
-        logger.error(f"Unhandled exception in view_file: {e}")
-        return HttpResponseServerError("An error occurred while processing your request.")
-'''
 
 
 @login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def view_pdf_file(request, upload_id):
     try:
 
@@ -715,97 +707,12 @@ def view_pdf_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_pdf_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-'''
 
-@login_required
-def view_pdf_file(request, upload_id):
-    try:
-        user_id = request.user.id
 
-        # Cache keys
-        cache_key_username = f'user_{user_id}_username'
-        cache_key_mime = f'user_{user_id}_upload_{upload_id}_mime'
-        cache_key_filename = f'user_{user_id}_upload_{upload_id}_filename'
-
-        # Username caching
-        user_username = cache.get(cache_key_username)
-        if not user_username:
-            user_username = request.user.username
-            cache.set(cache_key_username, user_username, timeout=60 * 60 * 24)
-
-        # Retrieve the upload object
-        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-        # Encryption key check
-        if not upload.encryption_key:
-            logger.error(f"Encryption key not found for file with ID {upload_id}")
-            return HttpResponseServerError("Encryption key not found for this file.")
-
-        # Fernet decryption setup
-        try:
-            fernet = Fernet(upload.encryption_key.encode('utf-8'))
-        except Exception as e:
-            logger.error(f"Fernet init failed: {e}")
-            return HttpResponseServerError("Failed to initialize decryption.")
-
-        # File path check
-        file_path = upload.file.path
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return HttpResponseNotFound("File not found.")
-
-        # MIME type caching
-        mime_type = cache.get(cache_key_mime)
-        if not mime_type:
-            mime_type, _ = mimetypes.guess_type(file_path)
-            if not mime_type:
-                mime_type = "application/octet-stream"
-            cache.set(cache_key_mime, mime_type, timeout=60 * 60)
-
-        # Ensure it's a PDF
-        if mime_type != "application/pdf":
-            logger.warning(f"Attempt to view non-PDF as PDF: {mime_type}")
-            return HttpResponseServerError("Unsupported file type.")
-
-        # File name caching
-        file_name = cache.get(cache_key_filename)
-        if not file_name:
-            file_name = upload.file_name or os.path.basename(file_path)
-            cache.set(cache_key_filename, file_name, timeout=60 * 60 * 12)
-
-        # Decrypt file content and write to temp
-        try:
-            with open(file_path, 'rb') as encrypted_file:
-                encrypted_data = encrypted_file.read()
-            decrypted_data = fernet.decrypt(encrypted_data)
-
-            # Write to temp file
-            temp_path = os.path.join('/tmp', f"decrypted_{file_name}")
-            with open(temp_path, 'wb') as temp_file:
-                temp_file.write(decrypted_data)
-
-            # Serve the decrypted PDF inline
-            fs = FileSystemStorage('/tmp')
-            with fs.open(f"decrypted_{file_name}", 'rb') as pdf:
-                response = HttpResponse(pdf, content_type='application/pdf')
-                response['Content-Disposition'] = f'inline; filename="{file_name}"'
-
-            # Clean up temp file
-            os.remove(temp_path)
-
-            return response
-
-        except Exception as e:
-            logger.error(f"Error decrypting/serving PDF: {e}")
-            return HttpResponseServerError("Error reading .pdf file.")
-
-    except Exception as e:
-        logger.error(f"Unhandled exception in view_pdf_file: {e}")
-        return HttpResponseServerError("An error occurred while processing your request.")
-'''
 
 
 @login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def view_docx_file(request, upload_id):
     try:
 
@@ -868,95 +775,12 @@ def view_docx_file(request, upload_id):
     except Exception as e:
         logger.error(f"Unhandled exception in view_docx_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
-'''
+
+
+
 
 @login_required
-def view_docx_file(request, upload_id):
-    try:
-        user_id = request.user.id
-
-        # Define cache keys
-        cache_key_username = f'user_{user_id}_username'
-        cache_key_mime = f'user_{user_id}_upload_{upload_id}_mime'
-        cache_key_filename = f'user_{user_id}_upload_{upload_id}_filename'
-
-        # Cache username
-        user_username = cache.get(cache_key_username)
-        if not user_username:
-            user_username = request.user.username
-            cache.set(cache_key_username, user_username, timeout=60 * 60 * 24)
-
-        # Fetch the uploaded file record
-        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-        # Ensure encryption key exists
-        if not upload.encryption_key:
-            logger.error(f"Encryption key missing for upload ID {upload_id}")
-            return HttpResponseServerError("Encryption key not found for this file.")
-
-        # Initialize decryption
-        try:
-            fernet = Fernet(upload.encryption_key.encode('utf-8'))
-        except Exception as e:
-            logger.error(f"Failed to init Fernet: {e}")
-            return HttpResponseServerError("Failed to initialize decryption.")
-
-        file_path = upload.file.path
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return HttpResponseNotFound("File not found.")
-
-        # Detect and cache MIME type
-        mime_type = cache.get(cache_key_mime)
-        if not mime_type:
-            mime_type, _ = mimetypes.guess_type(file_path)
-            if not mime_type:
-                mime_type = "application/octet-stream"
-            cache.set(cache_key_mime, mime_type, timeout=60 * 60)
-
-        if not file_path.endswith(".docx") or mime_type != "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            logger.warning(f"Attempt to view non-docx as docx: {mime_type}")
-            return HttpResponseServerError("Unsupported file type.")
-
-        # Cache file name
-        file_name = cache.get(cache_key_filename)
-        if not file_name:
-            file_name = upload.file_name or os.path.basename(file_path)
-            cache.set(cache_key_filename, file_name, timeout=60 * 60 * 12)
-
-        try:
-            # Decrypt the file data
-            with open(file_path, 'rb') as encrypted_file:
-                encrypted_data = encrypted_file.read()
-            decrypted_data = fernet.decrypt(encrypted_data)
-
-            # Write to temp file
-            temp_path = os.path.join('/tmp', f"decrypted_{file_name}")
-            with open(temp_path, 'wb') as temp_file:
-                temp_file.write(decrypted_data)
-
-            # Parse with python-docx
-            document = Document(temp_path)
-            docx_content = "".join(f"<p>{para.text}</p>" for para in document.paragraphs)
-
-            # Remove temp file
-            os.remove(temp_path)
-
-            return render(request, 'view_docx.html', {
-                'docx_content': docx_content,
-                'file_name': file_name
-            })
-
-        except Exception as e:
-            logger.error(f"Error processing DOCX: {e}")
-            return HttpResponseServerError("Error reading .docx file.")
-
-    except Exception as e:
-        logger.error(f"Unhandled exception in view_docx_file: {e}")
-        return HttpResponseServerError("An error occurred while processing your request.")
-'''
-
-@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def view_pptx_file(request, upload_id):
     try:
 
@@ -1024,6 +848,8 @@ def view_pptx_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def is_valid_excel_file(file_path):
     # Supported MIME types for Excel files
     excel_mime_types = [
@@ -1037,7 +863,8 @@ def is_valid_excel_file(file_path):
     return mime_type in excel_mime_types
 
 
-
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def view_xml_file(request, upload_id):
     try:
 
@@ -1079,6 +906,8 @@ def view_xml_file(request, upload_id):
         return HttpResponseServerError("An error occurred while processing your request.")
 
 
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
     """Handles XML, XLS, and XLSX file decryption and rendering."""
     try:
@@ -1118,6 +947,8 @@ def handle_xml_or_xlsx_file(file_path, fernet, upload, file_type):
             os.remove(decrypted_file_path)
 
 
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def handle_xml_file(decrypted_file_path, upload):
     """Handles the XML file content."""
     try:
@@ -1142,6 +973,8 @@ def handle_xml_file(decrypted_file_path, upload):
         return HttpResponseServerError("Error parsing the XML file.")
 
 
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def handle_xlsx_file(decrypted_file_path, upload):
     """Handles the XLSX file content using openpyxl."""
     try:
@@ -1174,6 +1007,8 @@ def handle_xlsx_file(decrypted_file_path, upload):
 
 
 
+@login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def handle_xls_file(decrypted_file_path, upload):
     """Handles the older .xls file format using xlrd."""
     try:
@@ -1197,9 +1032,10 @@ def handle_xls_file(decrypted_file_path, upload):
     except Exception as e:
         logger.error(f"Error reading Excel file (.xls): {e}")
         return HttpResponseServerError("Error reading Excel file (.xls).")
-    
 
+    
 @login_required
+@cache_control(public=True, max_age=120, s_maxage=120, must_revalidate=True)
 def view_text_file(request, upload_id):
     try:
 
@@ -1258,83 +1094,6 @@ def view_text_file(request, upload_id):
         logger.error(f"Unhandled exception in view_text_file: {e}")
         return HttpResponseServerError("An error occurred while processing your request.")
 
-'''
-@login_required
-def view_text_file(request, upload_id):
-    try:
-        user_id = request.user.id
-
-        # Define cache keys
-        cache_key_username = f'user_{user_id}_username'
-        cache_key_filetype = f'user_{user_id}_upload_{upload_id}_filetype'
-        cache_key_filename = f'user_{user_id}_upload_{upload_id}_filename'
-
-        # Cache username
-        user_username = cache.get(cache_key_username)
-        if not user_username:
-            user_username = request.user.username
-            cache.set(cache_key_username, user_username, timeout=60 * 60 * 24)
-
-        # Fetch the uploaded file record for the authenticated user
-        upload = get_object_or_404(UserUpload, id=upload_id, user=request.user)
-
-        # Ensure the file has an encryption key
-        if not upload.encryption_key:
-            logger.error(f"Encryption key not found for file with ID {upload_id}")
-            return HttpResponseServerError("Encryption key not found for this file.")
-
-        # Initialize Fernet
-        try:
-            fernet = Fernet(upload.encryption_key.encode('utf-8'))
-        except Exception as e:
-            logger.error(f"Error initializing Fernet cipher: {e}")
-            return HttpResponseServerError("Failed to initialize decryption.")
-
-        file_path = upload.file.path
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            return HttpResponseNotFound("File not found")
-
-        try:
-            # Read and decrypt file
-            with open(file_path, 'rb') as encrypted_file:
-                encrypted_file_data = encrypted_file.read()
-            decrypted_file_data = fernet.decrypt(encrypted_file_data).decode('utf-8')
-
-            # Detect file type and cache it
-            file_extension = os.path.splitext(upload.file.name)[1].lower()
-            file_type = cache.get(cache_key_filetype)
-            if not file_type:
-                if file_extension == '.py':
-                    file_type = 'python'
-                elif file_extension == '.js':
-                    file_type = 'javascript'
-                elif file_extension == '.txt':
-                    file_type = 'text'
-                else:
-                    file_type = 'unknown'
-                cache.set(cache_key_filetype, file_type, timeout=60 * 60)
-
-            # Cache file name
-            file_name = cache.get(cache_key_filename)
-            if not file_name:
-                file_name = upload.file_name or os.path.basename(file_path)
-                cache.set(cache_key_filename, file_name, timeout=60 * 60 * 12)
-
-            return render(request, 'view_docx.html', {
-                'txt_content': decrypted_file_data,
-                'file_name': file_name,
-                'file_type': file_type
-            })
-
-        except Exception as e:
-            logger.error(f"Error reading text file: {e}")
-            return HttpResponseServerError("Error reading text file.")
-
-    except Exception as e:
-        logger.error(f"Unhandled exception in view_text_file: {e}")
-        return HttpResponseServerError("An error occurred while processing your request.")
-'''
 
 """
 @login_required

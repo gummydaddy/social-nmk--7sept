@@ -35,7 +35,8 @@ class MessageForm(forms.Form):
                 'application/pdf',
                 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', # .doc, .docx
                 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', # .xls, .xlsx
-                'text/plain'
+                'text/plain',
+                'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'   #ppt
             ]
             if uploaded_file.content_type not in allowed_mimetypes:
                 raise ValidationError("Unsupported file type.")

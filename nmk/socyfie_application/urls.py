@@ -20,8 +20,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from django.views.generic import TemplateView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+from django.contrib.sitemaps.views import sitemap
+from service_auth.user_profile.sitemaps import StaticViewSitemap, ProfileSitemap, MediaSitemap
+from service_auth.notion.sitemaps import NotionSitemap
 
 
+#new sitemap
+sitemaps = {
+    'static': StaticViewSitemap(),
+    'profiles': ProfileSitemap(),
+    'media': MediaSitemap(),
+    'notions': NotionSitemap(),
+}
 
 urlpatterns = [
    
@@ -40,12 +52,13 @@ urlpatterns = [
 
     path('accounts/', include('django.contrib.auth.urls')),
 
-    # path('following/', auth_views.following_list, name='following_list'),
-    #path("service-worker.js", TemplateView.as_view(
-        #template_name="service-worker.js",
-        #content_type="application/javascript"
-    #)),
+    path("api/auth/", include("rest_framework.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
 
+    #path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'), #new sitemap
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
+    path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
 
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

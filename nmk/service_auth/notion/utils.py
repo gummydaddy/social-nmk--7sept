@@ -34,7 +34,7 @@ def add_to_fifo_list(fifo_list, item, max_length=50):
         fifo_list.pop(0)
     return fifo_list
 
-
+"""
 def make_usernames_clickable(content):
     def replace_username(match):
         username = match.group(1)
@@ -48,6 +48,38 @@ def make_usernames_clickable(content):
     content = re.sub(r'@(\w+)', replace_username, content)
 
     # Then, handle the links
+    content = re.sub(r'(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
+
+    return content
+"""
+
+
+
+def make_usernames_clickable(content):
+    def replace_username(match):
+        username = match.group(1)
+        try:
+            user = AuthUser.objects.select_related('profile').get(username=username)
+            profile_pic_url = user.profile.profile_picture.url if user.profile and user.profile.profile_picture else '/static/images/default_profile.png'
+            profile_url = reverse("user_profile:profile", args=[user.id])
+
+            return mark_safe(
+                f'''
+                <span class="mention-with-avatar">
+                    <a href="{profile_url}">
+                        <img src="{profile_pic_url}" class="mention-avatar" alt="{username}'s profile picture">
+                        @{username}
+                    </a>
+                </span>
+                '''
+            )
+        except AuthUser.DoesNotExist:
+            return f'@{username}'  # Fallback if user doesn't exist
+
+    # Replace @usernames with avatar + link
+    content = re.sub(r'@(\w+)', replace_username, content)
+
+    # Replace URLs with clickable links
     content = re.sub(r'(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
 
     return content

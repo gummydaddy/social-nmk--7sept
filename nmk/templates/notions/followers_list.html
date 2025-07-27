@@ -1,4 +1,6 @@
 {% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters %}
 
 {% block main_content %}
 <style>
@@ -38,9 +40,17 @@
   <ul>
       {% for follow in followers %}
       <li style="display: flex; justify-content: space-between; align-items: center;">
-          <a href="{% url 'user_profile:profile' follow.follower.id %}">
-              {{ follow.follower.username }}
-          </a>
+
+                    <a href="{% url 'user_profile:profile' follow.follower.id %}" class="mention-with-avatar">
+                        <img src="{{ notion.user.profile|profile_picture_url }}"
+                             class="mention-avatar"
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ follow.follower.username }}</h5>
+                    </a>
+
+          <!--<a href="{% url 'user_profile:profile' follow.follower.id %}">
+             <h5> {{ follow.follower.username }}</h5>
+          </a>-->
           
           <!-- Dropdown Menu for Removing Follower -->
           {%if profile_user == request.user%}

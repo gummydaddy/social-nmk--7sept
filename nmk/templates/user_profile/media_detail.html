@@ -101,9 +101,13 @@
 </style>
 
 <div class="media-detail-container">
-    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-        {{ media.user.username }}
-    </a>
+                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
+                        <img src="{{ media.user.profile|profile_picture_url }}"
+                             class="mention-avatar"
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ media.user.username }}</h5>
+                    </a>
+
     <div class="media-detail">
         {% if media.file.url|is_video %}
             <video controls class="img-fluid autoplay-video" unmute>
@@ -294,6 +298,51 @@
         <a href="?page={{ page_obj.next_page_number }}">Next</a>
     {% endif %}
 </div>
+
+            {% block footer %}
+            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+                <div class="bottom-strip d-flex justify-content-around align-items-center">
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'only_card:landing_page' %}">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
+                    </div>
+
+                    <!--<div class="footer-icon">
+                        <a href="{% url 'user_profile:upload_media' %}">
+                            <i class="fas fa-upload"></i>
+                        </a>
+                    </div>-->
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:explore' %}">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </footer>
+
+            {% endblock %}
 
 {% endblock %}
 

@@ -9,7 +9,7 @@
       <li data-username="{{ user.username|escape }}">
         <a href="{% url 'only_message:send_message_view' %}?recipient={{ user.username|urlencode }}">
           {{ user.username|escape }}
-          {% comment %} : {{ user.status|default:'Offline' }} {% endcomment %}
+           : {{ user.status|default:'Offline' }} 
         </a>
       </li>
     {% endfor %}

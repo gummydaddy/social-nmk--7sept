@@ -16,6 +16,31 @@ def is_video(file_url):
 
 
 @register.filter
+def is_powerpoint(file_url):
+    """Check if file is a PowerPoint document"""
+    mime_type, _ = mimetypes.guess_type(file_url)
+    ppt_types = [
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ]
+    return mime_type and mime_type in ppt_types
+
+@register.filter
+def is_office_document(file_url):
+    """Check if file is any Office document"""
+    mime_type, _ = mimetypes.guess_type(file_url)
+    office_types = [
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ]
+    return mime_type and mime_type in office_types
+
+
+@register.filter
 def ends_with(value, arg):
     """
     Checks if a string ends with the given suffix.

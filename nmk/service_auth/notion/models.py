@@ -7,6 +7,7 @@ from service_auth.user_profile.models import Media, Audio
 from django.utils.timezone import now #new
 from django.utils import timezone
 from datetime import timedelta
+from django.urls import reverse
 
 
 class Hashtag(models.Model):
@@ -33,7 +34,11 @@ class Notion(models.Model):
 
     def __str__(self):
         return self.content
-    
+
+    def get_absolute_url(self):
+        return reverse('notion:notion_detail', kwargs={'notion_id': self.id})
+
+
 #block     
 class BlockedUser(models.Model):
     blocker = models.ForeignKey(AuthUser, related_name='blocker', on_delete=models.CASCADE)

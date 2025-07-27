@@ -4,6 +4,30 @@
 
 {% block main_content %}
 <style>
+
+    .media-wrapper {
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: 2px;
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        color: #123;
+    }
+
+    .media-content img,
+    .media-content video {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+        border-radius: 8px;
+        display: block;
+        margin: 0 auto;
+    }
+
     .dropdown {
         position: relative;
         display: inline-block;
@@ -41,10 +65,15 @@
         display: block;
     }
 </style>
+<br>
 <div id="media-detail-container">
-    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-        {{ media.user.username }}
-    </a>
+                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
+                        <img src="{{ media.user.profile|profile_picture_url }}"
+                             class="mention-avatar"
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ media.user.username }}</h5>
+                    </a>
+
     <div id="current-media">
         {% if media.file.url|is_video %}
         <video controls class="img-fluid autoplay-video" unmute>
@@ -172,45 +201,47 @@
 </div>
 -->
 
-<div id="related-media-container" class="row row-cols-2 g-4 mt-4">
-    {% for related in related_media %}
-    <div class="col related-media-item">
-        <a href="{% url 'user_profile:explore_detail' related.id %}">
-            {% if related.file.url|is_video %}
-                {% if related.thumbnail %}
-                    <img src="{{ related.thumbnail.url }}" alt="video thumbnail" 
-                         class="img-fluid video-thumbnail" 
-                         data-video="{{ related.file.url }}" loading="lazy">
+<div class="media-wrapper">
+    <div id="related-media-container" class="row row-cols-2 g-4 mt-4">
+        {% for related in related_media %}
+        <div class="col related-media-item">
+            <a href="{% url 'user_profile:explore_detail' related.id %}">
+                {% if related.file.url|is_video %}
+                    {% if related.thumbnail %}
+                        <img src="{{ related.thumbnail.url }}" alt="video thumbnail"
+                             class="img-fluid video-thumbnail"
+                             data-video="{{ related.file.url }}" loading="lazy">
+                    {% else %}
+                        <img src="{{ related.file.url }}" alt="video fallback"
+                             class="img-fluid video-thumbnail" loading="lazy">
+                    {% endif %}
                 {% else %}
-                    <img src="{{ related.file.url }}" alt="video fallback" 
-                         class="img-fluid video-thumbnail" loading="lazy">
-                {% endif %}
-            {% else %}
-                {% if related.thumbnail %}
-                    <img src="{{ related.thumbnail.url }}" alt="thumbnail" class="img-fluid" loading="lazy">
-                {% else %}
-                    <img src="{{ related.file.url }}" alt="image fallback" class="img-fluid" loading="lazy">
-                {% endif %}
-            {% endif %}
-        </a>
-        <div class="actions">
-            <a href="{% url 'user_profile:like_media' related.id %}" 
-               class="like-link {% if request.user in related.likes.all %}liked{% endif %}" 
-               data-url="{% url 'user_profile:like_media' related.id %}" 
-               data-media-id="{{ related.id }}" 
-               data-csrf-token="{{ csrf_token }}">
-                {% if request.user in related.likes.all %}
-                    ❤️
-                {% else %}
-                    ♡
+                    {% if related.thumbnail %}
+                        <img src="{{ related.thumbnail.url }}" alt="thumbnail" class="img-fluid" loading="lazy">
+                    {% else %}
+                        <img src="{{ related.file.url }}" alt="image fallback" class="img-fluid" loading="lazy">
+                    {% endif %}
                 {% endif %}
             </a>
-            <span class="like-count">{{ related.likes.count }}</span> 
+            <div class="actions">
+                <a href="{% url 'user_profile:like_media' related.id %}"
+                   class="like-link {% if request.user in related.likes.all %}liked{% endif %}"
+                   data-url="{% url 'user_profile:like_media' related.id %}"
+                   data-media-id="{{ related.id }}"
+                   data-csrf-token="{{ csrf_token }}">
+                    {% if request.user in related.likes.all %}
+                        ❤️
+                    {% else %}
+                        ♡
+                    {% endif %}
+                </a>
+                <span class="like-count">{{ related.likes.count }}</span>
+            </div>
         </div>
+        {% endfor %}
     </div>
-
-    {% endfor %}
 </div>
+
 
 <!-- Loading Spinner -->
 {% comment %} <div id="loading-spinner" style="display: none;">
@@ -250,6 +281,51 @@
         {% endif %}
     </span>
 </div>
+
+            {% block footer %}
+            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+                <div class="bottom-strip d-flex justify-content-around align-items-center">
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'only_card:landing_page' %}">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                            <i class="fas fa-lightbulb"></i>
+                        </a>
+                    </div>
+
+                    <!--<div class="footer-icon">
+                        <a href="{% url 'user_profile:upload_media' %}">
+                            <i class="fas fa-upload"></i>
+                        </a>
+                    </div>-->
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:explore' %}">
+                            <i class="fas fa-globe"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </div>
+
+                </div>
+            </footer>
+
+            {% endblock %}
 
 {% endblock %}
 

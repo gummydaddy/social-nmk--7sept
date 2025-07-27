@@ -1,5 +1,7 @@
 {% extends 'landing_page.html' %}
 {% load static %}
+{% load custom_filters %}
+
 
 {% block main_content %}
 <style>
@@ -178,7 +180,15 @@
 <div class="notions-container">
   {% for notion in notions %}
     <div class="notion-item">
-      <a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>
+      <!--<a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>-->
+
+      <a href="{% url 'user_profile:profile' user_id=notion.user.id %}" class="mention-with-avatar">
+          <img src="{{ notion.user.profile|profile_picture_url }}"
+               class="mention-avatar"
+               alt="{{ notion.user.username }}'s profile picture">
+          <h5>{{ notion.user.username }}</h5>
+      </a>
+
       <div class="notion-content">{{ notion.content|safe }}</div>
       <div class="notion-meta">{{ notion.created_at }}</div>
       <div class="notion-actions">
@@ -206,10 +216,10 @@
 {% block footer %}
 <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
   <div class="d-flex justify-content-around align-items-center">
-    <a href="{% url 'only_card:landing_page' %}" style="color: #4F46E5; font-size: 1.8rem;">
+    <a href="{% url 'only_card:landing_page' %}" style="color: #343434; font-size: 1rem;">
       <i class="fas fa-shield-alt"></i>
     </a>
-    <a href="{% url 'user_profile:following_media' %}" style="color: #4F46E5; font-size: 1.8rem;">
+    <a href="{% url 'user_profile:following_media' %}" style="color: #343434; font-size: 1rem;">
       <!--<i class="fas fa-user-circle"></i>-->
       <i class="fas fa-home"></i>
     </a>

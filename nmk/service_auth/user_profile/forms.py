@@ -122,6 +122,7 @@ class ProfileForm(forms.ModelForm):
 
     def save(self, commit=True):
         profile = super().save(commit=False)
+        
         if self.cleaned_data['profile_picture']:
             profile_picture = self.cleaned_data['profile_picture']
             image = Image.open(profile_picture)

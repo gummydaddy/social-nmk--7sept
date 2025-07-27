@@ -3,6 +3,7 @@ from django import template
 from django.contrib.auth.models import User as AuthUser
 from service_auth.user_profile.models import Media
 from service_auth.user_profile.utils import make_usernames_clickable, linkify
+from django.templatetags.static import static  
 
 
 register = template.Library()
@@ -44,3 +45,10 @@ def startswith(text, prefix):
     if not isinstance(text, str):
         return False
     return text.startswith(prefix)
+
+
+@register.filter
+def profile_picture_url(profile):
+    if profile and profile.profile_picture and getattr(profile.profile_picture, 'url', None):
+        return profile.profile_picture.url
+    return static('images/logo.png')

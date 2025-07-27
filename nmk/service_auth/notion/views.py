@@ -33,7 +33,7 @@ AuthUser = get_user_model()
 # from user_profile.models import Story
 
 
-@login_required
+#@login_required
 def notion_home(request, notion_id=None):
     user = request.user
     following_users = Follow.objects.filter(follower=user).values_list('following_id', flat=True)
@@ -327,7 +327,7 @@ def my_notions(request, notion_id):
     return render(request, 'my_notions.html', context)
 
 
-@login_required
+#@login_required
 def notion_detail_view(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
     related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion_id)
@@ -400,7 +400,7 @@ def notifications(request):
     return render(request, 'notifications.html', {'notifications': notifications})
 
 
-@login_required
+#@login_required
 def notion_explorer(request):
     user = request.user
 

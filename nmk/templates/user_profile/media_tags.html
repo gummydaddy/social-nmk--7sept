@@ -20,9 +20,17 @@
                 {% endif %}
             </a>
             <p>
-                <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
+
+                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
+                        <img src="{{ media.user.profile|profile_picture_url }}"
+                             class="mention-avatar"
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ media.user.username }}</h5>
+                    </a>
+
+               <!-- <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
                     {{ media.user.username }}
-                </a>
+                </a>-->
             </p>
         </div>
     {% endfor %}

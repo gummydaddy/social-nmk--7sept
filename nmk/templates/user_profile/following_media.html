@@ -40,8 +40,9 @@
     }
 
     .footer-icon a {
-        color: #4F46E5;
-        font-size: 1.8rem;
+        /*color: #4F46E5;*/
+        color: #343434;
+        font-size: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -89,6 +90,22 @@
     }
 
 </style>
+<!--profile image with user name -->
+<style>
+.mention-with-avatar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mention-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+</style>
 
 <header>
     {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
@@ -98,10 +115,6 @@
                 <a href="{% url 'only_message:message_list_view' %}" class="button-link">
                     <button class="messagebtn"> 💬 </button>
                 </a>
-
-<!--                <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
-                    <i class="fas fa-globe"></i>
-                </button>-->
 
                 <button class="openbtn" onclick="openNav()">☰ </button>
             </div>
@@ -113,65 +126,24 @@
 <br>
 <div class="uploads-section">
     <div class="row row-cols-2 g-4">
-       {% comment %} <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:profile' user_id=request.user.id %}'">Profile</button> {% endcomment %}
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
     </div>
 </div>
-<!--
-<div class="media-wrapper">
-    <div class="row row-cols-1 g-4" id="media-container">
-        {% if page_obj %}
-            {% for media in page_obj %}
-                <div class="col media-item" data-id="{{ media.id }}" data-url="{% url 'user_profile:media_detail_view' media.id %}">
-                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-                        {{ media.user.username }}
-                    </a>
-                    <div class="media-content">
-                        {% if media.file.url|is_video %}
-                            <video controls class="img-fluid autoplay-video" unmute>
-                                <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
-                                Your browser does not support the video tag.
-                            </video>
-                        {% else %}
-                            <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
-                        {% endif %}
-                        <div class="description">
-                            <a href="{% url 'user_profile:like_media' media.id %}"
-                               class="like-link {% if request.user in media.likes.all %}liked{% endif %}"
-                               data-url="{% url 'user_profile:like_media' media.id %}"
-                               data-media-id="{{ media.id }}"
-                               data-csrf-token="{{ csrf_token }}">
-                                {% if request.user in media.likes.all %}
-                                    ❤️
-                                {% else %}
-                                    ♡
-                                {% endif %}
-                            </a>
-
-                            <span class="like-count">{{ media.likes.count }}</span> likes
-
-                            <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a>
-                            <p>{{ media.description|safe }}</p>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        {% else %}
-            <p>No media available from followed users. Showing recommended content based on your preferences, if you are new click on the green gloab at the top.</p>
-        {% endif %}
-    </div>
-</div>
--->
 
 <div class="media-wrapper">
     <div class="row row-cols-1 g-4" id="media-container">
         {% if page_obj %}
             {% for media in page_obj %}
                 <div class="col media-item" data-id="{{ media.id }}"> {# Removed data-url here as the <a> tag will handle it #}
-                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}">
-                        {{ media.user.username }}
+                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
+                        <img src="{{ media.user.profile|profile_picture_url }}"
+                             class="mention-avatar" 
+                             alt="{{ media.user.username }}'s profile picture">
+                        <h5>{{ media.user.username }}</h5>
                     </a>
+
+                    <br>
                     {# Wrap the media-content div with an anchor tag #}
                     <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content-link">
                         <div class="media-content">
@@ -249,7 +221,7 @@
                     </div>
 
                     <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
+                        <a href="{% url 'user_profile:profile' user_id=request.user.id%}">
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>
@@ -424,9 +396,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     mediaDiv.dataset.id = item.id;
                     mediaDiv.dataset.url = `/user_profile/media_detail_view/${item.id}/`; // Set a default
 
+
                     // Construct URLs using template-like string formatting
                     const profileUrl = item.profile_url; // Use profile_url from JSON
-                    //const likeUrl = `/user_profile/like_media/${item.id}/`;
+                    const profilePicUrl = item.profile_picture_url || '/static/images/default_profile.png';
+
                     const likeUrl = item.like_url; // Use like_url from JSON
                     const commentUrl = item.media_detail_url; // Use media_detail_url for comment link
 
@@ -439,10 +413,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     const cleanDescription = DOMPurify.sanitize(item.description || '');
 
                     let mediaContent = `
-                        <a href="${profileUrl}">
-                            ${item.user_username}
+                        <a href="${profileUrl}" class="mention-with-avatar">
+                            <img src="${profilePicUrl}" class="mention-avatar" alt="${item.user_username}'s profile picture">
+                            <h5>${item.user_username}</h5>
                         </a>
-
+                        <br>
                         <a href="${exploreDetailUrl}" class="media-content-link"> {# THIS IS THE KEY CHANGE #}
 
                         <div class="media-content">
@@ -479,6 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     descriptionDiv.appendChild(descriptionParagraph);
 
                     mediaContainer.appendChild(mediaDiv);
+
                 });
 
                 page++;
@@ -500,6 +476,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .finally(() => {
             loading = false;
 
+            // ✅ Add this block here for log_interaction function
+            const mediaContainer = document.getElementById('media-container');
+            mediaContainer.querySelectorAll('.media-item:not([data-logged])').forEach(el => {
+              viewObserver.observe(el);
+              el.dataset.logged = 'true'; // Prevents double observing
+            });
+
             // Re-initialize Intersection Observer for new videos
             const newVideos = mediaContainer.querySelectorAll('.autoplay-video:not([data-observed])');
             newVideos.forEach(video => {
@@ -514,12 +497,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Check if scroll position is near bottom to load more content
+
     function checkScroll() {
-        if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - loadThreshold)) {
+        const scrollPosition = window.scrollY + window.innerHeight;
+        const pageHeight = document.body.scrollHeight;
+
+        if (scrollPosition >= pageHeight * 0.8) {
             loadMoreMedia();
         }
     }
+
+
+
+    // Check if scroll position is near bottom to load more content
+    //function checkScroll() {
+        //if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - loadThreshold)) {
+            //loadMoreMedia();
+        //}
+    //}
+
 
     // Listen for scroll events
     window.addEventListener('scroll', checkScroll);
@@ -579,4 +575,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+<!--view log interaction for the log_interaction function-->
+
+<!--view log interaction for the log_interaction function-->
+<script>
+const viewObserver = new IntersectionObserver((entries, observer) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const mediaId = entry.target.getAttribute('data-id');
+
+      fetch('/log_interaction/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+          media_id: mediaId,
+          interaction_type: 'view',
+        }),
+      });
+
+      observer.unobserve(entry.target); // log only once
+    }
+  });
+}, { threshold: 0.5 });
+
+document.querySelectorAll('.media-item').forEach(el => {
+  viewObserver.observe(el);
+});
+</script>
+
+
 {% endblock %}
