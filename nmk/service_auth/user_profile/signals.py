@@ -46,7 +46,7 @@ def invalidate_user_feed(sender, instance, **kwargs):
 '''
 
 
-
+'''
 # Delete old profile picture if updated
 @receiver(pre_save, sender=Profile)
 def delete_old_profile_picture_on_update(sender, instance, **kwargs):
@@ -86,21 +86,6 @@ def delete_profile_media_on_delete(sender, instance, **kwargs):
             except Exception as e:
                 print(f"Error deleting {field}: {e}")
 
-'''
-# Delete associated file if media is deleted in frontend do not delets the thumbnails 
-@receiver(post_delete, sender=Media)
-def delete_media_file_on_delete(sender, instance, **kwargs):
-    """
-    Deletes the media file from storage when the Media object is deleted.
-    """
-    if instance.file and hasattr(instance.file, 'path'):
-        try:
-            if os.path.exists(instance.file.path):
-                os.remove(instance.file.path)
-                print(f"Deleted media file: {instance.file.path}")
-        except Exception as e:
-            print(f"Error deleting media file {instance.file.path}: {e}")
-'''
 
 # Delete associated file if media is deleted in frontend also delets the related thumbnails 
 @receiver(post_delete, sender=Media)
@@ -125,6 +110,70 @@ def delete_media_file_on_delete(sender, instance, **kwargs):
                 print(f"Deleted thumbnail: {instance.thumbnail.path}")
         except Exception as e:
             print(f"Error deleting thumbnail file {instance.thumbnail.path}: {e}")
+'''
+
+
+# Delete old profile picture or cover photo when updated
+@receiver(pre_save, sender=Profile)
+def delete_old_profile_picture_on_update(sender, instance, **kwargs):
+    if not instance.pk:
+        return  # New object, no need to delete old files
+
+    try:
+        old_instance = Profile.objects.get(pk=instance.pk)
+    except Profile.DoesNotExist:
+        return
+
+    # Delete old profile picture if replaced
+    if old_instance.profile_picture and old_instance.profile_picture != instance.profile_picture:
+        try:
+            old_instance.profile_picture.delete(save=False)
+        except Exception as e:
+            print(f"Error deleting old profile picture: {e}")
+
+    # Delete old cover photo if replaced
+    if old_instance.cover_photo and old_instance.cover_photo != instance.cover_photo:
+        try:
+            old_instance.cover_photo.delete(save=False)
+        except Exception as e:
+            print(f"Error deleting old cover photo: {e}")
+
+
+
+# Delete profile picture and cover photo when profile is deleted
+@receiver(post_delete, sender=Profile)
+def delete_profile_media_on_delete(sender, instance, **kwargs):
+    for field in ['profile_picture', 'cover_photo']:
+        media_file = getattr(instance, field)
+        if media_file:
+            try:
+                media_file.delete(save=False)
+            except Exception as e:
+                print(f"Error deleting {field}: {e}")
+
+
+
+# Delete media file and its thumbnail when Media object is deleted
+@receiver(post_delete, sender=Media)
+def delete_media_file_on_delete(sender, instance, **kwargs):
+    # Delete media file
+    if instance.file:
+        try:
+            instance.file.delete(save=False)
+            print("Deleted media file")
+        except Exception as e:
+            print(f"Error deleting media file: {e}")
+
+    # Delete thumbnail
+    if instance.thumbnail:
+        try:
+            instance.thumbnail.delete(save=False)
+            print("Deleted thumbnail")
+        except Exception as e:
+            print(f"Error deleting thumbnail file: {e}")
+
+
+
 
 
 

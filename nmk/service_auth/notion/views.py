@@ -33,7 +33,6 @@ AuthUser = get_user_model()
 # from user_profile.models import Story
 
 
-#@login_required
 def notion_home(request, notion_id=None):
     user = request.user
     following_users = Follow.objects.filter(follower=user).values_list('following_id', flat=True)
@@ -193,6 +192,7 @@ def like_notion(request, notion_id):
 
 
 @login_required
+@csrf_protect
 def post_comment(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
 
@@ -295,7 +295,6 @@ def search_users(request):
     })
 
 
-@login_required
 def my_notions(request, notion_id):
     user = get_object_or_404(AuthUser, id=notion_id)
 
@@ -327,7 +326,7 @@ def my_notions(request, notion_id):
     return render(request, 'my_notions.html', context)
 
 
-#@login_required
+
 def notion_detail_view(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
     related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion_id)
@@ -400,7 +399,6 @@ def notifications(request):
     return render(request, 'notifications.html', {'notifications': notifications})
 
 
-#@login_required
 def notion_explorer(request):
     user = request.user
 
@@ -504,5 +502,15 @@ def unblock_user(request, user_id):
 def blocked_user_list(request):
     blocked_users = BlockedUser.objects.filter(blocker=request.user).select_related('blocked')
     return render(request, 'blocked_user_list.html', {'blocked_users': blocked_users})
+
+
+#________________
+# function for sitem map
+#________________
+
+def notion_detail(request, username, notion_id):
+    user = get_object_or_404(AuthUser, username=username)
+    notion = get_object_or_404(Notion, id=notion_id, user=user)
+    return notion_detail_view(request, notion_id=notion.id)  # reuse old view
 
 

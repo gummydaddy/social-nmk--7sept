@@ -213,57 +213,28 @@ class UserHashtagPreference(models.Model):
     search_hashtags = models.JSONField(default=list)
 
     def add_viewed_hashtag(self, hashtags):
-        '''
-        self.viewed_hashtags = hashtags + self.viewed_hashtags
-        self.viewed_hashtags = list(dict.fromkeys(self.viewed_hashtags))[:50]
-        self.save(update_fields=['viewed_hashtags'])
-        '''
         for hashtag in hashtags:
             self.viewed_hashtags = add_to_fifo_list(self.viewed_hashtags, hashtag, 50)
         self.save(update_fields=['viewed_hashtags'])
 
     def add_viewed_media(self, media_ids):
-        '''
-        self.viewed_media = media_ids + self.viewed_media
-        self.viewed_media = list(dict.fromkeys(self.viewed_media))[:50]
-        self.save(update_fields=['viewed_media'])
-        '''
         for media_id in media_ids:
             self.viewed_media = add_to_fifo_list(self.viewed_media, media_id, 50)
         self.save(update_fields=['viewed_media'])
 
     def add_not_interested_media(self, media_id):
-        '''
-        self.not_interested_media = [media_id] + self.not_interested_media
-        self.not_interested_media = list(dict.fromkeys(self.not_interested_media))[:50]
-        self.save(update_fields=['not_interested_media'])
-        '''
         self.not_interested_media = add_to_fifo_list(self.not_interested_media, media_id, 50)
         self.save(update_fields=['not_interested_media'])
 
     # New method to add search keywords to the add_liked_category list
     def add_liked_category(self, category):
         if category:  # Check if category is valid
-            '''
-            self.liked_categories = [category] + self.liked_categories
-            self.liked_categories = list(dict.fromkeys(self.liked_categories))[:10]
-            self.save(update_fields=['liked_categories'])
-            '''
             self.liked_categories = add_to_fifo_list(self.liked_categories, category, 10)
             self.save(update_fields=['liked_categories'])
 
     # New method to add search keywords to the search_hashtags list
     def add_search_hashtag(self, search_keyword):
-        """
-        Add a search keyword to the search_hashtags list while ensuring it contains only unique
-        keywords and stores only the last 35 entries (FIFO).
-        """
         if search_keyword:  # Check if the search keyword is not empty
-            '''
-            self.search_hashtags = [search_keyword] + self.search_hashtags
-            self.search_hashtags = list(dict.fromkeys(self.search_hashtags))[:35]
-            self.save(update_fields=['search_hashtags'])
-            '''
             self.search_hashtags = add_to_fifo_list(self.search_hashtags, search_keyword, 35)
             self.save(update_fields=['search_hashtags'])
 

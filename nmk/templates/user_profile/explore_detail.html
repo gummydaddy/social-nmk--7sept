@@ -76,8 +76,8 @@
 
     <div id="current-media">
         {% if media.file.url|is_video %}
-        <video controls class="img-fluid autoplay-video" unmute>
-            <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
+        <video controls unmute autoplay playsinline preload="metadata" loading="lazy" class="img-fluid autoplay-video">
+            <source src="{{ media.file.url }}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
         {% else %}
@@ -100,6 +100,11 @@
                 {% endif %}
             </a>
             <span class="like-count">{{ media.likes.count }}</span> likes
+
+<!-- Share Button -->
+<button id="share-btn" class="btn btn-outline-primary">
+    📤 Share
+</button>
 
             {% comment %} <a href="{% url 'user_profile:media_detail_view' media.id %}">Comment</a> {% endcomment %}
             <div class="comments" id="comments-{{ media.id }}">
@@ -168,62 +173,29 @@
     </div>
 </div>
 
-<!--
-<div id="related-media-container" class="row row-cols-2 g-4 mt-4">
-    {% for related in related_media %}
-    <div class="col related-media-item">
-        <a href="{% url 'user_profile:explore_detail' related.id %}">
-            {% if related.file.url|is_video %}
-            <video controls class="img-fluid autoplay-video" muted>
-                <source src="{{ related.file.url }}" type="video/mp4">
-                Your browser does not support the video tag.
-            </video>
-            {% else %}
-            <img src="{{ related.file.url }}" alt="media" class="img-fluid">
-            {% endif %}
-        </a>
-        <div class="actions">
-            <a href="{% url 'user_profile:like_media' related.id %}" 
-               class="like-link {% if request.user in related.likes.all %}liked{% endif %}" 
-               data-url="{% url 'user_profile:like_media' related.id %}" 
-               data-media-id="{{ related.id }}" 
-               data-csrf-token="{{ csrf_token }}">
-                {% if request.user in related.likes.all %}
-                    ❤️
-                {% else %}
-                    ♡
-                {% endif %}
-            </a>
-            <span class="like-count">{{ related.likes.count }}</span> 
-        </div>
-    </div>
-    {% endfor %}
-</div>
--->
 
 <div class="media-wrapper">
     <div id="related-media-container" class="row row-cols-2 g-4 mt-4">
         {% for related in related_media %}
         <div class="col related-media-item">
-            <a href="{% url 'user_profile:explore_detail' related.id %}">
-                {% if related.file.url|is_video %}
-                    {% if related.thumbnail %}
-                        <img src="{{ related.thumbnail.url }}" alt="video thumbnail"
-                             class="img-fluid video-thumbnail"
-                             data-video="{{ related.file.url }}" loading="lazy">
-                    {% else %}
-                        <img src="{{ related.file.url }}" alt="video fallback"
-                             class="img-fluid video-thumbnail" loading="lazy">
+            <a href="{% url 'user_profile:explore_detail' related.id %}" class="media-content">
+                <div class="position-relative media-thumb-square">
+                    <img src="{% if related.thumbnail %}{{ related.thumbnail.url }}{% else %}{{ related.file.url }}{% endif %}"
+                         alt="Thumbnail"
+                         class="img-fluid object-cover"
+                         loading="lazy"
+                         {% if related.file.url|is_video %}data-video="{{ related.file.url }}"{% endif %}>
+
+                    {% if related.file.url|is_video %}
+                        <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
+                            ▶
+                        </span>
                     {% endif %}
-                {% else %}
-                    {% if related.thumbnail %}
-                        <img src="{{ related.thumbnail.url }}" alt="thumbnail" class="img-fluid" loading="lazy">
-                    {% else %}
-                        <img src="{{ related.file.url }}" alt="image fallback" class="img-fluid" loading="lazy">
-                    {% endif %}
-                {% endif %}
+                </div>
             </a>
-            <div class="actions">
+
+            <!-- Like Button -->
+            <div class="actions mt-1">
                 <a href="{% url 'user_profile:like_media' related.id %}"
                    class="like-link {% if request.user in related.likes.all %}liked{% endif %}"
                    data-url="{% url 'user_profile:like_media' related.id %}"
@@ -241,6 +213,7 @@
         {% endfor %}
     </div>
 </div>
+
 
 
 <!-- Loading Spinner -->
@@ -303,12 +276,6 @@
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
-
-                    <!--<div class="footer-icon">
-                        <a href="{% url 'user_profile:upload_media' %}">
-                            <i class="fas fa-upload"></i>
-                        </a>
-                    </div>-->
 
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:explore' %}">
@@ -509,6 +476,37 @@
             });
         });
     });
+</script>
+
+<!--share script-->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const shareBtn = document.getElementById("share-btn");
+
+    if (shareBtn) {
+        shareBtn.addEventListener("click", async function() {
+            const shareData = {
+                title: "{{ media.user.username }}'s post",
+                text: "Check out this upload on Socyfie!",
+                url: window.location.href  // Full page URL
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    console.log("Share successful");
+                } catch (err) {
+                    console.error("Share failed:", err);
+                }
+            } else {
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => alert("Link copied to clipboard!"))
+                    .catch(err => console.error("Could not copy link:", err));
+            }
+        });
+    }
+});
 </script>
 
 {% endblock %}

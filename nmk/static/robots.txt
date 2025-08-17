@@ -1,7 +1,18 @@
 User-agent: *
 Disallow: /admin/
-Disallow: /static/
-Disallow: /media/
 Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
 
 Sitemap: https://socyfie.com/sitemap.xml

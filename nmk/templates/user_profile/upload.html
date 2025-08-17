@@ -73,12 +73,6 @@
     <div id="uploadStatus"></div>
 
 </form>
-<!--
-<div id="uploadingSpinner" style="display:none; text-align: center; margin-top: 10px;">
-    <div class="spinner" style="width: 40px; height: 40px; border: 5px solid #f3f3f3; border-top: 5px solid #007bff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-    <p style="margin-top: 10px; color: #007bff;">Uploading... Please wait.</p>
-</div>
--->
                     <div class="home bg-white">
                         <a href="{% url 'user_profile:add_story' %}">
                             <i class="fas fa-upload"></i>
@@ -90,6 +84,40 @@
 {% block upload_script %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+<!--for uploading media directly from gallery without opening teh app-->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const sharedFile = {{ shared_file|default:"null"|safe }};
+    if (sharedFile && sharedFile.name && sharedFile.content) {
+        // Decode base64 string → binary data
+        const byteCharacters = atob(sharedFile.content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+
+        // Create a Blob with correct MIME type
+        let fileType = "application/octet-stream";
+        if (sharedFile.name.match(/\.(jpg|jpeg)$/i)) fileType = "image/jpeg";
+        else if (sharedFile.name.match(/\.png$/i)) fileType = "image/png";
+        else if (sharedFile.name.match(/\.webp$/i)) fileType = "image/webp";
+        else if (sharedFile.name.match(/\.mp4$/i)) fileType = "video/mp4";
+
+        const fileBlob = new Blob([byteArray], { type: fileType });
+
+        // Create a File object
+        const file = new File([fileBlob], sharedFile.name, { type: fileType });
+
+        // Simulate a file being selected in the input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('id_file').files = dataTransfer.files;
+    }
+});
+</script>
+
 <script>
     $(document).ready(function() {
         // Tag user field with Select2

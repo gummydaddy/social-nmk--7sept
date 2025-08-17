@@ -196,8 +196,15 @@
       {% endif %}
     </a> 
     <span class="like-count">{{ notion.likes.count }}</span>
+    <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>
+
+<!-- Share Button -->
+<button id="share-btn" class="btn btn-outline-primary">
+    📤 Share
+</button>
+
   </div>
-  <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>
+  <!--<button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>-->
 
   <div class="comments mt-3">
     <form method="post" action="{% url 'notion:post_comment' notion.id %}">
@@ -268,4 +275,36 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+
+<!--share script-->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const shareBtn = document.getElementById("share-btn");
+
+    if (shareBtn) {
+        shareBtn.addEventListener("click", async function() {
+            const shareData = {
+                title: "{{ media.user.username }}'s post",
+                text: "Check out this upload on Socyfie!",
+                url: window.location.href  // Full page URL
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    console.log("Share successful");
+                } catch (err) {
+                    console.error("Share failed:", err);
+                }
+            } else {
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => alert("Link copied to clipboard!"))
+                    .catch(err => console.error("Could not copy link:", err));
+            }
+        });
+    }
+});
+</script>
+
 {% endblock %}

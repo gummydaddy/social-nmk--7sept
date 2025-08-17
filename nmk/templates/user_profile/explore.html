@@ -58,7 +58,7 @@
 
 
 <br>
-
+<!--
 <div class="media-wrapper">
     <div class="row row-cols-3 g-4" id="media-container">
         {% for media in page_obj %}
@@ -74,6 +74,32 @@
         {% endfor %}
     </div>
 </div>
+-->
+
+<div class="media-wrapper">
+    <div class="row row-cols-3 g-4" id="media-container">
+        {% for media in page_obj %}
+            <div class="col media-item">
+                <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content">
+                    <div class="position-relative media-thumb-square">
+                        <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}"
+                             alt="Thumbnail"
+                             class="img-fluid object-cover"
+                             loading="lazy">
+                             
+                        {% if media.file.url|is_video %}
+                            <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
+                                ▶
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
 
 
 <!-- Loading Spinner -->

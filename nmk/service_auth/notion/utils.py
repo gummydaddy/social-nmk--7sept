@@ -54,7 +54,7 @@ def make_usernames_clickable(content):
 """
 
 
-
+"""
 def make_usernames_clickable(content):
     def replace_username(match):
         username = match.group(1)
@@ -81,5 +81,48 @@ def make_usernames_clickable(content):
 
     # Replace URLs with clickable links
     content = re.sub(r'(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
+
+    return content
+"""
+
+
+
+
+
+def strip_html_tags(text):
+    return re.sub(r'<.*?>', '', text)
+
+def make_usernames_clickable(content):
+    def replace_username(match):
+        username = match.group(1)
+        try:
+            user = AuthUser.objects.select_related('profile').get(username=username)
+
+            if user.profile and user.profile.profile_picture:
+                # Get the raw string URL and strip any HTML tags
+                profile_pic_url = strip_html_tags(str(user.profile.profile_picture.url))
+            else:
+                profile_pic_url = '/static/images/default_profile.png'
+
+            profile_url = reverse("user_profile:profile", args=[user.id])
+
+            return mark_safe(
+                f'''
+                <span class="mention-with-avatar">
+                    <a href="{profile_url}">
+                        <img src="{profile_pic_url}" class="mention-avatar" alt="{username}'s profile picture">
+                        @{username}
+                    </a>
+                </span>
+                '''
+            )
+        except AuthUser.DoesNotExist:
+            return f'@{username}'
+
+    # Replace @usernames with avatar + link
+    content = re.sub(r'@(\w+)', replace_username, content)
+
+    # Replace URLs with clickable links — BUT only in main text, not inside img tags
+    content = re.sub(r'(?<!src=")(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
 
     return content

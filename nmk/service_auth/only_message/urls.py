@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views 
 from service_auth.only_card import views as only_card_views  # Import views from only_card
-
+from service_auth.user_profile import views as user_profile_views
 
 app_name = 'only_message'
 
@@ -18,6 +18,8 @@ urlpatterns = [
     path('api/messages/<str:username>/', views.get_messages_api, name='get_messages_api'),
     path('get_online_users/', views.get_online_users, name='get_online_users'),
 
+    #path('<str:username>/', user_profile_views.profile_detail, name='profile_detail'), #new for sitemap purpose to add the username of users to the sitemap
+    #path('<str:username>/media/<int:media_id>/', user_profile_views.media_detail, name='media_detail'), #new for sitemap purpose to add the username of users to the sitemap
 
 
 ]

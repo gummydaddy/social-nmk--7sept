@@ -148,8 +148,9 @@
                     <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content-link">
                         <div class="media-content">
                             {% if media.file.url|is_video %}
-                                <video controls class="img-fluid autoplay-video" unmute>
-                                    <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
+                                <!--<video controls class="img-fluid autoplay-video" unmute>-->
+                                <video controls unmute autoplay playsinline preload="metadata" loading="lazy" class="img-fluid autoplay-video">
+                                    <source src="{{ media.file.url }}" type="video/mp4" >
                                     Your browser does not support the video tag.
                                 </video>
                             {% else %}
@@ -172,6 +173,8 @@
                                 <span class="like-count">{{ media.likes.count }}</span> likes
 
                                 <a href="{% url 'user_profile:media_detail_view' media.id %}" onclick="event.stopPropagation();">Comment</a> {# Crucial: Stop propagation for comment link #}
+                                <!-- Comment toggle button -->
+
                                 <p>{{ media.description|safe }}</p>
                             </div>
                         </div>
@@ -271,16 +274,30 @@ document.addEventListener('DOMContentLoaded', function() {
         return cookieValue;
     }
 
+    // Initialize videos on page load
+    function observeAutoplayVideos() {
+        document.querySelectorAll('.autoplay-video:not([data-observed])').forEach(video => {
+            videoObserver.observe(video);
+            video.dataset.observed = 'true';
+        });
+    }
+
     // Setup Intersection Observer for videos
     const observerOptions = {
         root: null,
         threshold: 0.75 // Play video when 75% of it is visible
     };
 
-    const videoObserver = new IntersectionObserver((entries, observer) => {
+    window.videoObserver = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             const video = entry.target;
+
             if (entry.isIntersecting) {
+                // Pause all other videos
+                document.querySelectorAll('video.autoplay-video').forEach(v => {
+                    if (v !== video) v.pause();
+                });
+
                 // Make sure the video is loaded before trying to play
                 if (video.readyState >= 2) {
                     video.play().catch(e => console.log("Autoplay prevented:", e));
@@ -295,11 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, observerOptions);
 
-    // Initialize videos on page load
-    document.querySelectorAll('.autoplay-video').forEach(video => {
-        videoObserver.observe(video);
-        video.dataset.observed = 'true';
-    });
+
 
     // Initialize like links on page load
     initializeLikeLinks(document.querySelectorAll('.like-link'));
@@ -422,11 +435,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
                         <div class="media-content">
                             ${item.is_video ?
-                                `<video controls class="img-fluid autoplay-video" unmute>
+                                `<video controls unmute autoplay playsinline preload="metadata" loading="lazy" class="img-fluid autoplay-video">
                                     <source src="${item.file_url}" type="video/mp4">
                                     Your browser does not support the video tag.
                                 </video>` :
-                                `<img src="${item.file_url}" alt="media" class="img-fluid">`
+                                `<img src="${item.file_url}" alt="media" class="img-fluid" loading="lazy">`
                             }
                             <div class="description">
                                 <a href="${likeUrl}"
@@ -454,6 +467,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     descriptionDiv.appendChild(descriptionParagraph);
 
                     mediaContainer.appendChild(mediaDiv);
+                    observeAutoplayVideos();
+                    initializeLikeLinks(mediaDiv.querySelectorAll('.like-link'));  // ✅ Attach Like listeners
 
                 });
 
@@ -483,6 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
               el.dataset.logged = 'true'; // Prevents double observing
             });
 
+
             // Re-initialize Intersection Observer for new videos
             const newVideos = mediaContainer.querySelectorAll('.autoplay-video:not([data-observed])');
             newVideos.forEach(video => {
@@ -506,18 +522,6 @@ document.addEventListener('DOMContentLoaded', function() {
             loadMoreMedia();
         }
     }
-
-
-
-    // Check if scroll position is near bottom to load more content
-    //function checkScroll() {
-        //if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - loadThreshold)) {
-            //loadMoreMedia();
-        //}
-    //}
-
-
-    // Listen for scroll events
     window.addEventListener('scroll', checkScroll);
 });
 </script>
@@ -575,36 +579,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-<!--view log interaction for the log_interaction function-->
 
-<!--view log interaction for the log_interaction function-->
-<script>
-const viewObserver = new IntersectionObserver((entries, observer) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const mediaId = entry.target.getAttribute('data-id');
-
-      fetch('/log_interaction/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify({
-          media_id: mediaId,
-          interaction_type: 'view',
-        }),
-      });
-
-      observer.unobserve(entry.target); // log only once
-    }
-  });
-}, { threshold: 0.5 });
-
-document.querySelectorAll('.media-item').forEach(el => {
-  viewObserver.observe(el);
-});
-</script>
-
+<!--comment section java script ajax commenting -->
 
 {% endblock %}

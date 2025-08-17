@@ -56,6 +56,40 @@
         vertical-align: middle;
     }
 
+.media-thumb-square {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* Makes it square */
+    overflow: hidden;
+    border-radius: 6px; /* Optional for rounded corners */
+}
+
+.media-thumb-square img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Prevents stretching */
+}
+
+.profile-picture-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: inline-block;
+}
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+}
+
+
 </style>
 <header>
     {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
@@ -111,17 +145,18 @@
             </p>
             <!-- Add any additional profile information here -->
         </div>
+        <!--
         <div class="cover-photo-container">
             {% if profile_user.profile.cover_photo %}
                 <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
             {% else %}
                 <div class="cover-photo" style="background-color: #f0f0f0;"></div>
             {% endif %}
-        </div>
-
+        </div>-->
+        <!--
         <div class="profile-picture-container">
             {% if active_story %}
-                    <a href="{% url 'user_profile:view_story' story_id=active_story.id %}">
+                <a href="{% url 'user_profile:view_story' story_id=active_story.id %}">
             {% else %}
                 {% if profile_user == request.user %}
                     <a href="{% url 'user_profile:add_story' %}">
@@ -134,9 +169,46 @@
                 {% endif %}
             </a>
         </div>
-        
+        -->
+
+        <div class="profile-picture-container">
+            {% if active_story %}
+                <button onclick="location.href='{% url 'user_profile:view_story' story_id=active_story.id %}'" class="profile-picture-btn">
+
+                <!--<a href="{% url 'user_profile:view_story' story_id=active_story.id %}">-->
+            {% elif profile_user.id == request.user.id %}
+                <button onclick="location.href='{% url 'user_profile:add_story' %}'" class="profile-picture-btn">
+
+                <!--<a href="{% url 'user_profile:add_story' %}">-->
+            {% else %}
+                <div>  {# fallback to non-clickable wrapper #}
+            {% endif %}
+
+                {% if profile_user.profile.profile_picture %}
+                    <img src="{{ profile_user.profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                {% else %}
+                    <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
+                {% endif %}
+
+            {% if active_story or profile_user.id == request.user.id %}
+                </button>
+
+                <!--</a>-->
+            {% else %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="cover-photo-container">
+            {% if profile_user.profile.cover_photo %}
+                <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
+            {% else %}
+                <div class="cover-photo" style="background-color: #f0f0f0;"></div>
+            {% endif %}
+        </div>
+
+
         <div class="bio">
-            {% comment %} {{ profile_user.profile.bio }} {% endcomment %}
             {{ profile_user.profile.bio|safe }}
         </div>
 
@@ -190,68 +262,33 @@
 </div>
 
 <!-- Uploaded media with pagination -->
-<!--
-<div class="row row-cols-3 g-4">
-    {% for upload in page_obj %}
-    <div class="col">
-        <div id="media-container-{{ upload.id }}" class="upload-item">
-            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
-                {% if upload.file.url|is_video %}
-                <video controls class="img-fluid">
-                    <source src="{{ upload.file.url }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-                {% else %}
-                <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
-                {% endif %}
-            </a>
 
-            <div class="view-count">
-                <p>Views: {{ upload.view_count }}</p>
-                
+<div class="media-wrapper">
+    <div class="row row-cols-3 g-4" id="media-container">
+        {% for media in page_obj %}
+            <div class="col media-item">
+                <a href="{% url 'user_profile:media_detail_view' media.id %}" class="media-content">
+                    <div class="position-relative media-thumb-square">
+                        <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}"
+                             alt="Thumbnail"
+                             class="img-fluid object-cover "
+                             loading="lazy">
+
+                        {% if media.file.url|is_video %}
+                            <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
+                                ▶
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+
+                <!-- View Count -->
+                <div class="view-count mt-1 text-muted">
+                    👁️ : {{ media.view_count }}
+                </div>
             </div>
-            {% comment %}
-            <div class="description">
-                <p>{{ upload.description|safe }}</p>
-            </div> {% endcomment %}
-        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
--->
-
-<div class="row row-cols-3 g-4">
-    {% for upload in page_obj %}
-    <div class="col">
-        <div id="media-container-{{ upload.id }}" class="upload-item">
-            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
-                {% if upload.file.url|is_video %}
-                <!-- Video Thumbnail -->
-                <video class="img-fluid lazyload" 
-                       data-src="{{ upload.file.url }}" 
-                       {% if upload.thumbnail %}
-                           poster="{{ upload.thumbnail.url }}"
-                       {% else %}
-                           poster="{{ upload.file.url }}"
-                       {% endif %} muted>
-                    Your browser does not support the video tag.
-                </video>
-                {% else %}
-                <!-- Image Thumbnail -->
-                <img src="{% if upload.thumbnail %}{{ upload.thumbnail.url }}{% else %}{{ upload.file.url }}{% endif %}" 
-                     data-src="{{ upload.file.url }}" 
-                     alt="Image" 
-                     class="img-fluid lazyload">
-                {% endif %}
-            </a>
-
-            <!-- View Count -->
-            <div class="view-count">
-                <p>👁️ : {{ upload.view_count }}</p>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
 </div>
 
 

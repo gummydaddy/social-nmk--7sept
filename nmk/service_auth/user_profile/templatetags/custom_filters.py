@@ -23,6 +23,12 @@ def get_hashtags(text):
 def is_video(file_url):
     return file_url.lower().endswith(('.mp4', '.mov', '.avi', '.mkv'))
 
+@register.filter(name='video_mime_type')
+def video_mime_type(file_url):
+    if is_video(file_url):
+        mime_type, _ = mimetypes.guess_type(file_url)
+        return mime_type or "video/mp4"
+    return ""
 
 @register.filter
 def is_user(value):

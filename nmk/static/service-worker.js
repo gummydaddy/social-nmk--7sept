@@ -75,6 +75,36 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
+//share media directly from the gallery without opening the app working with the above cache or fallback to network js
+self.addEventListener("fetch", (event) => {
+  if (event.request.url.includes("/share-upload/")) {
+    return; // Let the network handle POST
+  }
+});
+
+
+//share link opening manager
+self.addEventListener("fetch", (event) => {
+  // Only handle navigations (not images, CSS, etc.)
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      (async () => {
+        const url = new URL(event.request.url);
+
+        // Example: handle deep links to /media/<id> inside the app
+        if (url.pathname.startsWith("/media/")) {
+          // Return your main app shell (index.html) so PWA can render the route
+          return caches.match("/index.html") || fetch("/index.html");
+        }
+
+        // Default: try cache, then network
+        const cache = await caches.open("pwa-cache");
+        const cachedResponse = await cache.match(event.request);
+        return cachedResponse || fetch(event.request);
+      })()
+    );
+  }
+});
 
 
 
