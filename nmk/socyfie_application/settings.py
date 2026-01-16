@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 APP_NAME = "Socyfie"
 
 
-SITE_ID = 2
+SITE_ID = 3
 
 APPEND_SLASH = True
 
@@ -51,8 +51,7 @@ environ.Env.read_env(env_path)  # Reads the .env file
 # # Read the encryption key from the environment
 ENCRYPTION_KEY = env('ENCRYPTION_KEY')
 SECRET_KEY = env('SECRET_KEY')
-#ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
-#ALLOWED_HOSTS = ["socyfie.com","www.socyfie.com","ec2-13-235-125-150.ap-south-1.compute.amazonaws.com","13.235.125.150"]
+
 
 DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost")
 print(f"DEBUG: DJANGO_ALLOWED_HOSTS={DJANGO_ALLOWED_HOSTS}")  # Debugging line
@@ -81,6 +80,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # 'django-select2',
     'channels',
+
+    'storages',
+
     'social_django',
     'sslserver',
     'crispy_forms',
@@ -128,19 +130,6 @@ SOCIALACCOUNT_PROVIDERS = {
 # new29
 ASGI_APPLICATION = 'socyfie_application.asgi.application'  
 
-"""
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'asgi_redis.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [('redis://:090399Akash%24@15.235.192.133:6379/0')],
-        },
-        'ROUTING': 'service_auth.only_message_channels.routing.channel_routing',
-    }
-}
-
-
-"""
 CHANNEL_LAYERS = {
     "default": {
         # 'asgi_redis.RedisChannelLayer' is also an older backend.
@@ -150,42 +139,37 @@ CHANNEL_LAYERS = {
         "CONFIG": {
             # Your Redis host string is correct, including auth.
             "hosts": ["redis://:090399Akash%24@15.235.192.133:6379/0"],
-            # If you were previously using a list of (host, port) tuples,
-            # you can also do:
-            # "hosts": [
-            #     {
-            #         "address": "redis://15.235.192.133:6379/0",
-            #         "password": "090399Akash$",
-            #     }
-            # ]
-            # But the single URL string is generally preferred if it works for your setup.
         },
-        # Remove the 'ROUTING' key entirely. It's no longer needed here.
     },
 }
-
-
-
+'''
+#for development only
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'redis://:090399Akash%24@15.235.192.133:6379/1',  # For Redis
-        # 'LOCATION': '127.0.0.1:11211',  # For Memcached
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
             'DB': 1,  # Use a different database
         },
-        'KEY_PREFIX': 'example caches'
+        'KEY_PREFIX': 'example_caches'
+    }
+}
+'''
+# CACHES (Redis-backed Django cache)
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",  #  use django_redis backend, not LocMemCache
+        "LOCATION": "redis://:090399Akash%24@15.235.192.133:6379/1",  # DB 1 for caching
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100},  # optional optimization
+            # "PASSWORD": "090399Akash$",  # optional if you prefer separate field
+        },
+        "KEY_PREFIX": "socyfie",  # custom prefix to avoid collisions
     }
 }
 
-
-# T_BIRD_CONFIG = {
-#     'HOST': 't-bird-host',
-#     'PORT': 1234,
-#     'USER': 'your_username',
-#     'PASSWORD': 'your_password',
-# }
 
 
 REST_FRAMEWORK = {
@@ -218,6 +202,10 @@ MIDDLEWARE = [
     "allauth.account.middleware.AccountMiddleware",
 
 ]
+#newlly added for bots and crawlers
+MIDDLEWARE.insert(0, "service_auth.only_card.middleware.BotMetaMiddleware")
+
+
 
 # new29
 SECURE_HSTS_SECONDS = 31536000
@@ -225,6 +213,12 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
 # Secure cookies  new29
+SESSION_COOKIE_SAMESITE = "None"  # allow cross-context (needed for PWA)
+CSRF_COOKIE_SAMESITE = "None"
+
+#SESSION_COOKIE_DOMAIN = ".socyfie.com"
+#CSRF_COOKIE_DOMAIN = ".socyfie.com"
+
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
@@ -248,6 +242,9 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
+
+            os.path.join(BASE_DIR, "templates"),
+
             os.path.join(BASE_DIR, "templates/base"),
             os.path.join(BASE_DIR, "templates/authentication"),
             os.path.join(BASE_DIR, "templates/nmkCoin"),
@@ -279,9 +276,9 @@ COMPRESSED_MEDIA_STORAGE = {
     'storage': 'nmk.service_auth.storage.CompressedMediaStorage',
     'options': {
         'image_quality': 65,
-        #'video_crf': 28,
+        #'video_crf': 32,
         'max_image_dimension': 1920,
-        'audio_bitrate': '128k',
+        #'audio_bitrate': '64k',
     },
 }
 
@@ -335,6 +332,37 @@ DATABASES = {
         "PORT": "5432",
     }
 }
+
+
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_S3_CUSTOM_DOMAIN = 'media.socyfie.com'
+
+AWS_ACCESS_KEY_ID = '856f75ee1b7643a20b540f581a31a20b'
+AWS_SECRET_ACCESS_KEY = '05e0527769b0b7f36362dca11e00e403679895f5092f3e6da8e6924d48fdac43'
+AWS_STORAGE_BUCKET_NAME = 'socyfiebucket'
+AWS_S3_REGION_NAME = 'auto'  # Cloudflare suggests using 'auto'
+AWS_S3_ENDPOINT_URL = 'https://c522f51c1ad744b4b2f373db8dbbe785.r2.cloudflarestorage.com'
+
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = None
+AWS_QUERYSTRING_AUTH = False  # Optional: public URLs
+
+
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+    "ContentType": "video/webm",
+}
+
+#MEDIA_URL = 'https://media.socyfie.com/'
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+
+
+#MEDIA_URL = 'nmk/media/'
+#MEDIA_URL = '/media/'
+#MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+
 # DATABASES = {
 #     "default": {
 #         "ENGINE": "django.db.backends.sqlite3",
@@ -348,15 +376,11 @@ DATABASES = {
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
+    #{"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",},
-    {
-        'NAME': 'service_auth.only_card.validators.CustomUserAttributeSimilarityValidator',
-    },
+    {'NAME': 'service_auth.only_card.validators.CustomUserAttributeSimilarityValidator',},
 ]
 
 
@@ -368,6 +392,12 @@ AUTH_PASSWORD_VALIDATORS = [
 #SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = "default"
+
+# Do not log out users from other devices/browsers when they log in
+ACCOUNT_LOGOUT_ON_GET = False         # (for allauth)
+ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = False
+ACCOUNT_SESSION_REMEMBER = True
+
 
 SESSION_COOKIE_NAME = 'sessionid'
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 14  #seconds
@@ -411,10 +441,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
-#MEDIA_URL = 'nmk/media/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -425,7 +451,8 @@ CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000', 
     'https://socyfie.com', 
     'https://www.socyfie.com',
-    'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com'
+    'https://media.socyfie.com',
+    #'https://socyfiedev.ch6weeg28qnq.ap-south-1.rds.amazonaws.com'
     ]
 
 
@@ -458,3 +485,5 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+

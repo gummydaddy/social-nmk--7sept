@@ -18,6 +18,8 @@ class HashtagQueue:
 
     def add_hashtags(self, hashtags):
         for hashtag in hashtags:
+            if hashtag in self.queue:
+                self.queue.remove(hashtag)
             self.queue.append(hashtag)
 
     def get_hashtags(self):
@@ -26,6 +28,7 @@ class HashtagQueue:
 hashtag_queue = HashtagQueue()
 
 
+'''
 def add_to_fifo_list(fifo_list, item, max_length=50):
     if item in fifo_list:
         fifo_list.remove(item)
@@ -33,58 +36,21 @@ def add_to_fifo_list(fifo_list, item, max_length=50):
     if len(fifo_list) > max_length:
         fifo_list.pop(0)
     return fifo_list
-
-"""
-def make_usernames_clickable(content):
-    def replace_username(match):
-        username = match.group(1)
-        try:
-            user = AuthUser.objects.get(username=username)
-            url = reverse("user_profile:profile", args=[user.id])
-            return mark_safe(f'<a href="{url}">@{username}</a>')
-        except AuthUser.DoesNotExist:
-            return f'@{username}'  # If user does not exist, return the plain text
-
-    content = re.sub(r'@(\w+)', replace_username, content)
-
-    # Then, handle the links
-    content = re.sub(r'(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
-
-    return content
-"""
+'''
 
 
-"""
-def make_usernames_clickable(content):
-    def replace_username(match):
-        username = match.group(1)
-        try:
-            user = AuthUser.objects.select_related('profile').get(username=username)
-            profile_pic_url = user.profile.profile_picture.url if user.profile and user.profile.profile_picture else '/static/images/default_profile.png'
-            profile_url = reverse("user_profile:profile", args=[user.id])
-
-            return mark_safe(
-                f'''
-                <span class="mention-with-avatar">
-                    <a href="{profile_url}">
-                        <img src="{profile_pic_url}" class="mention-avatar" alt="{username}'s profile picture">
-                        @{username}
-                    </a>
-                </span>
-                '''
-            )
-        except AuthUser.DoesNotExist:
-            return f'@{username}'  # Fallback if user doesn't exist
-
-    # Replace @usernames with avatar + link
-    content = re.sub(r'@(\w+)', replace_username, content)
-
-    # Replace URLs with clickable links
-    content = re.sub(r'(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
-
-    return content
-"""
-
+def add_to_fifo_list(fifo_list, item, max_length=50):
+    """
+    Adds an item to a list acting as a FIFO queue, ensuring uniqueness and capped size.
+    Safe for Django JSONFields (uses lists, not deque).
+    """
+    fifo_list = fifo_list or []
+    if item in fifo_list:
+        fifo_list.remove(item)
+    fifo_list.append(item)
+    if len(fifo_list) > max_length:
+        fifo_list = fifo_list[-max_length:]
+    return fifo_list
 
 
 
@@ -126,3 +92,31 @@ def make_usernames_clickable(content):
     content = re.sub(r'(?<!src=")(https?://\S+)', r'<a href="\1" target="_blank">\1</a>', content)
 
     return content
+
+
+
+
+def format_notion_preview_text(content):
+    """
+    Convert hashtags and mentions into full absolute URLs
+    for OpenGraph/Twitter descriptions.
+    """
+    if not content:
+        return ""
+
+    # Replace hashtags (#tag → full link)
+    content = re.sub(
+        r"#(\w+)",
+        lambda m: f"https://socyfie.com/tag/{m.group(1)}",
+        content
+    )
+
+    # Replace mentions (@user → full link)
+    content = re.sub(
+        r"@(\w+)",
+        lambda m: f"https://socyfie.com/{m.group(1)}",
+        content
+    )
+
+    return content
+

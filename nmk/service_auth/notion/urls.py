@@ -8,6 +8,8 @@ app_name = "notion"
 urlpatterns = [
     # path('notion_home/', views.notion_home, name='notion_home'),
     path('notion_home/<int:notion_id>/', views.notion_home, name='notion_home'),
+    path("notion_home/", views.notion_home, name="notion_home"),
+
     path('explorer/', views.notion_explorer, name='notion_explorer'),
     path('following_list/<int:user_id>/', views.following_list, name='following_list'),
     path('followers_list/', views.followers_list, name='followers_list'),
@@ -22,6 +24,8 @@ urlpatterns = [
     path('search_users/', views.search_users, name='search_users'),
     # path('my_notions/', views.my_notions, name='my_notions'),
     path('my_notions/<int:notion_id>/', views.my_notions, name='my_notions'),
+    #path('my_notions/<int:user_id>/', views.my_notions, name='my_notions'),
+
     path('notion/<int:notion_id>/', views.notion_detail_view, name='notion_detail'),
     path('notifications/', views.notifications, name='notifications'),
     path('accounts/login/', only_card_views.login_view, name='login'),

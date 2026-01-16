@@ -1,3 +1,4 @@
+from django.utils.timezone import now
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from .models import LoggedInUser
 from django.contrib.auth.models import User as AuthUser
@@ -29,7 +30,7 @@ def create_user_encryption_keys(sender, instance, created, **kwargs):
             logger.error(f"Error creating encryption keys for user {instance.username}: {str(e)}")
 
 
-
+'''
 @receiver(user_logged_in)
 def on_user_login(sender, **kwargs):
     LoggedInUser.objects.get_or_create(user=kwargs.get('user'))
@@ -37,3 +38,25 @@ def on_user_login(sender, **kwargs):
 @receiver(user_logged_out)
 def on_user_logout(sender, **kwargs):
     LoggedInUser.objects.filter(user=kwargs.get('user')).delete()
+
+
+'''
+
+@receiver(user_logged_in)
+def on_user_login(sender, request, user, **kwargs):
+    # Just ensure the row exists, don't overwrite other sessions
+    obj, created = LoggedInUser.objects.get_or_create(user=user)
+    obj.last_activity = now()
+    obj.save()
+
+@receiver(user_logged_out)
+def on_user_logout(sender, request, user, **kwargs):
+    # Do NOT delete the row, otherwise other active sessions die
+    try:
+        obj = LoggedInUser.objects.get(user=user)
+        obj.last_activity = now()  # mark as "inactive" or "logged out from this session"
+        obj.save(update_fields=["last_activity"])
+    except LoggedInUser.DoesNotExist:
+        pass
+
+

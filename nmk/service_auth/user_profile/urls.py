@@ -12,7 +12,11 @@ RESERVED_USERNAMES = ['following_media', 'login', 'signup', 'explore']
 app_name = 'user_profile'
 #add <str:username>/ tp profile to display username in the navigation bar 
 urlpatterns = [
+
+    path("open/", views.open_bridge, name="open_bridge"), #to open the shared links in the installed pwa
+
     path('profile/<int:user_id>/', views.profile, name='profile'),
+    path('profile/', views.profile, name='profile'), #for unauthenticated users
 
     path('profile/<int:user_id>/edit/', views.edit_profile, name='edit_profile'),
     path('save_bio/', views.save_bio, name='save_bio'),
@@ -30,6 +34,8 @@ urlpatterns = [
     path('unfollow_user/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
     path('upload_media/', views.upload_media, name='upload_media'),
     path('media/tags/<int:user_id>/', views.media_tags, name='media_tags'),  # New URL for user's tagged media
+    path('media/tags/', views.media_tags, name='media_tags'),  # New URL for user's tagged media for unauthenticated user
+
     path('explore/', views.explore, name='explore'),
 
     path('log_interaction/', views.log_interaction, name='log_interaction'),
@@ -93,6 +99,9 @@ urlpatterns = [
 
     #view tracking using util and view function named as below
     path('track-media-view/<int:media_id>/', views.track_media_view, name='track_media_view'),
+
+    #notion_home
+    path('notion_home/<int:notion_id>/', notion_views.notion_home, name='notion_home'),
 
     #for sharing media directly from gallery without opening the app 
     path("share-upload/", views.share_upload, name="share_upload"),

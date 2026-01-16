@@ -24,14 +24,20 @@
 
 </style>
 
+</br>
 <h2>Upload</h2>
-<h6>the "video" upload function is not availabe currently</h6>
+
 <form id="uploadForm" method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.non_field_errors }}
     <div class="form-group">
-        <label for="id_file">image</label>
-        <input type="file" class="form-control-file" id="id_file" name="file" accept="image/*, video/*" onchange="previewFile(event)">
+
+        <label for="id_file" class="btn btn-primary">Select image/video</label>
+        <input type="file" id="id_file" name="file" accept="image/*,video/*" onchange="previewFile(event)" hidden>
+
+
+        <!--<input type="file" class="form-control-file" id="id_file" name="file" accept="image/*, video/*" onchange="previewFile(event)">-->
+
         {% for error in form.file.errors %}
             <p class="help-block text-danger">{{ error }}</p>
         {% endfor %}
@@ -63,9 +69,15 @@
         {% for error in form.description.errors %}
             <p class="help-block text-danger">{{ error }}</p>
         {% endfor %}
-        <div id="descriptionPreview" class="mt-3"></div>
+
+        <!-- Description preview -->
+        <div id="descriptionPreview" class="mt-3" style="margin-top: 10px;"></div>
+
+        <!-- Media (image/video) preview -->
+        <div id="filePreview" style="margin-top: 10px;"></div>
+
     </div>
-    <button type="submit" class="btn btn-primary" id="submitButton">Upload</button>
+    <button type="submit" class="btn btn-primary" id="submitButton">Share</button>
     <div id="uploadSpinner" style="display:none;">Uploading...</div>
     <div id="uploadProgress" style="display:none;">
         <div class="progress-bar" style="width: 0%;">0%</div>
@@ -88,7 +100,22 @@
 <!--for uploading media directly from gallery without opening teh app-->
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+
     const sharedFile = {{ shared_file|default:"null"|safe }};
+    const prefillText = "{{ prefill_text|default:''|escapejs }}";
+
+    // Fill description if prefill_text is provided
+    if (prefillText) {
+        const descriptionInput = document.getElementById('id_description');
+        descriptionInput.value = prefillText;
+
+        // Optionally update preview
+        const previewContainer = document.getElementById('descriptionPreview');
+        const linkifiedText = prefillText.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>');
+        previewContainer.innerHTML = linkifiedText;
+    }
+
+    // Fill file input if shared_file is provided
     if (sharedFile && sharedFile.name && sharedFile.content) {
         // Decode base64 string → binary data
         const byteCharacters = atob(sharedFile.content);
@@ -114,6 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         document.getElementById('id_file').files = dataTransfer.files;
+
+        // Show preview
+        const event = { target: document.getElementById('id_file') };
+        previewFile(event);
     }
 });
 </script>
@@ -179,8 +210,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 $(document).ready(function() {
+
+    const MAX_DURATION = 240; // seconds
+    let validDuration = true;
+
+    // --- Duration check on file input ---
+    $('#id_file').on('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const fileType = file.type;
+        if (fileType.startsWith('video/')) {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+
+            video.onloadedmetadata = function() {
+                window.URL.revokeObjectURL(video.src);
+                const duration = video.duration;
+                console.log("Video duration:", duration);
+
+                if (duration > MAX_DURATION) {
+                    alert(`This video is too long! Maximum allowed duration is ${MAX_DURATION} seconds.`);
+                    $('#id_file').val(''); // Clear the input
+                    validDuration = false;
+                } else {
+                    validDuration = true;
+                }
+            };
+
+            video.onerror = function() {
+                alert("Could not read video duration. Please upload a valid video file.");
+                $('#id_file').val('');
+                validDuration = false;
+            };
+
+            video.src = URL.createObjectURL(file);
+        } else {
+            validDuration = true; // allow images
+        }
+    });
+
+    // --- Form submission handler ---
     $('#uploadForm').on('submit', function(e) {
         e.preventDefault(); // Stop normal form submission
+
+        if (!validDuration) {
+            alert("Please select a valid video (≤ 240 seconds) before uploading.");
+            return;
+        }
 
         $('#uploadSpinner').show();        // Show spinner
         $('#submitButton').prop('disabled', true); // Disable button
@@ -208,13 +285,18 @@ $(document).ready(function() {
             contentType: false,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': '{{ csrf_token }}'  
+                'X-CSRFToken': '{{ csrf_token }}'
 
             },
             success: function(response) {
                 console.log('Upload successful:', response);
                 alert("Upload successful!");
-                window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+                //window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+                // Load profile page via AJAX and inject into #mainContent (or body)
+
+                $.get("{% url 'user_profile:profile' request.user.id %}", function(profileHtml) {
+                    $('body').html(profileHtml);
+                });
 
             },
             error: function(xhr, status, error) {
@@ -230,5 +312,3 @@ $(document).ready(function() {
 </script>
 
 {% endblock %}
-
-

@@ -1,19 +1,301 @@
+{% load static %}
+{% load custom_filters %}
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>{{ title }}</title>
-    <meta property="og:title" content="{{ title }}">
-    <meta property="og:description" content="{{ description }}">
-    {% if image_url %}
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Primary Meta Tags -->
+  <meta name="title" content="{{ title }}">
+  <meta name="description" content="{{ description|truncatechars:160 }}">
+  <meta name="robots" content="index, follow">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="{{ url }}">
+
+  <!-- Open Graph / Facebook / WhatsApp / Telegram / Instagram / LinkedIn -->
+  <meta property="og:type" content="{% if profile_user %}profile{% else %}article{% endif %}">
+  <meta property="og:title" content="{{ title }}">
+  <meta property="og:description" content="{{ description|truncatechars:160 }}">
+  {% if image_url %}
     <meta property="og:image" content="{{ image_url }}">
+    <meta property="og:image:alt" content="{{ description|truncatechars:160 }}">
+  {% endif %}
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+  <meta property="og:site_name" content="Socyfie">
+  <meta property="og:locale" content="en_IN">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title }}">
+  <meta name="twitter:description" content="{{ description|truncatechars:160 }}">
+  {% if image_url %}
+    <meta name="twitter:image" content="{{ image_url }}">
+    <meta name="twitter:image:alt" content="{{ description|truncatechars:160 }}">
+  {% endif %}
+
+  {% if profile_url %}
+    <!-- Optional: Add author/profile URL metadata -->
+    <meta property="article:author" content="{{ profile_url }}">
+  {% endif %}
+
+  <!--  Structured Data (JSON-LD for Google SEO) -->
+  {% comment %}
+  Schema rules:
+  - Notion → SocialMediaPosting
+  - Profile → Person
+  - Media → ImageObject / VideoObject
+  - Fallback → Article
+  {% endcomment %}
+
+  {% if notion %}
+  <!--  NOTION -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SocialMediaPosting",
+
+    "headline": "{{ title|truncatechars:110|escapejs }}",
+    "articleBody": "{{ notion.content|truncatechars:1000|escapejs }}",
+    "url": "{{ url }}",
+    "datePublished": "{{ notion.created_at|date:'c' }}",
+
+    "author": {
+      "@type": "Person",
+      "name": "{{ notion.user.username|escapejs }}",
+      "url": "{% url 'user_profile:profile' user_id=notion.user.id %}"
+    },
+
+    {% if image_url %}
+    "image": "{{ image_url }}",
     {% endif %}
-    <meta property="og:url" content="{{ url }}">
-    <meta name="twitter:card" content="summary_large_image">
+
+    {% if notion.hashtags.exists %}
+    "keywords": "{% for tag in notion.hashtags.all %}#{{ tag.name }}{% if not forloop.last %}, {% endif %}{% endfor %}",
+    {% endif %}
+
+    "interactionStatistic": [{
+      "@type": "InteractionCounter",
+      "interactionType": "https://schema.org/LikeAction",
+      "userInteractionCount": {{ notion.likes.count|default:0 }}
+    }],
+
+    "publisher": {
+      "@type": "Organization",
+      "name": "Socyfie",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://socyfie.com/static/img/socyfie-logo.png"
+      }
+    }
+  }
+  </script>
+
+  {% elif profile_user %}
+  <!--  PROFILE -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "{{ profile_user.username|escapejs }}",
+    "url": "{{ profile_url }}"
+  }
+  </script>
+
+  {% elif media %}
+  <!--  MEDIA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    {% if media.file.url|is_video %}
+    "@type": " VideoObject",
+    "name": "{{ title|escapejs }}",
+    "description": "{{ description|truncatechars:160|escapejs }}",
+    "thumbnailUrl": [
+      "{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ image_url }}{% endif %}"
+    ],
+    "uploadDate": "{{ media.created_at|date:'c' }}",
+    "contentUrl": "{{ media.file.url }}",
+    "embedUrl": "{{ url }}",
+
+    {% else %}
+    "@type": "ImageObject",
+    <!--"author": "{{ media.user.username|escapejs }}",-->
+    "contentUrl": "{{ media.file.url }}",
+    "description": "{{ description|truncatechars:160|escapejs }}",
+    {% endif %}
+    "url": "{{ url }}",
+    "author": {
+      "@type": "Person",
+      "name": "{{ media.user.username|escapejs }}",
+      "url": "{% url 'user_profile:profile' user_id=media.user.id %}"
+    }
+  }
+  </script>
+
+  {% else %}
+  <!--  FALLBACK -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "{{ title|escapejs }}",
+    "description": "{{ description|truncatechars:160|escapejs }}",
+    "url": "{{ url }}",
+    "datePublished": "{% now 'c' %}",
+
+    "publisher": {
+      "@type": "Organization",
+      "name": "Socyfie"
+    }
+  }
+  </script>
+  {% endif %}
+
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      color: #333;
+      background: #fafafa;
+      text-align: center;
+      padding: 50px;
+    }
+    img {
+      max-width: 250px;
+      border-radius: 10px;
+      margin: 20px auto;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .profile-name {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .description {
+      font-size: 1rem;
+      color: #555;
+      max-width: 600px;
+      margin: 0 auto 20px;
+    }
+    .mention-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 10px auto;
+      display: block;
+    }
+  </style>
 </head>
+
 <body>
-    Preview only for crawlers.
+  {% if media %}
+    <div id="media-detail-container">
+      {% if media.user and media.user.id %}
+        <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
+      {% elif profile_url %}
+        <a href="{{ profile_url }}" class="mention-with-avatar">
+      {% else %}
+        <a href="#" class="mention-with-avatar">
+      {% endif %}
+          {% if media.user.profile %}
+            <img src="{{ media.user.profile|profile_picture_url }}" class="mention-avatar" alt="{{ media.user.username }}'s profile picture">
+          {% endif %}
+          <h5>@{{ media.user.username }}</h5>
+        </a>
+
+      <div id="current-media">
+        {% if media.file.url|is_video %}
+          <video controls autoplay playsinline preload="metadata" poster="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ image_url }}{% endif %}" 
+                 class="img-fluid autoplay-video">
+            <source src="{{ media.file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+        {% else %}
+          <img src="{{ media.file.url }}" alt="{{ title }}" class="img-fluid" loading="lazy">
+        {% endif %}
+      </div>
+
+      <div id="media-description" class="description">
+        <p>{{ description|safe }}</p>
+      </div>
+    </div>
+
+  {% elif notion %}
+    <!-- ===================== -->
+    <!-- NOTION PREVIEW BLOCK -->
+    <!-- ===================== -->
+
+    <div id="notion-detail-container">
+
+        {% if notion.user and notion.user.id %}
+            <a href="{% url 'user_profile:profile' user_id=notion.user.id %}" class="mention-with-avatar" rel="author">
+        {% else %}
+            <a href="#" class="mention-with-avatar">
+        {% endif %}
+
+            {% if notion.user.profile %}
+                <img src="{{ notion.user.profile|profile_picture_url }}"
+                     class="mention-avatar"
+                     alt="{{ notion.user.username }}'s profile picture">
+            {% endif %}
+            <h5>@{{ notion.user.username }}</h5>
+        </a>
+
+        <div id="notion-content" class="description">
+            <p>{{ notion.content|truncatechars:1000|safe }}</p>
+        </div>
+
+        {% if image_url %}
+        <div class="notion-media">
+            <img src="{{ image_url }}" alt="{{ title }}" style="width: 100%; max-width: 500px; margin-top: 15px;">
+        </div>
+        {% endif %}
+
+        {% if notion.hashtags.all %}
+            <div class="description">
+                {% for tag in notion.hashtags.all %}
+                    <span>#{{ tag.name }}</span>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if notion.created_at %}
+            <div class="description">
+                <small>
+                    Published on
+                    <time datetime="{{ notion.created_at|date:'c' }}">
+                        {{ notion.created_at|date:"F j, Y" }}
+                    </time>
+                </small>
+            </div>
+        {% endif %}
+    </div>
+
+  {% elif profile_user %}
+    <div class="profile-preview">
+      {% if image_url %}
+        <img src="{{ image_url }}" alt="{{ profile_user.username }}'s profile picture">
+      {% endif %}
+      <div class="profile-name">@{{ profile_user.username }}</div>
+      <div class="description">{{ description }}</div>
+    </div>
+
+  {% else %}
+    <div class="generic-preview">
+      <h2>{{ title }}</h2>
+      <p class="description">{{ description|truncatechars:160 }}</p>
+      {% if image_url %}
+        <img src="{{ image_url }}" alt="{{ title }}">
+      {% endif %}
+    </div>
+  {% endif %}
 </body>
 </html>
-
-

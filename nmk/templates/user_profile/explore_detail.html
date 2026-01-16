@@ -2,6 +2,15 @@
 {% load static %}
 {% load custom_filters %}
 
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+{% block extra_meta %}
+<meta name="google-site-verification" content="_IBkfzFM3ddmUBqo1n1XVen31tQ8YWTE9Kj1leWqk4s" />
+{% endblock %}
+
 {% block main_content %}
 <style>
 
@@ -63,6 +72,14 @@
 
     .dropdown:hover .dropdown-content {
         display: block;
+    }
+
+    .description {
+        #color: #123;
+        max-width: 90%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
     }
 </style>
 <br>
@@ -255,44 +272,63 @@
     </span>
 </div>
 
-            {% block footer %}
-            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
-                <div class="bottom-strip d-flex justify-content-around align-items-center">
 
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:following_media'  %}">
-                            <i class="fas fa-home"></i>
-                        </a>
-                    </div>
+    {% block footer %}
+        <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+            <div class="bottom-strip d-flex justify-content-around align-items-center">
 
-                    <div class="footer-icon">
-                        <a href="{% url 'only_card:landing_page' %}">
-                            <i class="fas fa-shield-alt"></i>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:following_media' %}">
+                        <i class="fas fa-home"></i>
+                    </a>
+                </div>
 
+                <!--<div class="footer-icon">
+                    <a href="{% url 'only_card:landing_page' %}">
+                        <i class="fas fa-shield-alt"></i>
+                    </a>
+                </div>-->
+
+        {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
+        {% else %}
 
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' %}">
 
+                        <i class="fas fa-lightbulb"></i>
+                    </a>
+                </div>
+        {% endif %}
+
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:explore' %}">
+                        <i class="fas fa-search"></i>
+                    </a>
+                </div>
+
+        {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>
+        {% else %}
 
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:profile'  %}">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
                 </div>
-            </footer>
+        {% endif %}
+            </div>
+        </footer>
+    {% endblock %}
 
-            {% endblock %}
 
 {% endblock %}
 
@@ -478,7 +514,8 @@
     });
 </script>
 
-<!--share script-->
+
+<!--share script page link -->
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     const shareBtn = document.getElementById("share-btn");
@@ -508,5 +545,42 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 </script>
-
 {% endblock %}
+
+<!--
+//share script that hides the share link with the help of helper functoion open_bridge and open.html page in template
+this setup still needs proper pipeing to work as desired 
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const shareBtn = document.getElementById("share-btn");
+
+    if (shareBtn) {
+        shareBtn.addEventListener("click", async function() {
+            const currentUrl = window.location.href;
+            const shareUrl = `https://socyfie.com/open/?url=${encodeURIComponent(currentUrl)}`;
+
+            const shareData = {
+                title: "{{ media.user.username }}'s post",
+                text: "Check out this upload on Socyfie!",
+                url: shareUrl  // ✅ Smart bridge URL
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    console.log("Share successful");
+                } catch (err) {
+                    console.error("Share failed:", err);
+                }
+            } else {
+                // Fallback: copy bridge link to clipboard
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => alert("Link copied to clipboard!"))
+                    .catch(err => console.error("Could not copy link:", err));
+            }
+        });
+    }
+});
+</script>
+-->
+

@@ -7,8 +7,14 @@ from django.core.validators import RegexValidator
 class UsernameUpdateForm(forms.Form):
     new_username = forms.CharField(
         max_length=20, 
-        label='New Username', 
-        validators=[RegexValidator(r'^[a-zA-Z0-9]+$', 'Only alphanumeric characters allowed.')],
+        label='New Username',
+
+        validators=[RegexValidator(
+            r'^[A-Za-z0-9._-]+$',
+            'Username may only contain letters, numbers, underscores (_), hyphens (-), and dots (.)'
+        )],
+
+        #validators=[RegexValidator(r'^[a-zA-Z0-9]+$', 'Only alphanumeric characters allowed.')],
         widget=forms.TextInput(attrs={'placeholder': 'Enter new username'})  # This creates the input field
     )
 

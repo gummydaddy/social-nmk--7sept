@@ -16,9 +16,15 @@ class CustomSignupForm(SignupForm):
     field_order = ['username', 'email', 'first_name', 'last_name']
 
     username = forms.CharField(
-        max_length=20, 
-        label='Choose Username', 
-        validators=[RegexValidator(r'^[a-zA-Z0-9]+$', 'Only alphanumeric characters allowed.')],
+        max_length=20,
+        label='Choose Username',
+
+        validators=[RegexValidator(
+            r'^[A-Za-z0-9._-]+$',
+            'Username may only contain letters, numbers, underscores (_), hyphens (-), and dots (.)'
+        )],
+
+        #validators=[RegexValidator(r'^[a-zA-Z0-9]+$', 'Only alphanumeric characters allowed.')],
         widget=forms.TextInput(attrs={'placeholder': 'Enter username'})
     )
     first_name = forms.CharField(

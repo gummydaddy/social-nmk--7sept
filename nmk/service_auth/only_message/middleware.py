@@ -2,6 +2,7 @@
 from django.utils.timezone import now
 from .models import LoggedInUser
 
+"""
 class UpdateLastActivityMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -14,22 +15,38 @@ class UpdateLastActivityMiddleware:
             request.user.logged_in_user.last_activity = now()
             request.user.logged_in_user.save()
         return response
+"""
+
+'''
+class UpdateLastActivityMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        if request.user.is_authenticated:
+            try:
+                obj, created = LoggedInUser.objects.get_or_create(user=request.user)
+                obj.last_activity = now()
+                obj.save(update_fields=["last_activity"])
+            except Exception:
+                pass
+        return response
+'''
 
 
+class UpdateLastActivityMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-# from django.utils.timezone import now
-# from .models import LoggedInUser
+    def __call__(self, request):
+        response = self.get_response(request)
 
-# class UpdateLastActivityMiddleware:
-#     def __init__(self, get_response):
-#         self.get_response = get_response
+        if request.user.is_authenticated:
+            LoggedInUser.objects.update_or_create(
+                user=request.user,
+                defaults={'last_activity': now()}
+            )
+        return response
 
-#     def __call__(self, request):
-#         response = self.get_response(request)
-#         if request.user.is_authenticated:
-#             # Update last activity time
-#             LoggedInUser.objects.update_or_create(
-#                 user=request.user,
-#                 defaults={'last_activity': now()}
-#             )
-#         return response
+

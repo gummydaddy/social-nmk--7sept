@@ -2,6 +2,14 @@
 {% load static %}
 {% load custom_filters %}
 
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+
+{% block extra_meta %}
+<meta name="google-site-verification" content="_IBkfzFM3ddmUBqo1n1XVen31tQ8YWTE9Kj1leWqk4s" />
+{% endblock %}
 
 {% block main_content %}
 <style>
@@ -157,9 +165,7 @@
       <a href="{% url 'only_message:message_list_view' %}">
         <button class="messagebtn">💬</button>
       </a>
-      <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
-        🌐
-      </button>
+
       <button class="openbtn" onclick="openNav()">☰</button>
     </div>
   </nav>
@@ -220,7 +226,6 @@
       <i class="fas fa-shield-alt"></i>
     </a>
     <a href="{% url 'user_profile:following_media' %}" style="color: #343434; font-size: 1rem;">
-      <!--<i class="fas fa-user-circle"></i>-->
       <i class="fas fa-home"></i>
     </a>
   </div>

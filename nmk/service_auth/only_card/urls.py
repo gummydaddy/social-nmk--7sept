@@ -70,7 +70,8 @@ urlpatterns = [
     # path('lock/<int:user_id>/', views.lock_user, name='lock_user'),
     # path('unlock/<int:user_id>/', views.unlock_user, name='unlock_user'),
     # path('locked/', views.locked_page, name='locked_page'),
-    
+    #path("pwa-cache-manifest/", views.pwa_cache_manifest, name="pwa_cache_manifest"),
+
 
     
 ]

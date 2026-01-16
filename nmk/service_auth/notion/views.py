@@ -16,6 +16,7 @@ from django.http import JsonResponse
 import random
 from collections import deque
 from django.core.cache import cache
+from django.views.decorators.cache import cache_page
 from django.db.models import Q, Count
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.html import escape, mark_safe
@@ -25,6 +26,7 @@ from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 # from identity.notion.tasks import send_tagged_user_notifications  # Import the Celery task
 
+from django.views.decorators.cache import cache_page, cache_control
 
 
 AuthUser = get_user_model()
@@ -32,9 +34,40 @@ AuthUser = get_user_model()
 # from user_profile.views import profile 
 # from user_profile.models import Story
 
-
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_page(60 * 2)
 def notion_home(request, notion_id=None):
     user = request.user
+
+    # -------------------------------
+    # GUEST / BOT (Anonymous User)
+    # -------------------------------
+
+    if not user.is_authenticated:
+        notions = (
+            Notion.objects
+            .select_related('user', 'user__profile')
+            #.filter(is_public=True)
+            .order_by('-created_at')
+        )
+
+        context = {
+            'notions': notions,
+            'user_id': None,
+            'following_count': 0,
+            'followers_count': 0,
+            'user': None,
+        }
+
+        if notion_id:
+            context['notion_id'] = notion_id
+
+        return render(request, 'notionHome.html', context)
+
+    # -------------------------------
+    # LOGGED-IN USER
+    # -------------------------------
+
     following_users = Follow.objects.filter(follower=user).values_list('following_id', flat=True)
 
     # Get users with active stories in the last 24 hours
@@ -94,7 +127,7 @@ def notion_home(request, notion_id=None):
 
 # views.py
 import logging
-@login_required
+#@login_required
 def post_notion(request):
     if request.method == 'POST':
         content = request.POST.get('content', '')
@@ -115,7 +148,7 @@ def post_notion(request):
 
         # Create the notion
         try:
-            deletion_date = timezone.now() + timedelta(days=7)
+            deletion_date = timezone.now() + timedelta(days=28)
             notion = Notion.objects.create(user=request.user, content=content, deletion_date=deletion_date)
             logging.info(f"Notion created with ID: {notion.id}")
         except Exception as e:
@@ -141,26 +174,41 @@ def post_notion(request):
             except AuthUser.DoesNotExist:
                 pass
 
-        return redirect('notion:notion_home', notion_id=notion.id)
+        #return redirect('notion:notion_home', notion_id=notion.id)
+
+        # Instead of redirect → render notion_detail.html
+        related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion.id)
+        return render(
+            request,
+            'notion_detail.html',
+            {
+                'notion': notion,
+                'related_notions': related_notions
+            }
+        )
 
     return render(request, 'post_notion.html', {'user_id': request.user.id})
 
 
-
+#@login_required
+@cache_page(60 * 10)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def following_list(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
     following = Follow.objects.filter(follower=profile_user).select_related('following')
     return render(request, 'following_list.html', {'profile_user': profile_user, 'following': following})
 
 
-@login_required
+#@login_required
+@cache_page(60 * 10)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def followers_list(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
     followers = Follow.objects.filter(following=profile_user).select_related('follower')
     return render(request, 'followers_list.html', {'profile_user': profile_user, 'followers': followers})
 
 
-@login_required
+#@login_required
 @csrf_protect
 def like_notion(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
@@ -191,7 +239,7 @@ def like_notion(request, notion_id):
     return redirect(request.META.get('HTTP_REFERER', 'notion:notion_home'))
 
 
-@login_required
+#@login_required
 @csrf_protect
 def post_comment(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
@@ -242,24 +290,71 @@ def post_comment(request, notion_id):
             )
 
         # Redirect to the notion detail page with a fragment identifier for the new comment
-        return redirect(f"{reverse('notion:notion_detail', args=[notion.id])}#{comment.id}")
+        #return redirect(f"{reverse('notion:notion_detail', args=[notion.id])}#{comment.id}")
+
+        # Instead of redirecting → render notion_detail.html with updated context
+        related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion.id)
+        comments = Comment.objects.filter(notion=notion).select_related('user')
+
+        return render(request, 'notion_detail.html', {
+            'notion': notion,
+            'related_notions': related_notions,
+            'comments': comments,
+            'new_comment_id': comment.id,  # optionally highlight or scroll to new comment
+        })
 
     # If not a POST request, fallback to redirecting to the notion detail page
-    return redirect('notion:notion_detail', notion_id=notion.id)
+    #return redirect('notion:notion_detail', notion_id=notion.id)
+
+    # If not a POST request, render detail page
+    related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion.id)
+    comments = Comment.objects.filter(notion=notion).select_related('user')
+
+    return render(request, 'notion_detail.html', {
+        'notion': notion,
+        'related_notions': related_notions,
+        'comments': comments,
+    })
+
+
+
+#@login_required
+def delete_notion(request, notion_id):
+    notion = get_object_or_404(Notion, id=notion_id)
+
+    if notion.user == request.user:
+        notion.delete()
+        return redirect('notion:notion_home')  # or any page you want
+    else:
+        return HttpResponseForbidden("You are not allowed to delete this notion.")
+'''
 
 
 @login_required
 def delete_notion(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
 
-    if notion.user == request.user:
-        notion.delete()
-        return redirect('notion_list')  # or any page you want
-    else:
+    # --- Permission Checks ---
+    is_owner = (notion.user == request.user)
+
+    # Check if current user is a CustomGroupAdmin for the notion's owner
+    is_custom_admin = CustomGroupAdmin.objects.filter(
+        user=request.user
+    ).exists()
+
+    if not (is_owner or is_custom_admin):
         return HttpResponseForbidden("You are not allowed to delete this notion.")
 
+    # --- Delete Notion ---
+    user_id = notion.user.id  # The user whose notions page we return to
+    notion.delete()
 
-@login_required
+    # Redirect back to the user's notions page
+    return redirect('notion:my_notions', notion_id=user_id)
+'''
+
+
+#@login_required
 def delete_comment(request, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
     notion = comment.notion
@@ -269,7 +364,9 @@ def delete_comment(request, comment_id):
     return redirect('notion:notion_detail', notion_id=notion.id)
 
 #works for the search bar at the top of the page 
-@login_required
+#@login_required
+@cache_page(60 * 10)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def search_users(request):
     query = request.GET.get('q', '')
     
@@ -294,7 +391,9 @@ def search_users(request):
         'following': following
     })
 
-
+@login_required
+@cache_page(60 * 30)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def my_notions(request, notion_id):
     user = get_object_or_404(AuthUser, id=notion_id)
 
@@ -324,9 +423,35 @@ def my_notions(request, notion_id):
         context['notion_id'] = notion_id
 
     return render(request, 'my_notions.html', context)
+'''
 
+def my_notions(request, user_id):
+    user = get_object_or_404(AuthUser, id=user_id)
 
+    user_notions = Notion.objects.filter(user=user)
 
+    custom_group_admin_ids = CustomGroupAdmin.objects.filter(
+        user=user
+    ).values_list('user_id', flat=True)
+
+    admin_notions = Notion.objects.filter(user_id__in=custom_group_admin_ids)
+
+    notions = (user_notions | admin_notions).order_by('-created_at')
+
+    following_count = Follow.objects.filter(follower=user).count()
+    followers_count = Follow.objects.filter(following=user).count()
+
+    return render(request, 'my_notions.html', {
+        'notions': notions,
+        'user_id': user.id,
+        'following_count': following_count,
+        'followers_count': followers_count,
+        'user': user
+    })
+'''
+
+@cache_page(60 * 30)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def notion_detail_view(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
     related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion_id)
@@ -378,7 +503,9 @@ def notion_detail_view(request, notion_id):
     })
 
 
-@login_required
+#@login_required
+@cache_page(60 * 30)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def notifications(request):
     user = request.user
     # Get current time and the time 8 days ago
@@ -399,8 +526,40 @@ def notifications(request):
     return render(request, 'notifications.html', {'notifications': notifications})
 
 
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def notion_explorer(request):
     user = request.user
+
+    # =====================================================
+    # GUEST / BOT (NO PERSONALIZATION)
+    # =====================================================
+    if not user.is_authenticated:
+        notions = (
+            Notion.objects
+            .annotate(like_count=Count('likes'))
+            .order_by('-created_at', '-like_count')[:50]
+        )
+
+        # Search still allowed
+        query = request.GET.get('q')
+        if query:
+            notions = (
+                Notion.objects.filter(
+                    Q(content__icontains=query) |
+                    Q(user__username__icontains=query) |
+                    Q(hashtags__name__icontains=query)
+                )
+                .distinct()
+            )
+
+        return render(request, 'notion_explorer.html', {
+            'notions': notions,
+            'is_guest': True
+        })
+
+    # =====================================================
+    # LOGGED-IN USER (PERSONALIZED)
+    # =====================================================
 
     # Fetch user's liked notions directly from the Notion model
     liked_notions = Notion.objects.filter(likes=user)
@@ -499,6 +658,8 @@ def unblock_user(request, user_id):
     return redirect('user_profile:blocked_user_list')
 
 @login_required
+@cache_page(60 * 30)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def blocked_user_list(request):
     blocked_users = BlockedUser.objects.filter(blocker=request.user).select_related('blocked')
     return render(request, 'blocked_user_list.html', {'blocked_users': blocked_users})

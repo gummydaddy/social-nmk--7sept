@@ -22,10 +22,10 @@ from asgiref.sync import async_to_sync
 import json
 from django.views.decorators.http import require_http_methods
 
-
+from django.views.decorators.vary import vary_on_headers
+from django.views.decorators.cache import cache_page, cache_control
 
 logger = logging.getLogger(__name__)
-
 
 def get_or_create_conversation_key(sender, recipient):
     conversation = ConversationKey.objects.filter(participants=sender).filter(participants=recipient).first()
@@ -56,6 +56,7 @@ def get_or_create_conversation_key(sender, recipient):
 #     return render(request, 'user_list.html', {'users': users})
 
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def _base(request):
     return render(request,'_base.html')
 
@@ -69,6 +70,7 @@ def get_online_users(request):
 
 
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def send_message_view(request):
     if request.method == 'POST':
         form = MessageForm(request.POST, request.FILES) # Add request.FILES for file uploads
@@ -176,6 +178,8 @@ def message_list_view(request):
 """
 
 @login_required
+#@cache_page(60 * 10)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def message_list_view(request):
     # Get the latest message timestamp for each user
     latest_messages = Message.objects.filter(
@@ -215,6 +219,8 @@ def message_list_view(request):
 
 #sending message update that included sending files 
 @login_required
+@cache_page(60 * 10)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def user_messages_view(request, username):
     user = get_object_or_404(AuthUser, username=username)
     messages = Message.objects.filter(
@@ -448,7 +454,7 @@ def user_messages_view(request, username):
     return render(request, 'user_messages.html', {'messages': decrypted_messages, 'form': form, 'recipient': user})
 """
 
-
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def search_user_message(request):
     query = request.GET.get('q')
     if query:
@@ -460,6 +466,7 @@ def search_user_message(request):
 
 
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def get_messages_api(request, username):
     user = get_object_or_404(AuthUser, username=username)
     messages = Message.objects.filter(

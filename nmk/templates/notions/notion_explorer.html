@@ -2,6 +2,17 @@
 {% load static %}
 {% load custom_filters%}
 
+
+<!--for google search console-->
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+{% block extra_meta %}
+<meta name="google-site-verification" content="_IBkfzFM3ddmUBqo1n1XVen31tQ8YWTE9Kj1leWqk4s" />
+{% endblock %}
+
+
 {% block main_content %}
 <style>
   body {
@@ -127,9 +138,6 @@
       <a href="{% url 'only_message:message_list_view' %}">
         <button class="messagebtn">💬</button>
       </a>
-<!--      <button id="globe-button" onclick="location.href='{% url 'notion:notion_home' notion_id=request.user.id %}'">
-        🌐
-      </button>-->
 
       <button class="openbtn" onclick="openNav()">☰</button>
     </div>
@@ -176,6 +184,15 @@
           </a>
           <span class="like-count">{{ notion.likes.count }}</span> likes
           <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">💬</button>
+
+<!-- Share Button -->
+<button
+    class="btn btn-outline-primary share-btn"
+    data-username="{{ notion.user.username }}"
+    data-url="{% url 'notion:notion_detail' notion.id %}">
+    📤 Share
+</button>
+
         </div>
       </div>
     {% endfor %}
@@ -194,11 +211,22 @@
         <i class="fas fa-shield-alt"></i>
       </a>
     </div>
+
+                {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
+                {% else %}
+
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' %}">
+
+                        <i class="fas fa-lightbulb"></i>
+                    </a>
+                </div>
+                {% endif %}
 
     <div class="footer-icon">
       <a href="{% url 'user_profile:following_media' %}">
@@ -249,4 +277,40 @@
     });
   });
 </script>
+
+<!--share script-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".share-btn").forEach(button => {
+        button.addEventListener("click", async function () {
+
+            const username = this.dataset.username;
+            const notionUrl = `${window.location.origin}${this.dataset.url}`;
+
+            const shareData = {
+                title: `${username}'s Notion`,
+                text: `Check out this notion by ${username} on Socyfie`,
+                url: notionUrl
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    console.log("Share successful");
+                } catch (err) {
+                    console.error("Share cancelled or failed:", err);
+                }
+            } else {
+                // Fallback: copy link
+                navigator.clipboard.writeText(notionUrl)
+                    .then(() => alert("Notion link copied to clipboard!"))
+                    .catch(err => console.error("Clipboard copy failed:", err));
+            }
+        });
+    });
+
+});
+</script>
+
 {% endblock %}

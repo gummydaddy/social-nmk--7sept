@@ -2,17 +2,93 @@ User-agent: *
 Disallow: /admin/
 Allow: /
 
+# --- Major Search Engines ---
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+User-agent: Applebot
+Allow: /
+
+User-agent: DuckDuckBot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+# --- Social Media Bots (for link previews) ---
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: Facebot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# --- AI / Data Scraping Bots — Blocked ---
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+User-agent: Bytespider
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: archive.org_bot
+Allow: /
+
+User-agent: PetalBot
+Allow: /
+
+User-agent: ProRataInc
+Allow: /
+
+User-agent: Timpibot
+Allow: /
+
+User-agent: Novellum AI Crawl
+Allow: /
+
+# --- Meta Bots used for scraping ---
+User-agent: Meta-ExternalAgent
+Allow: /
+User-agent: Meta-ExternalFetcher
+Allow: /
+
 
 Sitemap: https://socyfie.com/sitemap.xml
+Sitemap: https://socyfie.com/video-sitemap.xml

@@ -2,7 +2,13 @@
 {% load static %}
 {% load custom_filters %}
 
+<!--for google search console-->
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
 {% block main_content %}
+
 <style>
   body {
     font-family: 'Poppins', sans-serif;
@@ -157,7 +163,21 @@
 
 <div class="uploads-section">
   <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:notion_explorer' %}'">Explore Notions</button>-->
-  <button type="button" class="btn btn-primary" onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id %}'">My Notions</button>
+    {% if request.user.is_authenticated %}
+        <button type="button"
+                class="btn btn-primary"
+                onclick="location.href='{% url 'notion:my_notions' notion_id=request.user.id %}'">
+            My Notions
+        </button>
+    {% else %}
+        <button type="button"
+                class="btn btn-primary"
+                disabled
+                style="cursor: not-allowed; opacity: 0.6;">
+            My Notions
+        </button>
+    {% endif %}
+
 </div>
 
 <div class="search-form">
@@ -199,7 +219,10 @@
     <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>
 
 <!-- Share Button -->
-<button id="share-btn" class="btn btn-outline-primary">
+<button
+    class="btn btn-outline-primary share-btn"
+    data-username="{{ notion.user.username }}"
+    data-url="{% url 'notion:notion_detail' notion.id %}">
     📤 Share
 </button>
 
@@ -226,7 +249,7 @@
     </a>
                     <div class="footer-icon">
                         <a href="{% url 'notion:notion_explorer' %}">
-                            <i class="fas fa-globe"></i>
+                            <i class="fas fa-search"></i>
                         </a>
                     </div>
     <a href="{% url 'user_profile:following_media' %}" style="color: #343434; font-size: 1rem;">
@@ -278,15 +301,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!--share script-->
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const shareBtn = document.getElementById("share-btn");
+document.addEventListener("DOMContentLoaded", function () {
 
-    if (shareBtn) {
-        shareBtn.addEventListener("click", async function() {
+    document.querySelectorAll(".share-btn").forEach(button => {
+        button.addEventListener("click", async function () {
+
+            const username = this.dataset.username;
+            const notionUrl = `${window.location.origin}${this.dataset.url}`;
+
             const shareData = {
-                title: "{{ media.user.username }}'s post",
-                text: "Check out this upload on Socyfie!",
-                url: window.location.href  // Full page URL
+                title: `${username}'s Notion`,
+                text: `Check out this notion by ${username} on Socyfie`,
+                url: notionUrl
             };
 
             if (navigator.share) {
@@ -294,17 +320,18 @@ document.addEventListener("DOMContentLoaded", function() {
                     await navigator.share(shareData);
                     console.log("Share successful");
                 } catch (err) {
-                    console.error("Share failed:", err);
+                    console.error("Share cancelled or failed:", err);
                 }
             } else {
-                // Fallback: copy link to clipboard
-                navigator.clipboard.writeText(window.location.href)
-                    .then(() => alert("Link copied to clipboard!"))
-                    .catch(err => console.error("Could not copy link:", err));
+                // Fallback: copy link
+                navigator.clipboard.writeText(notionUrl)
+                    .then(() => alert("Notion link copied to clipboard!"))
+                    .catch(err => console.error("Clipboard copy failed:", err));
             }
         });
-    }
+    });
+
 });
 </script>
-
 {% endblock %}
+

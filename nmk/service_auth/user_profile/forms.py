@@ -119,7 +119,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['profile_picture', 'cover_photo', 'bio']
-
+    '''
     def save(self, commit=True):
         profile = super().save(commit=False)
         
@@ -140,7 +140,7 @@ class ProfileForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
-
+    '''
 
 class CategorySelectionForm(forms.ModelForm):
     category = forms.ChoiceField(choices=[

@@ -52,16 +52,12 @@ echo "PYTHONPATH set to: $PYTHONPATH"
 
 gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 &
 
-#gunicorn socyfie_application.asgi:application -k uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000 &
-
 
 # Start Celery worker and beat services in the background
 echo "Starting Celery worker and beat services..."
 #celery -A socyfie_application worker --loglevel=info -n worker1@%h &
 
 #celery -A socyfie_application worker --pool=gevent --autoscale=100,10 --loglevel=info -E --pidfile=/tmp/celery_worker.pid -n worker1@%h &
-
-#celery -A socyfie_application worker --pool=prefork --loglevel=info --pidfile=/tmp/celery_worker.pid -n worker1@%h &
 
 celery -A socyfie_application worker --pool=prefork --autoscale=6,2 --loglevel=info --pidfile=/tmp/celery_worker.pid -n worker1@%h &
 

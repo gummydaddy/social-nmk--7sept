@@ -36,9 +36,11 @@ app.conf.beat_schedule =  {
         'task': 'service_auth.notion.tasks.delete_old_notifications',
         'schedule': crontab(minute='0', hour='*/7'),  # Runs daily at midnight
     },
-#    'service_auth.user_profile.tasks.process_media_upload': {
-#        'queue': 'media_worker',
-#    },
+    #for trending score updation refrence to user_profile (model engagement class) and utils
+    'update-trending-every-20-mins': {
+        'task': 'service_auth.user_profile.tasks.update_trending_scores',
+        'schedule': crontab(minute='*/29'),
+    },
 
 }
 

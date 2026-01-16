@@ -2,6 +2,11 @@
 {% load static %}
 {% load custom_filters %}
 
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
 {% block main_content %}
 
 <style>
@@ -310,6 +315,44 @@
     </span>
 </div>
 </div>
+
+            {% block footer %}
+            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+                <div class="bottom-strip d-flex justify-content-around align-items-center">
+
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:following_media'  %}">
+                            <i class="fas fa-home"></i>
+                        </a>
+                    </div>
+
+                    <div class="footer-icon">
+                        <a href="{% url 'only_card:landing_page' %}">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
+                    </div>
+
+                    {% if request.user.is_authenticated %}
+                                <div class="footer-icon">
+                                    <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                                        <i class="fas fa-lightbulb"></i>
+                                    </a>
+                                </div>
+                    {% else %}
+
+                            <div class="footer-icon">
+                                <a href="{% url 'notion:notion_home' %}">
+
+                                    <i class="fas fa-lightbulb"></i>
+                                </a>
+                            </div>
+                    {% endif %}
+
+                </div>
+            </footer>
+
+            {% endblock %}
+
 {% endblock %}
 
 {% block profile_script %}

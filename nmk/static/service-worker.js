@@ -1,11 +1,11 @@
-const CACHE_NAME = "socyfie-v1";
+const CACHE_NAME = "socyfie-v1.1";
 
 const urlsToCache = [
   // Base pages
   "/",                               // Homepage if applicable
   "/landing_page/",                  // Corrected based on Django path
   "/explore/",                       // Static route
-  "/following_media/",              // Corrected path
+  "/following_media/",               // Corrected path
 
   // Static files (must match STATIC_URL paths, not local filesystem)
   "/static/css/sb-admin.css",
@@ -29,21 +29,22 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then((cache) => {
       return Promise.all(
         urlsToCache.map((url) => {
-          return fetch(url).then((response) => {
-            if (!response.ok) {
-              console.warn(`Skipped caching ${url}: ${response.statusText}`);
-              return;
-            }
-            return cache.put(url, response);
-          }).catch((error) => {
-            console.warn(`Failed to cache ${url}:`, error);
-          });
+          return fetch(url)
+            .then((response) => {
+              if (!response.ok) {
+                console.warn(`Skipped caching ${url}: ${response.statusText}`);
+                return;
+              }
+              return cache.put(url, response);
+            })
+            .catch((error) => {
+              console.warn(`Failed to cache ${url}:`, error);
+            });
         })
       );
     })
   );
 });
-
 
 // Activate event — clean up old caches
 self.addEventListener("activate", (event) => {
@@ -75,15 +76,15 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-//share media directly from the gallery without opening the app working with the above cache or fallback to network js
+// Share media directly from the gallery without opening the app
+// working with the above cache or fallback to network js
 self.addEventListener("fetch", (event) => {
   if (event.request.url.includes("/share-upload/")) {
     return; // Let the network handle POST
   }
 });
 
-
-//share link opening manager
+// Share link opening manager
 self.addEventListener("fetch", (event) => {
   // Only handle navigations (not images, CSS, etc.)
   if (event.request.mode === "navigate") {
@@ -105,6 +106,3 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
-
-
-

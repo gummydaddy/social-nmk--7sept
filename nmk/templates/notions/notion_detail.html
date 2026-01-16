@@ -5,7 +5,35 @@
 {% block profile_header_content %}
 {% endblock %}
 
+<!--for google search console-->
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
 {% block main_content %}
+
+  <!--for displaying the description to the bots for better search results-->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SocialMediaPosting",
+
+  "text": "{{ notion.content|truncatechars:1000|escapejs }}",
+  "url": "{{ url }}",
+  "datePublished": "{{ notion.created_at|date:'c' }}",
+
+
+  "author": {
+    "@type": "Person",
+    "name": "{{ notion.user.username|escapejs }}",
+    "url": "{% url 'user_profile:profile' user_id=notion.user.id %}"
+  } 
+
+}
+</script>
+  <!--for displaying the description to the bots for better search results-->
+
+
 <style>
     .notion-detail-container {
         max-width: 800px;
@@ -53,7 +81,7 @@
     .dropdown-content {
         display: none;
         position: absolute;
-        right: 0;
+        left: 0;
         background-color: white;
         min-width: 160px;
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
@@ -97,6 +125,29 @@
                     ♡
                 {% endif %}
             </a> <span class="like-count">{{ notion.likes.count }}</span> likes
+
+<!-- Share Button -->
+<button
+    class="btn btn-outline-primary share-btn"
+    data-username="{{ notion.user.username }}"
+    data-url="{% url 'notion:notion_detail' notion.id %}">
+    📤 Share
+</button>
+
+<div class="dropdown">
+    <span>☰</span>
+    <div class="dropdown-content">
+
+        {% if request.user == notion.user %}
+        <form method="post" action="{% url 'notion:delete_notion' notion.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+        {% endif %}
+
+    </div>
+</div>
+
         </div>
         
         <div class="comments">
@@ -179,4 +230,40 @@
     });
     
 </script>
+
+<!--share script-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".share-btn").forEach(button => {
+        button.addEventListener("click", async function () {
+
+            const username = this.dataset.username;
+            const notionUrl = `${window.location.origin}${this.dataset.url}`;
+
+            const shareData = {
+                title: `${username}'s Notion`,
+                text: `Check out this notion by ${username} on Socyfie`,
+                url: notionUrl
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    console.log("Share successful");
+                } catch (err) {
+                    console.error("Share cancelled or failed:", err);
+                }
+            } else {
+                // Fallback: copy link
+                navigator.clipboard.writeText(notionUrl)
+                    .then(() => alert("Notion link copied to clipboard!"))
+                    .catch(err => console.error("Clipboard copy failed:", err));
+            }
+        });
+    });
+
+});
+</script>
+
 {% endblock %}

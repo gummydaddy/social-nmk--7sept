@@ -2,7 +2,41 @@
 {% load static %}
 {% load custom_filters %}
 
+
+<!--for google search console-->
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+<!--for google search console-->
+
+<!--for google search console-->
+{% block extra_meta %}
+<meta name="google-site-verification" content="_IBkfzFM3ddmUBqo1n1XVen31tQ8YWTE9Kj1leWqk4s" />
+{% endblock %}
+
+
 {% block main_content %}
+
+
+<!--for displaying the description to the bots for better search results-->
+  <meta name="description" content="{{ media.description|truncatewords:50 }}">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "url": "{{ request.build_absolute_uri }}",
+  "name": "Following Media - Socyfie",
+  "description": "Latest media updates from people you follow on Socyfie.",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.build_absolute_uri }}"
+  }
+}
+</script>
+<!--for displaying the description to the bots for better search results-->
+
 
 <style>
     .media-wrapper {
@@ -30,6 +64,10 @@
 
     .description {
         color: #123;
+        max-width: 90%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
     }
     .footer-icon {
         background: #f9fafb;
@@ -108,9 +146,22 @@
 </style>
 
 <header>
-    {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
+    <!--for displaying install button to the users who have not installed the app-->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!-- Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+    <script src="{% static 'js/install-pwa.js' %}" defer></script>
+
+
+    <!--for displaying install button to the users who have not installed the app-->
 
         <nav class="navbar navbar-expand-lg navbar-dark bg-white">
+            <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
             <div class="container">
                 <a href="{% url 'only_message:message_list_view' %}" class="button-link">
                     <button class="messagebtn"> 💬 </button>
@@ -126,8 +177,13 @@
 <br>
 <div class="uploads-section">
     <div class="row row-cols-2 g-4">
+        {% if request.user.is_authenticated %}
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
+        {% else %}
+        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' %}'">Tags 🔖</button>
+        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
+        {% endif %}
     </div>
 </div>
 
@@ -139,9 +195,26 @@
                     <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
                         <img src="{{ media.user.profile|profile_picture_url }}"
                              class="mention-avatar" 
-                             alt="{{ media.user.username }}'s profile picture">
+                             alt="{{ media.user.username }}'s profile picture" fetchpriority="high">
                         <h5>{{ media.user.username }}</h5>
                     </a>
+
+                    <!--for displaying follw button next to the username -->
+                    {% if not request.user.is_authenticated %}
+                        {# Show follow for guests #}
+                        <form method="post" action="{% url 'user_profile:follow_user' media.user.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary">Follow</button>
+                        </form>
+                    {% elif request.user.id != media.user.id %}
+                        {% if media.user.id not in following_ids %}
+                            <form method="post" action="{% url 'user_profile:follow_user' media.user.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-primary">Follow</button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                    
 
                     <br>
                     {# Wrap the media-content div with an anchor tag #}
@@ -149,7 +222,7 @@
                         <div class="media-content">
                             {% if media.file.url|is_video %}
                                 <!--<video controls class="img-fluid autoplay-video" unmute>-->
-                                <video controls unmute autoplay playsinline preload="metadata" loading="lazy" class="img-fluid autoplay-video">
+                                <video controls unmute playsinline preload="metadata" loading="lazy" class="img-fluid autoplay-video">
                                     <source src="{{ media.file.url }}" type="video/mp4" >
                                     Your browser does not support the video tag.
                                 </video>
@@ -172,9 +245,23 @@
 
                                 <span class="like-count">{{ media.likes.count }}</span> likes
 
-                                <a href="{% url 'user_profile:media_detail_view' media.id %}" onclick="event.stopPropagation();">Comment</a> {# Crucial: Stop propagation for comment link #}
+                                <a href="{% url 'user_profile:media_detail_view' media.id %}" onclick="event.stopPropagation();">Comment {# Crucial: Stop propagation for comment link #}
                                 <!-- Comment toggle button -->
 
+                <!-- View Count -->
+                <div class="view-count mt-1 text-muted">
+                    👁️ : {{ media.view_count }}
+                </div>
+
+                                <!-- Share Button -->
+                                <button 
+                                    class="share-btn"
+                                    data-media-id="{{ media.id }}"
+                                    data-media-url="{{ media.explore_detail_url }}"
+                                    data-username="{{ media.user.username }}">
+                                    📤 Share
+                                </button>
+                                </a>
                                 <p>{{ media.description|safe }}</p>
                             </div>
                         </div>
@@ -204,12 +291,21 @@
                         </a>
                     </div>
 
+                {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
+                {% else %}
 
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' %}">
+
+                        <i class="fas fa-lightbulb"></i>
+                    </a>
+                </div>
+                {% endif %}
 
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:upload_media' %}">
@@ -219,15 +315,23 @@
 
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
+                            <i class="fas fa-search"></i>
                         </a>
                     </div>
 
+                {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:profile' user_id=request.user.id%}">
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>
+                {% else %}
+                    <div class="footer-icon">
+                        <a href="{% url 'user_profile:profile'%}">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </div>
+                {% endif %}
 
                 </div>
             </footer>
@@ -293,6 +397,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const video = entry.target;
 
             if (entry.isIntersecting) {
+                // Ensure it stays muted (iOS requirement)
+                video.muted = false;
+
                 // Pause all other videos
                 document.querySelectorAll('video.autoplay-video').forEach(v => {
                     if (v !== video) v.pause();
@@ -381,6 +488,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
+
     // Infinite scrolling functionality
     function loadMoreMedia() {
         if (loading || !hasMoreMedia) {
@@ -423,13 +532,30 @@ document.addEventListener('DOMContentLoaded', function() {
                     const isLiked = item.is_liked ? 'liked' : '';
                     const likeSymbol = item.is_liked ? '❤️' : '♡';
 
+                    const viewCount = item.view_count;   //  new views count variable
+
                     const cleanDescription = DOMPurify.sanitize(item.description || '');
 
+                    //<!--for displaying follw button next to the username -->
+                    let followButton = "";
+                    if (item.show_follow) {
+                        followButton = `
+                            <form method="post" action="${item.follow_url}">
+
+                                <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                                <button type="submit" class="btn btn-sm btn-primary">Follow</button>
+                            </form>
+                        `;
+                    }
+
+                    <!--for loading page content from infinite scrolling -->
                     let mediaContent = `
                         <a href="${profileUrl}" class="mention-with-avatar">
-                            <img src="${profilePicUrl}" class="mention-avatar" alt="${item.user_username}'s profile picture">
+                            <img src="${profilePicUrl}" class="mention-avatar" alt="${item.user_username}'s profile picture" fetchpriority="high">
                             <h5>${item.user_username}</h5>
                         </a>
+                        ${followButton}   <!-- ✅ Inject follow form here -->
+
                         <br>
                         <a href="${exploreDetailUrl}" class="media-content-link"> {# THIS IS THE KEY CHANGE #}
 
@@ -451,6 +577,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </a>
                                 <span class="like-count">${item.likes_count || 0}</span> likes
                                 <a href="${commentUrl}">Comment</a>
+
+                                <!-- ✅ View Count -->
+                                <div class="view-count mt-1 text-muted">
+                                    👁️ : ${viewCount}
+                                </div>
+
+                                <button 
+                                    class="share-btn"
+                                    data-media-id="${item.id}"
+                                    data-media-url="${exploreDetailUrl}"
+                                    data-username="${item.user_username}">
+                                    📤 Share
+                                </button>
+
                                 <div class="description-paragraph-container"></div>
 
                             </div>
@@ -526,7 +666,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
-
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     // Function to protect an image or video
@@ -580,6 +719,56 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<!--share script page link -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Use event delegation so even AJAX-loaded buttons work
+    document.addEventListener("click", async function(e) {
+        // Check if the clicked element OR its parent is a share button
+        let shareBtn = e.target.closest(".share-btn");
+        if (!shareBtn) return;
+
+        const mediaId = shareBtn.dataset.mediaId;
+        const mediaUrl = shareBtn.dataset.mediaUrl;
+        const username = shareBtn.dataset.username;
+
+        const shareData = {
+            title: `${username}'s post`,
+            text: "Check out this upload on Socyfie!",
+            url: mediaUrl   // Specific media detail URL
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+                console.log("Share successful");
+            } catch (err) {
+                console.error("Share failed:", err);
+            }
+        } else {
+            // Fallback: copy link to clipboard
+            navigator.clipboard.writeText(mediaUrl)
+                .then(() => alert("Link copied to clipboard!"))
+                .catch(err => console.error("Could not copy link:", err));
+        }
+    });
+});
+</script>
+
+
 <!--comment section java script ajax commenting -->
 
 {% endblock %}
+<!--  <script type="application/ld+json"
+  {
+    "@context": "https://schema.org",
+    "@type": "SocialMediaPosting",
+    "headline": "{{ media.description|truncatewords:10|escapejs }}",
+    "articleBody": "{{ media.description|escapejs }}",
+    "author": {
+      "@type": "Person",
+      "name": "{{ media.user.username }}"
+    },
+    "datePublished": "{{ media.created_at|date:'c' }}"
+  }
+  </script-->

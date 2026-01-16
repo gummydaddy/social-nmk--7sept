@@ -25,7 +25,7 @@
                         <img src="{{ media.user.profile|profile_picture_url }}"
                              class="mention-avatar"
                              alt="{{ media.user.username }}'s profile picture">
-                        <h5>{{ media.user.username }}</h5>
+                        {{ media.user.username }}
                     </a>
 
                <!-- <a href="{% url 'user_profile:profile' user_id=media.user.id %}">

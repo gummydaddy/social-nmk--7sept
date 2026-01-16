@@ -2,6 +2,12 @@
 {% load static %}
 {% load custom_filters %}
 
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+
 {% block main_content %}
 <style>
 
@@ -58,23 +64,6 @@
 
 
 <br>
-<!--
-<div class="media-wrapper">
-    <div class="row row-cols-3 g-4" id="media-container">
-        {% for media in page_obj %}
-            <div class="col media-item">
-                <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content">
-                    {% if media.thumbnail %}
-                        <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid" loading="lazy">
-                    {% else %}
-                        <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
-                    {% endif %}
-                </a>
-            </div>
-        {% endfor %}
-    </div>
-</div>
--->
 
 <div class="media-wrapper">
     <div class="row row-cols-3 g-4" id="media-container">
@@ -171,7 +160,7 @@
 
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
+                            <i class="fas fa-search"></i>
                         </a>
                     </div>
 

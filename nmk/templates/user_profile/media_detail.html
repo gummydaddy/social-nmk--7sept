@@ -5,7 +5,12 @@
 {% block profile_header_content %}
 {% endblock %}
 
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
 {% block main_content %}
+
 <style>
     .media-detail-container {
         max-width: none;
@@ -97,6 +102,10 @@
     }
     .description {
         color: #123;
+        max-width: 90%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
     }
 </style>
 
@@ -286,17 +295,27 @@
                         </a>
                     </div>
 
-                    <div class="footer-icon">
+                    <!--<div class="footer-icon">
                         <a href="{% url 'only_card:landing_page' %}">
                             <i class="fas fa-shield-alt"></i>
                         </a>
-                    </div>
+                    </div>-->
 
+                {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
                             <i class="fas fa-lightbulb"></i>
                         </a>
                     </div>
+                {% else %}
+
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' %}">
+
+                        <i class="fas fa-lightbulb"></i>
+                    </a>
+                </div>
+                {% endif %}
 
                     <!--<div class="footer-icon">
                         <a href="{% url 'user_profile:upload_media' %}">
@@ -306,15 +325,24 @@
 
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
+                            <i class="fas fa-search"></i>
                         </a>
                     </div>
 
+                {% if request.user.is_authenticated %}
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
                             <i class="fas fa-user-circle"></i>
                         </a>
                     </div>
+                {% else %}
+
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:profile'  %}">
+                        <i class="fas fa-user-circle"></i>
+                    </a>
+                </div>
+                {% endif %}
 
                 </div>
             </footer>
