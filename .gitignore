@@ -1,0 +1,22 @@
+# Python
+*.log
+*.pyc
+__pycache__/
+
+nmk/.env
+
+celerybeat-schedule*
+nohup.out
+
+media/
+
+nmk/database_setup/
+
+nmk/setup_environment.sh
+
+nmk/socyfie_application/settings.py
+
+nmk/staticfiles/
+
+venv/
+
