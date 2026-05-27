@@ -1,6 +1,10 @@
 {% extends 'landing_page.html' %}
 {% load static %}
-{% load custom_filters %}
+
+{% load custom_filters_message %}
+{% load media_filters %}
+
+
 
 
 {% block main_content %}
@@ -10,16 +14,23 @@
     <ul>
         {% for user in users %}
         <li>
-                    <a href="{% url 'user_profile:profile' user_id %}" class="mention-with-avatar">
-                        <img src="{{ media.user.profile|profile_picture_url }}"
-                             class="mention-avatar"
-                             alt="{{ media.user.username }}'s profile picture">
-                        <h5>{{ media.user.username }}</h5>
-                    </a>
 
             <a href="{% url 'user_profile:profile' user.id %}">
                <h5> {{ user.username }}</h5>
             </a>
+
+
+            <a href="{% url 'user_profile:profile' user.id %}"> 
+               <!--class="mention-with-avatar">-->
+
+                <img src="{{ user.profile|profile_picture_url }}"
+                     <!--class="mention-avatar"-->
+                     alt="{{ user.username }}'s profile picture">
+
+                <h5>{{ user.username }}</h5>
+
+            </a>
+
         </li>
         {% endfor %}
     </ul>

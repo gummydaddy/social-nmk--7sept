@@ -23,8 +23,9 @@ from django.views.generic import TemplateView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from django.contrib.sitemaps.views import sitemap
-from service_auth.user_profile.sitemaps import StaticViewSitemap, ProfileSitemap, MediaSitemap
+from service_auth.user_profile.sitemaps import StaticViewSitemap, ProfileSitemap, MediaSitemap, VideoSitemap
 from service_auth.notion.sitemaps import NotionSitemap
+#from service_auth.only_card.views import pwa_cache_manifest
 
 
 #new sitemap
@@ -33,6 +34,8 @@ sitemaps = {
     'profiles': ProfileSitemap(),
     'media': MediaSitemap(),
     'notions': NotionSitemap(),
+    'videos': VideoSitemap(),
+
 }
 
 urlpatterns = [
@@ -56,8 +59,14 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="docs"),
 
+    #pwa
+    #path("pwa-cache-manifest/", pwa_cache_manifest, name="pwa_cache_manifest"),
+
     #path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'), #new sitemap
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='sitemap'),
+
+    path('video-sitemap.xml', sitemap, {'sitemaps': {'videos': VideoSitemap}}, name='video-sitemap'),
+
     path('robots.txt', TemplateView.as_view(template_name="robots.txt", content_type="text/plain")),
 
 

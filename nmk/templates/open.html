@@ -1,0 +1,80 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }}</title>
+
+    <!-- Primary Meta Tags -->
+    <!--new-->
+    <meta name="title" content="{{ title }}">
+
+    <meta name="description" content="{{ description|truncatechars:160 }}">
+
+    <!-- Open Graph / Facebook / WhatsApp / Instagram / LinkedIn -->
+    <!--new-->
+    <meta property="og:type" content="article">
+
+    <meta property="og:title" content="{{ title }}">
+
+    <meta property="og:description" content="{{ description|truncatechars:160 }}">
+
+    {% if image_url %}
+        <meta property="og:image" content="{{ image_url }}">
+
+        <meta property="og:image:alt" content="{{ description|truncatechars:160 }}">
+
+    {% endif %}
+    <meta property="og:url" content="{{ url|default:request.build_absolute_uri }}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <!--new-->
+    <meta name="twitter:title" content="{{ title }}">
+
+    <meta name="twitter:description" content="{{ description|truncatechars:160 }}">
+
+    {% if image_url %}
+        <meta name="twitter:image" content="{{ image_url }}">
+    {% endif %}
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ✅ Shortcut icon & PWA Manifest for good measure -->
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <link rel="icon" href="{% static 'images/android-icon-192x192.png' %}" type="image/png">
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const target = '{{ target_url|default:"https://socyfie.com" }}';
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      // ✅ Case 1: User opened from within installed PWA
+      if (isStandalone) {
+        window.location.replace(target);
+        return;
+      }
+
+      // ✅ Case 2: Open link through external browser or app
+      // Attempt to trigger PWA open via app link if supported
+      if (navigator.canShare) {
+        // noop — for crawlers and share previews
+      } else {
+        // redirect user manually
+        window.location.href = target;
+      }
+
+      // ✅ Fallback: If user’s device didn’t switch to PWA, redirect after delay
+      setTimeout(() => {
+        window.location.replace('https://socyfie.com');
+      }, 1800);
+    });
+  </script>
+
+</head>
+<body>
+  <p>Opening Socyfie...</p>
+</body>
+</html>

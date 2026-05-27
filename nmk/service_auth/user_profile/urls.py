@@ -4,22 +4,28 @@ from . import views, admin
 from service_auth.only_card import views as only_card_views  # Import views from only_card
 from service_auth.notion import views as notion_views  # Import views from only_card
 from service_auth.only_message import views as only_message_views
+from django.urls import re_path
 
 
+RESERVED_USERNAMES = ['following_media', 'login', 'signup', 'explore']
 
 app_name = 'user_profile'
 #add <str:username>/ tp profile to display username in the navigation bar 
 urlpatterns = [
+
+    path("open/", views.open_bridge, name="open_bridge"), #to open the shared links in the installed pwa
+
     path('profile/<int:user_id>/', views.profile, name='profile'),
-    
+    path('profile/', views.profile, name='profile'), #for unauthenticated users
+
     path('profile/<int:user_id>/edit/', views.edit_profile, name='edit_profile'),
     path('save_bio/', views.save_bio, name='save_bio'),
 
     path('media/<int:media_id>/', views.media_detail_view, name='media_detail_view'),
-    
+
     path('upload-audio/', views.upload_audio, name='upload_audio'),
     path('delete_audio/delete/<int:audio_id>/', views.delete_audio, name='delete_audio'),
-    path('voices/<int:user_id>/', views.voices, name='voices'),  #
+    path('voices/<int:user_id>/', views.voices, name='voices'),
     path('like_audio/<int:audio_id>/', views.like_audio, name='like_audio'),
     path('comment_audio/<int:audio_id>/', views.comment_audio, name='comment_audio'),
     path('delete_user_audio_comment/<int:comment_id>/', views.delete_user_audio_comment, name='delete_user_audio_comment'),
@@ -27,15 +33,19 @@ urlpatterns = [
     path('follow_user/<int:user_id>/', views.follow_user, name='follow_user'),
     path('unfollow_user/<int:user_id>/', views.unfollow_user, name='unfollow_user'),
     path('upload_media/', views.upload_media, name='upload_media'),
-    # path('media/tags/', views.media_tags, name='media_tags'),  # New URL for tagged media
     path('media/tags/<int:user_id>/', views.media_tags, name='media_tags'),  # New URL for user's tagged media
-    path('explore/', views.explore, name='explore'),
+    path('media/tags/', views.media_tags, name='media_tags'),  # New URL for user's tagged media for unauthenticated user
+
+    #path('explore/', views.explore, name='explore'),
+    path('explore_me/', views.explore_me, name='explore_me'),
 
     path('log_interaction/', views.log_interaction, name='log_interaction'),
 
 
     path('search_uploads/', views.search_uploads, name='search_uploads'),
     path('explore_detail/<int:media_id>/', views.explore_detail, name='explore_detail'),
+
+    path("feed/", views.feed_page, name="feed_page"),
     path('following_media/', views.following_media, name='following_media'),
 
     path('following_list/<int:user_id>', notion_views.following_list, name='following_list'),
@@ -61,6 +71,8 @@ urlpatterns = [
     path('delete_user_comment/<int:comment_id>/', views.delete_user_comment, name='delete_user_comment'),
 
     path('not_interested/<int:media_id>/', views.not_interested, name='not_interested'),
+    path('undo_not_interested/<int:media_id>/', views.undo_not_interested, name='undo_not_interested'),
+
     path('report_media/<int:media_id>/', views.report_media, name='report_media'),
     path('admin/review_reports/', admin.admin_review_reports, name='admin_review_reports'),
     path('admin/handle_report/<int:notification_id>/<str:action>/', admin.handle_report, name='handle_report'),
@@ -85,6 +97,38 @@ urlpatterns = [
     path('accounts/logout/', only_card_views.logout_view, name='logout'),  # Use the logout view from only_card
     path('accounts/signup/', only_card_views.signup, name='signup'),  # Use the signup view from only_card
 
+
+    path('message_list_view/', only_message_views.message_list_view, name='message_list_view'),
+    path('search_user_message/', only_message_views.search_user_message, name='search_user_message'),
+    path('get_online_users/', only_message_views.get_online_users, name='get_online_users'),
+
+    #view tracking using util and view function named as below
+    path('track-media-view/<int:media_id>/', views.track_media_view, name='track_media_view'),
+
+    #notion_home
+    path('notion_home/<int:notion_id>/', notion_views.notion_home, name='notion_home'),
+
+    #for sharing media directly from gallery without opening the app 
+    path("share-upload/", views.share_upload, name="share_upload"),
+    path("get-shared-file/", views.get_shared_file, name="get_shared_file"),
+
+    # for sharing media on the platofrm to other platforms
+    path('media/<int:media_id>/share/', views.share_media, name='share_media'),
+    path('media/<int:media_id>/', views.media_detail_public, name='media_detail_public'),
+    path('media/<int:media_id>/qr/', views.generate_qr_code, name='generate_qr_code'),
+    path('media/<int:media_id>/download/', views.download_media, name='download_media'),
+
+
+
+
+
+    path('<str:username>/', views.profile_detail, name='profile_detail'), #new for sitemap purpose to add the username of users to the sitemap
+    #re_path(r'^(?!following_media$)(?P<username>[\w.@+-]+)/$', views.profile_detail, name='profile_detail'),
+    #re_path(rf'^(?!({"|".join(RESERVED_USERNAMES)})$)(?P<username>[\w.@+-]+)/$', views.profile_detail, name='profile_detail'),
+
+    path('<str:username>/media/<int:media_id>/', views.media_detail, name='media_detail'), #new for sitemap purpose to add the username of users to the sitemap
+    #re_path(r'^(?!following_media$)(?P<username>[\w.@+-]+)/media/(?P<media_id>\d+)/$', views.media_detail, name='media_detail'),
+    #re_path(rf'^(?!({"|".join(RESERVED_USERNAMES)})$)(?P<username>[\w.@+-]+)/media/(?P<media_id>\d+)/$', views.media_detail, name='media_detail'),
 
 
 ]

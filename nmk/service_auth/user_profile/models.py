@@ -18,7 +18,7 @@ import subprocess
 from moviepy.editor import VideoFileClip
 from django.conf import settings
 from django.urls import reverse
-from .utils import add_to_fifo_list
+#from .utils import add_to_fifo_list
 
 class Profile(models.Model):
     user = models.OneToOneField(AuthUser, on_delete=models.CASCADE, related_name='profile')
@@ -73,15 +73,7 @@ class Media(models.Model):
     def delete_file(self):
         if self.file:
             self.file.delete(save=False)
-    '''
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None  # Check if it's a new object
-        super().save(*args, **kwargs)
-        if is_new:  # Run the Celery task only for new media
-            process_media_upload.delay(self.id, self.file.name, self.media_type)
 
-            #generate_thumbnail_task.delay(self.id)
-    '''
     def save(self, *args, **kwargs):
         if not self.thumbnail:  # Generate only if not already created
             self.generate_thumbnail()
@@ -91,8 +83,7 @@ class Media(models.Model):
         """Generate a thumbnail for images or videos."""
         if self.file.name.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
             self.create_image_thumbnail()
-       # elif self.file.name.lower().endswith(('.mp4', '.mov', '.avi', '.mkv')):
-       #     self.create_video_thumbnail()
+
 
     def create_image_thumbnail(self):
         """Generate a compressed thumbnail for images."""
@@ -114,37 +105,6 @@ class Media(models.Model):
         except Exception as e:
             print(f"Error creating image thumbnail: {e}")
 
-    '''
-    def create_video_thumbnail(self):
-        """Generate a thumbnail for videos without FFmpeg."""
-        if not self.file:
-            return  # Skip if file is missing
-
-        video_path = self.file.path  # This ensures an absolute path
-        if not os.path.exists(video_path):
-            print(f"File not found: {video_path}")
-            return  # Prevent errors
-
-        try:
-            clip = VideoFileClip(video_path)
-            frame = clip.get_frame(1)  # Capture a frame at 1 second
-
-            # Save frame as thumbnail
-            thumb_name = f"thumb_{os.path.splitext(os.path.basename(self.file.name))[0]}.jpg"
-            thumb_path = os.path.join(settings.MEDIA_ROOT, "thumbnails", thumb_name)
-
-            from PIL import Image
-            import numpy as np
-
-            img = Image.fromarray(np.uint8(frame))
-            img.thumbnail((250, 150))
-            img.save(thumb_path, format="JPEG", quality=85)
-
-            # Save to model field
-            self.thumbnail.name = os.path.relpath(thumb_path, settings.MEDIA_ROOT)
-        except Exception as e:
-            print(f"Error generating video thumbnail: {e}")
-    '''
     def get_absolute_url(self):
         return reverse('user_profile:media_detail_view', kwargs={'media_id': self.id})
 
@@ -189,12 +149,13 @@ class Story(models.Model):
     
 
             
-
 class Hashtag(models.Model):
     name = models.CharField(max_length=25, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
+        from .utils import add_to_fifo_list
+
         return self.name
     
 
@@ -213,59 +174,120 @@ class UserHashtagPreference(models.Model):
     search_hashtags = models.JSONField(default=list)
 
     def add_viewed_hashtag(self, hashtags):
-        '''
-        self.viewed_hashtags = hashtags + self.viewed_hashtags
-        self.viewed_hashtags = list(dict.fromkeys(self.viewed_hashtags))[:50]
-        self.save(update_fields=['viewed_hashtags'])
-        '''
+        from .utils import add_to_fifo_list
+
+        if not hashtags:
+            return
         for hashtag in hashtags:
-            self.viewed_hashtags = add_to_fifo_list(self.viewed_hashtags, hashtag, 50)
+            self.viewed_hashtags = add_to_fifo_list(self.viewed_hashtags, hashtag, 35)
+
+        # Smart cleanup to avoid stale negative bias
+        if len(self.viewed_hashtags) > 25:
+            self.viewed_hashtags = self.viewed_hashtags[-15:]
+
         self.save(update_fields=['viewed_hashtags'])
 
     def add_viewed_media(self, media_ids):
-        '''
-        self.viewed_media = media_ids + self.viewed_media
-        self.viewed_media = list(dict.fromkeys(self.viewed_media))[:50]
-        self.save(update_fields=['viewed_media'])
-        '''
+        from .utils import add_to_fifo_list
+
+        if not media_ids:
+            return
         for media_id in media_ids:
             self.viewed_media = add_to_fifo_list(self.viewed_media, media_id, 50)
+
+        # Smart cleanup to avoid stale negative bias
+        if len(self.viewed_media) > 40:
+            self.viewed_media = self.viewed_media[-25:]
+
+        # Optional decay-style hard limit (ensures DB never bloats)
+        #self.viewed_media = self.viewed_media[-30:]
+
         self.save(update_fields=['viewed_media'])
 
     def add_not_interested_media(self, media_id):
-        '''
-        self.not_interested_media = [media_id] + self.not_interested_media
-        self.not_interested_media = list(dict.fromkeys(self.not_interested_media))[:50]
-        self.save(update_fields=['not_interested_media'])
-        '''
+        from .utils import add_to_fifo_list
+
+        if not media_id:
+            return
         self.not_interested_media = add_to_fifo_list(self.not_interested_media, media_id, 50)
+
+        # Smart cleanup to avoid stale negative bias
+        if len(self.not_interested_media) > 40:
+            self.not_interested_media = self.not_interested_media[-25:]
+
         self.save(update_fields=['not_interested_media'])
+
+    def add_not_interested_hashtag(self, hashtag):
+        from .utils import add_to_fifo_list
+
+        if hashtag:
+            self.not_interested_hashtags = add_to_fifo_list(self.not_interested_hashtags, hashtag, 35)
+
+            # Smart cleanup to avoid stale negative bias
+            if len(self.not_interested_hashtags) > 15:
+                self.not_interested_hashtags = self.not_interested_hashtags[-8:]
+
+            self.save(update_fields=['not_interested_hashtags'])
 
     # New method to add search keywords to the add_liked_category list
     def add_liked_category(self, category):
+        from .utils import add_to_fifo_list
+
         if category:  # Check if category is valid
-            '''
-            self.liked_categories = [category] + self.liked_categories
-            self.liked_categories = list(dict.fromkeys(self.liked_categories))[:10]
-            self.save(update_fields=['liked_categories'])
-            '''
-            self.liked_categories = add_to_fifo_list(self.liked_categories, category, 10)
+            self.liked_categories = add_to_fifo_list(self.liked_categories, category, 9)
+
+            # Smart cleanup to avoid stale negative bias
+            if len(self.liked_categories) > 7:
+                self.liked_categories = self.liked_categories[-4:]
+
             self.save(update_fields=['liked_categories'])
 
     # New method to add search keywords to the search_hashtags list
     def add_search_hashtag(self, search_keyword):
-        """
-        Add a search keyword to the search_hashtags list while ensuring it contains only unique
-        keywords and stores only the last 35 entries (FIFO).
-        """
+        from .utils import add_to_fifo_list
+
         if search_keyword:  # Check if the search keyword is not empty
-            '''
-            self.search_hashtags = [search_keyword] + self.search_hashtags
-            self.search_hashtags = list(dict.fromkeys(self.search_hashtags))[:35]
+            self.search_hashtags = add_to_fifo_list(self.search_hashtags, search_keyword, 17)
+
+            # Smart cleanup to avoid stale negative bias
+            if len(self.search_hashtags) > 12:
+                self.search_hashtags = self.search_hashtags[-7:]
+
             self.save(update_fields=['search_hashtags'])
-            '''
-            self.search_hashtags = add_to_fifo_list(self.search_hashtags, search_keyword, 35)
-            self.save(update_fields=['search_hashtags'])
+
+    def add_liked_hashtag(self, hashtag):
+        from .utils import add_to_fifo_list
+
+        """
+        Add a hashtag to the liked_hashtags list, maintaining FIFO order,
+        ensuring uniqueness, and performing smart cleanup to avoid stale data.
+        """
+        if hashtag:  # Validate
+            self.liked_hashtags = add_to_fifo_list(self.liked_hashtags, hashtag, 35)
+
+            # --- Smart cleanup logic ---
+            # Prevent excessive growth and keep recent preferences more relevant
+            if len(self.liked_hashtags) > 29:
+                self.liked_hashtags = self.liked_hashtags[-15:]
+
+            # Optional decay-style hard limit (ensures DB never bloats)
+            #self.liked_hashtags = self.liked_hashtags[-30:]
+
+            self.save(update_fields=['liked_hashtags'])
+
+
+    # --- DECAY / INTELLIGENCE HOOK ---
+    def decay_old_preferences(self):
+        from .utils import add_to_fifo_list
+
+        """
+        Gradually reduces the weight of older preferences.
+        Can be triggered by a Celery or background task.
+        """
+        self.liked_hashtags = self.liked_hashtags[-30:]
+        self.liked_categories = self.liked_categories[-5:]
+        self.save(update_fields=['liked_hashtags', 'liked_categories'])
+
 
 
 
@@ -274,7 +296,7 @@ class AdminNotification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     reviewed = models.BooleanField(default=False)
 
-
+#_________________________________________
 class Engagement(models.Model):
     ENGAGEMENT_TYPES = (
         ('view', 'View'),
@@ -298,6 +320,23 @@ class Engagement(models.Model):
 
     def __str__(self):
         return f'{self.user.username} {self.engagement_type} {self.media}'
+#_________________________________
+#_____Implement a universal trending score for all uploaded media to determine popularity dynamically.
+#The score should:
+#Increase with user engagement (likes, views, comments).
+#Decay naturally over time to prevent old media from dominating.
+#Allow easy integration into the Explore feed and “Trending” pages.
+#USED THIS EARLIER NOW USING REDISH AND TASK FOR THE SAME 
+#___________________________________
+    '''
+    @property
+    def trending_score(self):
+        """Dynamically computed trending score (not stored)."""
+        age_hours = (timezone.now() - self.created_at).total_seconds() / 3600
+        α, β, γ, decay = 3.0, 5.0, 1.0, 1.3
+        return (α * self.likes + β * self.comments + γ * self.views) / ((age_hours + 2) ** decay)
+    '''
+#____________________________________________
 
 
 class Buddy(models.Model):

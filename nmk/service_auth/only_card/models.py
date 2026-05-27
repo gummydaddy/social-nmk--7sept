@@ -67,9 +67,15 @@ class UserUpload(models.Model):
         file_size = self.file.size  # Get the size of the uploaded file
 
         # Check the user's storage usage
+        user_storage, _ = UserStorage.objects.get_or_create(user=self.user)
+        if user_storage.total_storage_used + file_size > 100 * 1024 * 1024:  # 100 MB
+            raise ValueError("Storage limit exceeded")
+
+        """
         user_storage, created = UserStorage.objects.get_or_create(user=self.user)
         if user_storage.total_storage_used + file_size > 100 * 1024 * 1024:  # 100 MB limit
             raise ValueError("Storage limit exceeded")
+        """
 
         if not self.encryption_key:
             self.encryption_key = Fernet.generate_key().decode('utf-8')
@@ -78,14 +84,26 @@ class UserUpload(models.Model):
 
         # Encrypt the file after saving
         fernet = Fernet(self.encryption_key.encode('utf-8'))
-        file_path = self.file.path
-        with open(file_path, 'rb') as file:
-            original_file_data = file.read()
+
+        with self.file.open('rb') as f:
+            original_file_data = f.read()
+
+            #encrypted_data = f.read()
+
+        #file_path = self.file.path
+        #with open(file_path, 'rb') as file:
+            #original_file_data = file.read()
         encrypted_file_data = fernet.encrypt(original_file_data)
 
         # Save the encrypted file
-        with open(file_path, 'wb') as encrypted_file:
-            encrypted_file.write(encrypted_file_data)
+
+        from django.core.files.base import ContentFile
+        self.file.save(self.file.name, ContentFile(encrypted_file_data), save=False)
+        super().save(update_fields=["file"])
+
+
+        #with open(file_path, 'wb') as encrypted_file:
+            #encrypted_file.write(encrypted_file_data)
 
         # Update user's total storage
         user_storage.total_storage_used += file_size
@@ -94,10 +112,12 @@ class UserUpload(models.Model):
     def delete_file(self):
         if self.file:
             try:
-                file_path = self.file.path
+                #file_path = self.file.path
                 file_size = self.file.size
-                if os.path.exists(file_path):
-                    os.remove(file_path)
+                self.file.delete(save=False)
+
+                #if os.path.exists(file_path):
+                    #os.remove(file_path)
 
                 # Update user's storage after file deletion
                 user_storage = UserStorage.objects.get(user=self.user)

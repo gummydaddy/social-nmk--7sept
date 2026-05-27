@@ -2,12 +2,49 @@
 {% load static %}
 {% load custom_filters %}
 
+<script src="{% static 'js/sharing.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/sharing.css' %}">
+
+{% block profile_header_content %}
+{% endblock %}
+
+<!--for google search console-->
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+<!--for google search console-->
+
+<!--for google search console-->
+{% block extra_meta %}
+<meta name="google-site-verification" content="_IBkfzFM3ddmUBqo1n1XVen31tQ8YWTE9Kj1leWqk4s" />
+{% endblock %}
+
+
 {% block main_content %}
+
+<!--for displaying the description to the bots for better search results-->
+  <meta name="description" content="{{ media.description|truncatewords:50 }}">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "url": "{{ request.build_absolute_uri }}",
+  "name": "Following Media - Socyfie",
+  "description": "Latest media updates from people you follow on Socyfie.",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ request.build_absolute_uri }}"
+  }
+}
+</script>
+<!--for displaying the description to the bots for better search results-->
+
 
 <style>
     .media-wrapper {
-        max-width: none;
-        width: 100%;
         margin: 0 auto;
         padding: 2px;  
         background-color: white;
@@ -16,12 +53,13 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
         color: #123;
+        z-index: 9998;
+
     }
 
     .media-content img,
     .media-content video {
         max-width: 100%;
-        height: auto;
         object-fit: contain;
         border-radius: 8px;
         display: block;
@@ -30,6 +68,10 @@
 
     .description {
         color: #123;
+        max-width: 90%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
     }
     .footer-icon {
         background: #f9fafb;
@@ -107,10 +149,53 @@
 
 </style>
 
+<style>
+.video-wrapper {
+    position: relative;
+}
+
+.play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.play-icon {
+    width: 70px;
+    height: 70px;
+    transition: transform 0.3s ease;
+}
+
+.video-wrapper:hover .play-icon {
+    transform: scale(1.08);
+}
+
+.video-wrapper.playing .play-overlay {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.85);
+}
+</style>
+
 <header>
-    {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
+    <!--for displaying install button to the users who have not installed the app-->
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+
+    <!-- Poppins Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+    <script src="{% static 'js/install-pwa.js' %}" defer></script>
+
+
+    <!--for displaying install button to the users who have not installed the app-->
 
         <nav class="navbar navbar-expand-lg navbar-dark bg-white">
+            <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
             <div class="container">
                 <a href="{% url 'only_message:message_list_view' %}" class="button-link">
                     <button class="messagebtn"> 💬 </button>
@@ -126,485 +211,52 @@
 <br>
 <div class="uploads-section">
     <div class="row row-cols-2 g-4">
+        {% if request.user.is_authenticated %}
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
-    </div>
-</div>
-
-<div class="media-wrapper">
-    <div class="row row-cols-1 g-4" id="media-container">
-        {% if page_obj %}
-            {% for media in page_obj %}
-                <div class="col media-item" data-id="{{ media.id }}"> {# Removed data-url here as the <a> tag will handle it #}
-                    <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
-                        <img src="{{ media.user.profile|profile_picture_url }}"
-                             class="mention-avatar" 
-                             alt="{{ media.user.username }}'s profile picture">
-                        <h5>{{ media.user.username }}</h5>
-                    </a>
-
-                    <br>
-                    {# Wrap the media-content div with an anchor tag #}
-                    <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content-link">
-                        <div class="media-content">
-                            {% if media.file.url|is_video %}
-                                <video controls class="img-fluid autoplay-video" unmute>
-                                    <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
-                                    Your browser does not support the video tag.
-                                </video>
-                            {% else %}
-                                <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
-                            {% endif %}
-                            <div class="description">
-                                <a href="{% url 'user_profile:like_media' media.id %}"
-                                   class="like-link {% if request.user in media.likes.all %}liked{% endif %}"
-                                   data-url="{% url 'user_profile:like_media' media.id %}"
-                                   data-media-id="{{ media.id }}"
-                                   data-csrf-token="{{ csrf_token }}"
-                                   onclick="event.stopPropagation();"> {# Crucial: Stop propagation for like button #}
-                                    {% if request.user in media.likes.all %}
-                                        ❤️
-                                    {% else %}
-                                        ♡
-                                    {% endif %}
-                                </a>
-
-                                <span class="like-count">{{ media.likes.count }}</span> likes
-
-                                <a href="{% url 'user_profile:media_detail_view' media.id %}" onclick="event.stopPropagation();">Comment</a> {# Crucial: Stop propagation for comment link #}
-                                <p>{{ media.description|safe }}</p>
-                            </div>
-                        </div>
-                    </a> {# Close the anchor tag #}
-                </div>
-            {% endfor %}
         {% else %}
-            <p>No media available from followed users. Showing recommended content based on your preferences, if you are new click on the green globe at the top.</p>
+        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' %}'">Tags 🔖</button>
+        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
         {% endif %}
     </div>
 </div>
 
+<div class="media-wrapper">
+    <div class="row row-cols-1 g-4" id="media-container"></div>
+</div>
 
     <!-- Loading Message -->
     <div id="loading-spinner" style="display: none; text-align: center; margin-top: 10px; font-size: 14px;">
         <span id="loading-text">Loading more<span class="dots">.</span></span>
     </div>
 
+{% csrf_token %}
 
-            {% block footer %}
-            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
-                <div class="bottom-strip d-flex justify-content-around align-items-center">
-
-                    <div class="footer-icon">
-                        <a href="{% url 'only_card:landing_page' %}">
-                            <i class="fas fa-shield-alt"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
-                            <i class="fas fa-lightbulb"></i>
-                        </a>
-                    </div>
-
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:upload_media' %}">
-                            <i class="fas fa-upload"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id%}">
-                            <i class="fas fa-user-circle"></i>
-                        </a>
-                    </div>
-
-                </div>
-            </footer>
-
-            {% endblock %}
 
 {% endblock %}
 
 {% block following_media_script %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.1/purify.min.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const mediaContainer = document.getElementById('media-container');
-    const loadingSpinner = document.getElementById('loading-spinner');
-    let page = 2; // Start loading from the next page
-    let loading = false;
-    let hasMoreMedia = true;
-    const loadThreshold = 200; // Load more when within 200px of the bottom
+    <script src="{% static 'js/following_media.js' %}" defer></script>
 
-    // Get the CSRF token once for later use
-    let csrfToken = '';
-    const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
-    if (csrfElement) {
-        csrfToken = csrfElement.value;
-    } else {
-        // Alternative way to get CSRF token from cookie
-        csrfToken = getCookie('csrftoken');
-    }
-
-    // Helper function to get cookies
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    // Setup Intersection Observer for videos
-    const observerOptions = {
-        root: null,
-        threshold: 0.75 // Play video when 75% of it is visible
-    };
-
-    const videoObserver = new IntersectionObserver((entries, observer) => {
-        entries.forEach(entry => {
-            const video = entry.target;
-            if (entry.isIntersecting) {
-                // Make sure the video is loaded before trying to play
-                if (video.readyState >= 2) {
-                    video.play().catch(e => console.log("Autoplay prevented:", e));
-                } else {
-                    video.addEventListener('loadeddata', function() {
-                        video.play().catch(e => console.log("Autoplay prevented:", e));
-                    }, { once: true });
-                }
-            } else {
-                video.pause();
-            }
-        });
-    }, observerOptions);
-
-    // Initialize videos on page load
-    document.querySelectorAll('.autoplay-video').forEach(video => {
-        videoObserver.observe(video);
-        video.dataset.observed = 'true';
-    });
-
-    // Initialize like links on page load
-    initializeLikeLinks(document.querySelectorAll('.like-link'));
-
-    // Function to handle like button clicks
-    function handleLikeClick(event) {
-        event.preventDefault();
-        const likeLink = event.currentTarget;
-        const url = likeLink.getAttribute('data-url');
-        const mediaId = likeLink.getAttribute('data-media-id');
-
-        // Ensure we have the CSRF token
-        let tokenToUse = likeLink.getAttribute('data-csrf-token') || csrfToken;
-
-        // Prevent multiple clicks
-        if (likeLink.dataset.processing === 'true') {
-            return;
-        }
-        likeLink.dataset.processing = 'true';
-
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': tokenToUse,
-                'X-Requested-With': 'XMLHttpRequest',
-            },
-            body: JSON.stringify({ media_id: mediaId })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            const likeCountElement = likeLink.nextElementSibling;
-            if (likeCountElement) {
-                likeCountElement.textContent = data.like_count;
-            }
-
-            if (data.liked) {
-                likeLink.classList.add('liked');
-                likeLink.textContent = '❤️';
-            } else {
-                likeLink.classList.remove('liked');
-                likeLink.textContent = '♡';
-            }
-        })
-        .catch(error => {
-            console.error('Error with like action:', error);
-            // Optionally display an error message to the user
-        })
-        .finally(() => {
-            likeLink.dataset.processing = 'false';
-        });
-    }
-
-    // Function to initialize like links
-    function initializeLikeLinks(likeLinks) {
-        likeLinks.forEach(function(link) {
-            if (!link.dataset.listener) {
-                link.addEventListener('click', handleLikeClick);
-                link.dataset.listener = 'true';
-            }
-        });
-    }
-
-    // Infinite scrolling functionality
-    function loadMoreMedia() {
-        if (loading || !hasMoreMedia) {
-            return;
-        }
-        loading = true;
-        if (loadingSpinner) loadingSpinner.style.display = 'block';
-
-        fetch(`?page=${page}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.media && data.media.length > 0) {
-                data.media.forEach(item => {
-                    // Create new media item
-                    const mediaDiv = document.createElement('div');
-                    mediaDiv.classList.add('col', 'media-item');
-                    mediaDiv.dataset.id = item.id;
-                    mediaDiv.dataset.url = `/user_profile/media_detail_view/${item.id}/`; // Set a default
-
-
-                    // Construct URLs using template-like string formatting
-                    const profileUrl = item.profile_url; // Use profile_url from JSON
-                    const profilePicUrl = item.profile_picture_url || '/static/images/default_profile.png';
-
-                    const likeUrl = item.like_url; // Use like_url from JSON
-                    const commentUrl = item.media_detail_url; // Use media_detail_url for comment link
-
-                    // Assuming item.media_detail_url from your JSON corresponds to 'user_profile:explore_detail'
-                    const exploreDetailUrl = item.explore_detail_url; // Assign to a clearer variable name
-
-                    const isLiked = item.is_liked ? 'liked' : '';
-                    const likeSymbol = item.is_liked ? '❤️' : '♡';
-
-                    const cleanDescription = DOMPurify.sanitize(item.description || '');
-
-                    let mediaContent = `
-                        <a href="${profileUrl}" class="mention-with-avatar">
-                            <img src="${profilePicUrl}" class="mention-avatar" alt="${item.user_username}'s profile picture">
-                            <h5>${item.user_username}</h5>
-                        </a>
-                        <br>
-                        <a href="${exploreDetailUrl}" class="media-content-link"> {# THIS IS THE KEY CHANGE #}
-
-                        <div class="media-content">
-                            ${item.is_video ?
-                                `<video controls class="img-fluid autoplay-video" unmute>
-                                    <source src="${item.file_url}" type="video/mp4">
-                                    Your browser does not support the video tag.
-                                </video>` :
-                                `<img src="${item.file_url}" alt="media" class="img-fluid">`
-                            }
-                            <div class="description">
-                                <a href="${likeUrl}"
-                                   class="like-link ${isLiked}"
-                                   data-url="${likeUrl}"
-                                   data-media-id="${item.id}"
-                                   data-csrf-token="${csrfToken}">
-                                    ${likeSymbol}
-                                </a>
-                                <span class="like-count">${item.likes_count || 0}</span> likes
-                                <a href="${commentUrl}">Comment</a>
-                                <div class="description-paragraph-container"></div>
-
-                            </div>
-                        </div>
-                        </a> {# Closing tag for the new media-content-link #}
-
-                    `;
-
-                    mediaDiv.innerHTML = mediaContent;
-
-                    const descriptionDiv = mediaDiv.querySelector('.description-paragraph-container');
-                    const descriptionParagraph = document.createElement('p');
-                    descriptionParagraph.innerHTML = cleanDescription;
-                    descriptionDiv.appendChild(descriptionParagraph);
-
-                    mediaContainer.appendChild(mediaDiv);
-
-                });
-
-                page++;
-            } else {
-                hasMoreMedia = false;
-                const endMessage = document.createElement('div');
-                endMessage.classList.add('col', 'text-center', 'my-4');
-                endMessage.innerHTML = '<p>No more media to load</p>';
-                mediaContainer.appendChild(endMessage);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading more media:', error);
-            const errorMsg = document.createElement('div');
-            errorMsg.classList.add('col', 'text-center', 'my-4', 'text-danger');
-            errorMsg.innerHTML = '<p>Failed to load more content. Please try again later.</p>';
-            mediaContainer.appendChild(errorMsg);
-        })
-        .finally(() => {
-            loading = false;
-
-            // ✅ Add this block here for log_interaction function
-            const mediaContainer = document.getElementById('media-container');
-            mediaContainer.querySelectorAll('.media-item:not([data-logged])').forEach(el => {
-              viewObserver.observe(el);
-              el.dataset.logged = 'true'; // Prevents double observing
-            });
-
-            // Re-initialize Intersection Observer for new videos
-            const newVideos = mediaContainer.querySelectorAll('.autoplay-video:not([data-observed])');
-            newVideos.forEach(video => {
-                videoObserver.observe(video);
-                video.dataset.observed = 'true';
-            });
-
-            // Re-initialize event listeners for new like buttons
-            initializeLikeLinks(mediaContainer.querySelectorAll('.like-link:not([data-listener])'));
-
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-        });
-    }
-
-
-    function checkScroll() {
-        const scrollPosition = window.scrollY + window.innerHeight;
-        const pageHeight = document.body.scrollHeight;
-
-        if (scrollPosition >= pageHeight * 0.8) {
-            loadMoreMedia();
-        }
-    }
-
-
-
-    // Check if scroll position is near bottom to load more content
-    //function checkScroll() {
-        //if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - loadThreshold)) {
-            //loadMoreMedia();
-        //}
-    //}
-
-
-    // Listen for scroll events
-    window.addEventListener('scroll', checkScroll);
-});
-</script>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Function to protect an image or video
-    function protectMediaElement(el) {
-        if (el.dataset.protected) return; // Avoid duplicate bindings
-
-        el.addEventListener('contextmenu', function (e) {
-            e.preventDefault();
-        });
-
-        let pressTimer;
-
-        el.addEventListener('touchstart', function (e) {
-            pressTimer = setTimeout(() => {
-                e.preventDefault();
-            }, 600);
-        });
-
-        el.addEventListener('touchend', function () {
-            clearTimeout(pressTimer);
-        });
-
-        el.addEventListener('touchmove', function () {
-            clearTimeout(pressTimer);
-        });
-
-        el.dataset.protected = 'true'; // Mark as protected
-    }
-
-    // Protect initial media
-    document.querySelectorAll('img, video').forEach(protectMediaElement);
-
-    // Observe DOM changes for new images/videos
-    const observer = new MutationObserver((mutationsList) => {
-        mutationsList.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType !== 1) return; // Only process element nodes
-                if (node.matches('img, video')) {
-                    protectMediaElement(node);
-                }
-                // Also check inside containers
-                node.querySelectorAll?.('img, video').forEach(protectMediaElement);
-            });
-        });
-    });
-
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-});
-</script>
-<!--view log interaction for the log_interaction function-->
-
-<!--view log interaction for the log_interaction function-->
-<script>
-const viewObserver = new IntersectionObserver((entries, observer) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const mediaId = entry.target.getAttribute('data-id');
-
-      fetch('/log_interaction/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify({
-          media_id: mediaId,
-          interaction_type: 'view',
-        }),
-      });
-
-      observer.unobserve(entry.target); // log only once
-    }
-  });
-}, { threshold: 0.5 });
-
-document.querySelectorAll('.media-item').forEach(el => {
-  viewObserver.observe(el);
-});
-</script>
+    <script src="{% static 'js/pull_to_refresh.js' %}"></script>
 
 
 {% endblock %}
+
+<!--comment section java script ajax commenting -->
+
+<!--  <script type="application/ld+json"
+  {
+    "@context": "https://schema.org",
+    "@type": "SocialMediaPosting",
+    "headline": "{{ media.description|truncatewords:10|escapejs }}",
+    "articleBody": "{{ media.description|escapejs }}",
+    "author": {
+      "@type": "Person",
+      "name": "{{ media.user.username }}"
+    },
+    "datePublished": "{{ media.created_at|date:'c' }}"
+  }
+  </script-->

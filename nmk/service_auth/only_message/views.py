@@ -20,12 +20,26 @@ from django.contrib.auth import get_user_model
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 import json
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
+from django.views.decorators.vary import vary_on_headers
+from django.views.decorators.cache import cache_page, cache_control
 
+from django.views.decorators.http import require_POST
 
+from .websocket_notifications import (
+    create_message_notification,
+    send_notification_sync,
+    get_notifications,
+    get_unread_count,
+    clear_unread_count
+)
+
+from .tasks import process_uploaded_file
+
+AuthUser = get_user_model()
 logger = logging.getLogger(__name__)
-
 
 def get_or_create_conversation_key(sender, recipient):
     conversation = ConversationKey.objects.filter(participants=sender).filter(participants=recipient).first()
@@ -56,6 +70,7 @@ def get_or_create_conversation_key(sender, recipient):
 #     return render(request, 'user_list.html', {'users': users})
 
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def _base(request):
     return render(request,'_base.html')
 
@@ -67,93 +82,133 @@ def get_online_users(request):
             online_users.append(user.id)
     return JsonResponse({'online_users': online_users})
 
+#----------------------------------------------------------------------------------------
+#
+#
+#----------------------------------------------------------------------------------------
+
 
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def send_message_view(request):
-    if request.method == 'POST':
-        form = MessageForm(request.POST, request.FILES) # Add request.FILES for file uploads
-        if form.is_valid():
-            recipient_username = form.cleaned_data['recipient']
-            content = form.cleaned_data['content']
-            uploaded_file = request.FILES.get('file') # Get the uploaded file
 
-            try:
-                recipient = AuthUser.objects.get(username=recipient_username)
-            except AuthUser.DoesNotExist:
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'error': 'Recipient user does not exist.'})
-                messages.error(request, 'Recipient user does not exist.')
-                return redirect('only_message:send_message_view')
+    if request.method != "POST":
+        return JsonResponse({
+            "success": False,
+            "error": "POST request required."
+        }, status=405)
 
-            try:
-                recipient_keys = UserEncryptionKeys.objects.get(user=recipient)
-                sender_keys = UserEncryptionKeys.objects.get(user=request.user)
-            except UserEncryptionKeys.DoesNotExist:
-                create_user_encryption_keys(AuthUser, request.user, True) # Pass sender as AuthUser
-                create_user_encryption_keys(AuthUser, recipient, True)
-                recipient_keys = UserEncryptionKeys.objects.get(user=recipient)
-                sender_keys = UserEncryptionKeys.objects.get(user=request.user)
+    form = MessageForm(request.POST, request.FILES)
 
-            if not sender_keys.signing_private_key:
-                logger.error(f'Sender signing private key is missing for user {request.user.username}.')
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'error': 'Sender signing private key is missing.'})
-                messages.error(request, 'An error occurred while sending the message. Please try again.')
-                return redirect('only_message:send_message_view')
+    if not form.is_valid():
+        return JsonResponse({
+            "success": False,
+            "error": "Invalid form data.",
+            "errors": form.errors
+        }, status=400)
 
-            conversation_key = get_or_create_conversation_key(request.user, recipient)
+    recipient_username = form.cleaned_data["recipient"]
+    content = form.cleaned_data["content"]
+    uploaded_file = request.FILES.get("file")
 
-            try:
-                encrypted_content = encrypt_message(content, conversation_key.encode())
-                signature = sign_message(content, sender_keys.signing_private_key)
-            except Exception as e:
-                logger.error(f'Error during message encryption or signing: {str(e)}')
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'success': False, 'error': 'Error during message encryption or signing.'})
-                messages.error(request, 'An error occurred while sending the message. Please try again.')
-                return redirect('only_message:send_message_view')
+    # ----------------------------
+    # Get recipient
+    # ----------------------------
+    try:
+        recipient = AuthUser.objects.get(username=recipient_username)
+    except AuthUser.DoesNotExist:
+        return JsonResponse({
+            "success": False,
+            "error": "Recipient user does not exist."
+        }, status=404)
 
-            new_message = Message.objects.create(
-                sender=request.user,
-                recipient=recipient,
-                content=encrypted_content,
-                signature=signature,
-                file=uploaded_file # Save the file here
-            )
+    # ----------------------------
+    # Encryption keys
+    # ----------------------------
+    try:
+        recipient_keys = UserEncryptionKeys.objects.get(user=recipient)
+        sender_keys = UserEncryptionKeys.objects.get(user=request.user)
+    except UserEncryptionKeys.DoesNotExist:
+        create_user_encryption_keys(AuthUser, request.user, True)
+        create_user_encryption_keys(AuthUser, recipient, True)
 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                # For AJAX requests, return JSON
-                return JsonResponse({
-                    'success': True,
-                    'message_id': new_message.id,
-                    'sender': request.user.username,
-                    'recipient': recipient.username,
-                    'content': content, # Send original content for display if client decrypts, or decrypted_content
-                    'timestamp': new_message.timestamp.isoformat(),
-                    'file_url': new_message.file.url if new_message.file else None
-                })
-            else:
-                # For regular form submissions, redirect
-                messages.success(request, 'Message sent successfully.')
-                return redirect('only_message:message_list_view')
-        else:
-            # Form is not valid
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': 'Invalid form data.', 'errors': form.errors})
-            messages.error(request, 'There was an error sending your message. Please try again.')
-            return render(request, 'send_message.html', {'form': form}) # Render with form errors
-    else:
-        initial_data = {}
-        recipient_username = request.GET.get('recipient')
-        if recipient_username:
-            initial_data['recipient'] = recipient_username
-        form = MessageForm(initial=initial_data)
-    return render(request, 'send_message.html', {'form': form})
+        recipient_keys = UserEncryptionKeys.objects.get(user=recipient)
+        sender_keys = UserEncryptionKeys.objects.get(user=request.user)
 
-"""
+    if not sender_keys.signing_private_key:
+        logger.error(
+            f"Sender signing private key missing for {request.user.username}"
+        )
+        return JsonResponse({
+            "success": False,
+            "error": "Sender signing private key missing."
+        }, status=500)
+
+    # ----------------------------
+    # Encrypt + Sign
+    # ----------------------------
+    conversation_key = get_or_create_conversation_key(
+        request.user,
+        recipient
+    )
+
+    try:
+        encrypted_content = encrypt_message(
+            content,
+            conversation_key.encode()
+        )
+        signature = sign_message(
+            content,
+            sender_keys.signing_private_key
+        )
+    except Exception as e:
+        logger.error(f"Encryption/signing error: {str(e)}")
+        return JsonResponse({
+            "success": False,
+            "error": "Encryption or signing failed."
+        }, status=500)
+
+    # ----------------------------
+    # Save message
+    # ----------------------------
+    new_message = Message.objects.create(
+        sender=request.user,
+        recipient=recipient,
+        content=encrypted_content,
+        signature=signature,
+        file=uploaded_file
+    )
+
+    # ----------------------------
+    # API response ONLY
+    # ----------------------------
+    return JsonResponse({
+        "success": True,
+        "message": {
+            "id": new_message.id,
+            "sender": request.user.username,
+            "recipient": recipient.username,
+            "content": content,  # plaintext for UI display
+            "timestamp": new_message.timestamp.isoformat(),
+            "file_url": (
+                new_message.file.url
+                if new_message.file else None
+            ),
+        }
+    }, status=201)
+
+#----------------------------------------------------------------------------------------
+#
+#
+#----------------------------------------------------------------------------------------
+
+
+
+
+
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def message_list_view(request):
-    # Get the latest message timestamp for each user
     latest_messages = Message.objects.filter(
         Q(sender=request.user) | Q(recipient=request.user)
     ).values('sender', 'recipient').annotate(
@@ -162,293 +217,657 @@ def message_list_view(request):
 
     user_ids = set()
     for message in latest_messages:
-        user_ids.add(message['sender'] if message['sender'] != request.user.id else message['recipient'])
-
-    # Get the users and their latest message timestamp
-    users = AuthUser.objects.filter(id__in=user_ids)
-    users = sorted(users, key=lambda u: next(
-        (m['latest_message'] for m in latest_messages if m['sender'] == u.id or m['recipient'] == u.id),
-        None
-    ), reverse=True)
-
-    return render(request, 'message_list.html', {'users': users})
-
-"""
-
-@login_required
-def message_list_view(request):
-    # Get the latest message timestamp for each user
-    latest_messages = Message.objects.filter(
-        Q(sender=request.user) | Q(recipient=request.user)
-    ).values('sender', 'recipient').annotate(
-        latest_message=Max('timestamp')
-    ).order_by('-latest_message')
-
-    user_ids = set()
-    for message in latest_messages:
-        # Determine the other user in the conversation
         other_user_id = message['sender'] if message['sender'] != request.user.id else message['recipient']
-        if other_user_id: # Ensure other_user_id is not None (can happen if sender/recipient is deleted)
+        if other_user_id:
             user_ids.add(other_user_id)
 
-    # Get the users and their latest message timestamp
     users_with_latest_message_time = []
-    users_qs = AuthUser.objects.filter(id__in=list(user_ids)) # Convert set to list for __in lookup
+    users_qs = AuthUser.objects.filter(id__in=list(user_ids))
 
     for user in users_qs:
-        # Find the latest message timestamp for this specific user
         latest_time = None
         for m in latest_messages:
             if m['sender'] == user.id or m['recipient'] == user.id:
                 latest_time = m['latest_message']
-                break # Found the latest for this user
+                break
 
         if latest_time:
             users_with_latest_message_time.append({'user': user, 'latest_message_time': latest_time})
 
-    # Sort users by their latest message timestamp in reverse order
     sorted_users_data = sorted(users_with_latest_message_time, key=lambda x: x['latest_message_time'], reverse=True)
     users = [data['user'] for data in sorted_users_data]
 
     return render(request, 'message_list.html', {'users': users})
 
 
-#sending message update that included sending files 
+#----------------------------------------------------------------------------------------
+#
+#
+#----------------------------------------------------------------------------------------
+
+# FIXED user_messages_view function for views.py
+'''
 @login_required
 def user_messages_view(request, username):
     user = get_object_or_404(AuthUser, username=username)
-    messages = Message.objects.filter(
-        (Q(sender=request.user) & Q(recipient=user)) |
-        (Q(sender=user) & Q(recipient=request.user))
-    ).order_by('-timestamp')
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        message_data = [{
-            'id': msg.id,
-            'content': msg.content,
-            'sender': msg.sender.username,
-            'timestamp': msg.timestamp.isoformat(),
-            'file_url': msg.file.url if msg.file else None  # Include file URL if file exists
-        } for msg in messages]
-        return JsonResponse({'messages': message_data})
-
-    if request.method == 'POST':
-        form = MessageForm(request.POST, request.FILES)  # Handle file uploads
-        if form.is_valid():
-            content = form.cleaned_data['content']
-            uploaded_file = request.FILES.get('file', None)  # Get uploaded file if present
-
-            try:
-                recipient_keys = UserEncryptionKeys.objects.get(user=user)
-                sender_keys = UserEncryptionKeys.objects.get(user=request.user)
-            except UserEncryptionKeys.DoesNotExist:
-                logger.error('User encryption keys not found.')
-                return HttpResponse('User encryption keys not found.', status=404)
-
-            if not sender_keys.signing_private_key:
-                logger.error(f'Sender signing private key is missing for user {request.user.username}.')
-                return HttpResponse('Sender signing private key is missing.', status=500)
-
-            conversation_key = get_or_create_conversation_key(request.user, user)
-
-            try:
-                encrypted_content = encrypt_message(content, conversation_key.encode())
-                signature = sign_message(content, sender_keys.signing_private_key)
-            except Exception as e:
-                logger.error(f'Error during message encryption or signing: {e}')
-                return HttpResponse('Error during message encryption or signing.', status=500)
-
-            # File is saved as-is, not encrypted.
-            Message.objects.create(
-                sender=request.user,
-                recipient=user,
-                content=encrypted_content,
-                signature=signature,
-                file=uploaded_file  # Save the uploaded file directly
-            )
-
-            return redirect('only_message:user_messages_view', username=user.username)
-    else:
-        form = MessageForm(initial={'recipient': user.username})
-
-    try:
-        user_keys = UserEncryptionKeys.objects.get(user=request.user)
-    except UserEncryptionKeys.DoesNotExist:
-        logger.error('Your encryption keys not found.')
-        return HttpResponse('Your encryption keys not found.', status=404)
-
-    decrypted_messages = []
-    for msg in messages:
-        conversation_key = get_or_create_conversation_key(request.user, msg.sender if msg.sender != request.user else msg.recipient)
-        decrypted_content = decrypt_message(msg.content, conversation_key.encode())
-        if decrypted_content is None:
-            logger.warning(f'Failed to decrypt message {msg.id}.')
-            continue
-
-        # Ensure the sender has encryption_keys associated, especially for signature verification
-        if not hasattr(msg.sender, 'encryption_keys') or not msg.sender.encryption_keys.signing_public_key:
-            logger.error(f"Sender {msg.sender.username} does not have signing_public_key for message {msg.id}.")
-            signature_valid = False # Cannot verify without public key
-        else:
-            signature_valid = verify_message(
-                decrypted_content,
-                msg.signature,
-                msg.sender.encryption_keys.signing_public_key
-            )
-
-        decrypted_messages.append({
-            'sender': msg.sender,
-            'content': decrypted_content,
-            'timestamp': msg.timestamp,
-            'signature_valid': signature_valid,
-            'file_url': msg.file.url if msg.file else None  # Include file URL for decrypted messages
-        })
-
-    return render(request, 'user_messages.html', {'messages': decrypted_messages, 'form': form, 'recipient': user})
-
-
-"""
-#old message sending function 
-@login_required
-def user_messages_view(request, username):
-    user = get_object_or_404(AuthUser, username=username)
+    
+    # Get messages for display - ORDER BY TIMESTAMP ASCENDING (oldest first)
     messages_qs = Message.objects.filter(
         (Q(sender=request.user) & Q(recipient=user)) |
         (Q(sender=user) & Q(recipient=request.user))
-    ).order_by('timestamp') # Order by timestamp ASC for chat flow
-
-    # Handle AJAX POST request for sending messages/files
+    ).order_by('timestamp')
+ 
+    # ===== HANDLE POST REQUESTS =====
     if request.method == 'POST':
-        form = MessageForm(request.POST, request.FILES) # Handle file uploads
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        logger.info(f"POST request from {request.user.username} to {username}")
+        logger.info(f"Is AJAX: {is_ajax}")
+        
+        form = MessageForm(request.POST, request.FILES)
+        
         if form.is_valid():
-            content = form.cleaned_data['content']
+            content = form.cleaned_data.get('content', '').strip()
             uploaded_file = request.FILES.get('file', None)
-
-            # Ensure either content or file exists
+ 
+            logger.info(f"Form valid - content: {bool(content)}, file: {bool(uploaded_file)}")
+ 
             if not content and not uploaded_file:
-                return JsonResponse({'success': False, 'error': 'Cannot send empty message or without a file.'}, status=400)
-
-
-            # --- Encryption/Signature Logic (as per your original code) ---
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Cannot send empty message.'
+                }, status=400)
+ 
             try:
-                recipient_keys = UserEncryptionKeys.objects.get(user=user)
-                sender_keys = UserEncryptionKeys.objects.get(user=request.user)
-            except UserEncryptionKeys.DoesNotExist:
-                logger.error(f'User encryption keys not found for {request.user.username} or {user.username}. Attempting to create.')
-                # This logic is a bit risky if not properly designed for concurrency
-                # Best to ensure keys exist at user registration.
+                # Get encryption keys
                 try:
+                    recipient_keys = UserEncryptionKeys.objects.get(user=user)
+                    sender_keys = UserEncryptionKeys.objects.get(user=request.user)
+                except UserEncryptionKeys.DoesNotExist:
+                    logger.warning('Encryption keys not found, creating...')
                     create_user_encryption_keys(AuthUser, request.user, True)
                     create_user_encryption_keys(AuthUser, user, True)
                     sender_keys = UserEncryptionKeys.objects.get(user=request.user)
                     recipient_keys = UserEncryptionKeys.objects.get(user=user)
-                except Exception as e:
-                    logger.error(f'Failed to create encryption keys: {e}')
-                    return JsonResponse({'success': False, 'error': 'User encryption keys could not be generated.'}, status=500)
-
-
-            if not sender_keys.signing_private_key:
-                logger.error(f'Sender signing private key is missing for user {request.user.username}.')
-                return JsonResponse({'success': False, 'error': 'Sender signing private key is missing.'}, status=500)
-
-            conversation_key = get_or_create_conversation_key(request.user, user)
-
-            encrypted_content = None
-            signature = None
-            if content: # Only encrypt/sign if there's actual text content
-                try:
+ 
+                if not sender_keys.signing_private_key:
+                    logger.error('Sender signing private key missing')
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Signing key missing.'
+                    }, status=500)
+ 
+                conversation_key = get_or_create_conversation_key(request.user, user)
+ 
+                # Encrypt and sign message
+                encrypted_content = None
+                signature = None
+                if content:
                     encrypted_content = encrypt_message(content, conversation_key.encode())
                     signature = sign_message(content, sender_keys.signing_private_key)
+                    logger.info('Message encrypted and signed')
+ 
+                # Create message in database
+                new_message = Message.objects.create(
+                    sender=request.user,
+                    recipient=user,
+                    content=encrypted_content,
+                    signature=signature,
+                    file=uploaded_file
+                )
+ 
+                logger.info(f"✅ Message created in database: id={new_message.id}")
+ 
+                # ========================================
+                # CREATE AND SEND NOTIFICATION (NEW CODE)
+                # ========================================
+                try:
+                    # Prepare notification message preview
+                    if content:
+                        message_preview = content
+                    elif uploaded_file:
+                        message_preview = f"📎 {uploaded_file.name}"
+                    else:
+                        message_preview = "Sent a message"
+                    
+                    # Create notification
+                    notification_data = create_message_notification(
+                        sender_username=request.user.username,
+                        sender_id=request.user.id,
+                        recipient_user_id=user.id,
+                        message_preview=message_preview,
+                        message_id=new_message.id
+                    )
+                    
+                    logger.info(f"🔔 Notification created: {notification_data}")
+                    
+                    # Broadcast notification via WebSocket
+                    send_notification_sync(user.id, notification_data)
+                    
+                    logger.info(f"✅ Notification sent to user {user.username}")
+                    
                 except Exception as e:
-                    logger.error(f'Error during message encryption or signing: {e}')
-                    return JsonResponse({'success': False, 'error': 'Error during message encryption or signing.'}, status=500)
-
-            # --- Create Message Object ---
-            new_message = Message.objects.create(
-                sender=request.user,
-                recipient=user,
-                content=encrypted_content, # Can be None if only file is sent
-                signature=signature,       # Can be None if only file is sent
-                file=uploaded_file         # Stored as-is
-            )
-
-            # --- Send Message via WebSocket (to both sender and recipient) ---
-            channel_layer = get_channel_layer()
-            group_name = f'chat_{request.user.id}_{user.id}' # Adjust group naming as per your consumer logic
-            group_name_reverse = f'chat_{user.id}_{request.user.id}'
-
-            # Prepare data to send over WebSocket
-            # Note: We send the original content for display purposes,
-            # as the client-side JS expects it for display.
-            # In a true end-to-end encrypted scenario, the client would decrypt.
-            websocket_message_data = {
-                'type': 'chat_message', # Corresponds to a method in your consumer
-                'message': content, # Original content
-                'sender': request.user.username,
-                'recipient': user.username,
-                'timestamp': new_message.timestamp.isoformat(),
-                'file_url': new_message.file.url if new_message.file else None,
-                # 'signature_valid': True # You might want to pass this if you verify on server before sending
-            }
-
-            # Send to sender's group (if they are also connected to this chat)
-            async_to_sync(channel_layer.group_send)(
-                group_name,
-                websocket_message_data
-            )
-            # Send to recipient's group (ensures recipient sees it)
-            async_to_sync(channel_layer.group_send)(
-                group_name_reverse,
-                websocket_message_data
-            )
-
-            # --- Return JSON Response for AJAX success ---
-            return JsonResponse({'success': True, 'message_id': new_message.id})
+                    # Don't fail the message send if notification fails
+                    logger.warning(f"⚠️ Failed to send notification: {e}")
+                # ========================================
+ 
+                response_data = {
+                    'success': True,
+                    'message_id': new_message.id,
+                    'sender': request.user.username,
+                    'recipient': user.username,
+                    'content': content,
+                    'timestamp': new_message.timestamp.isoformat(),
+                    'file_url': new_message.file.url if new_message.file else None
+                }
+                
+                logger.info(f"Returning JSON response: message_id={new_message.id}")
+                return JsonResponse(response_data)
+ 
+            except Exception as e:
+                logger.error(f'Error processing message: {str(e)}', exc_info=True)
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Server error: {str(e)}'
+                }, status=500)
         else:
-            # Form is not valid, return errors as JSON
-            return JsonResponse({'success': False, 'error': 'Invalid form data.', 'errors': form.errors}, status=400)
-
-    # --- Initial GET request for displaying chat history ---
+            logger.error(f'Form validation errors: {form.errors}')
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid form data.',
+                'errors': dict(form.errors)
+            }, status=400)
+ 
+    # ===== HANDLE GET REQUESTS =====
+    form = MessageForm(initial={'recipient': user.username})
+ 
     try:
         user_keys = UserEncryptionKeys.objects.get(user=request.user)
     except UserEncryptionKeys.DoesNotExist:
-        logger.error('Your encryption keys not found.')
-        messages.error(request, 'Your encryption keys not found.') # Use Django messages for initial load errors
-        return render(request, 'user_messages.html', {'messages': [], 'form': MessageForm(), 'recipient': user})
-
+        logger.error('Encryption keys not found for current user')
+        return HttpResponse('Your encryption keys not found.', status=404)
+ 
+    # Decrypt messages for display
     decrypted_messages = []
     for msg in messages_qs:
-        conversation_key = get_or_create_conversation_key(request.user, msg.sender if msg.sender != request.user else msg.recipient)
+        conversation_key = get_or_create_conversation_key(
+            request.user,
+            msg.sender if msg.sender != request.user else msg.recipient
+        )
+        
         decrypted_content = None
-        if msg.content: # Only attempt decryption if content exists
+        if msg.content:
             decrypted_content = decrypt_message(msg.content, conversation_key.encode())
             if decrypted_content is None:
-                logger.warning(f'Failed to decrypt message {msg.id}. Content will be empty.')
-                decrypted_content = "[Message Decryption Failed]" # Placeholder
-
+                logger.warning(f'Failed to decrypt message {msg.id}')
+                decrypted_content = "[Decryption Failed]"
+ 
         signature_valid = False
-        if decrypted_content and msg.signature and hasattr(msg.sender, 'encryption_keys') and msg.sender.encryption_keys.signing_public_key:
-            signature_valid = verify_message(
-                decrypted_content,
-                msg.signature,
-                msg.sender.encryption_keys.signing_public_key
-            )
-        elif not msg.content: # If no content, signature validity is irrelevant for text
-            signature_valid = True # Or handle as a different status
-
+        if (decrypted_content and decrypted_content != "[Decryption Failed]" and 
+            msg.signature and hasattr(msg.sender, 'encryption_keys')):
+            if msg.sender.encryption_keys.signing_public_key:
+                signature_valid = verify_message(
+                    decrypted_content,
+                    msg.signature,
+                    msg.sender.encryption_keys.signing_public_key
+                )
+ 
         decrypted_messages.append({
+            'id': msg.id,
+
             'sender': msg.sender,
             'content': decrypted_content,
             'timestamp': msg.timestamp,
             'signature_valid': signature_valid,
             'file_url': msg.file.url if msg.file else None
         })
+ 
+    return render(request, 'user_messages.html', {
+        'messages': decrypted_messages,
+        'form': form,
+        'recipient': user
+    })
 
-    form = MessageForm(initial={'recipient': user.username}) # Pre-populate recipient for the form
-    return render(request, 'user_messages.html', {'messages': decrypted_messages, 'form': form, 'recipient': user})
-"""
+'''
+
+# Find the part where new_message is created and add notification sending
 
 
+
+# nmk/service_auth/only_message/views.py
+# UPDATED user_messages_view function with async file processing
+@login_required
+def user_messages_view(request, username):
+    user = get_object_or_404(AuthUser, username=username)
+
+    # Get messages for display - ORDER BY TIMESTAMP ASCENDING
+    messages_qs = Message.objects.filter(
+        (Q(sender=request.user) & Q(recipient=user)) |
+        (Q(sender=user) & Q(recipient=request.user))
+    ).order_by('timestamp')
+
+    # =====================================================
+    # HANDLE POST REQUESTS
+    # =====================================================
+    if request.method == 'POST':
+
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+        logger.info(
+            f"POST request from {request.user.username} to {username}"
+        )
+
+        logger.info(f"Is AJAX: {is_ajax}")
+
+        form = MessageForm(request.POST, request.FILES)
+
+        if form.is_valid():
+
+            content = form.cleaned_data.get('content', '').strip()
+            uploaded_file = request.FILES.get('file', None)
+
+            logger.info(
+                f"Form valid - "
+                f"content: {bool(content)}, "
+                f"file: {bool(uploaded_file)}"
+            )
+
+            # Prevent empty messages
+            if not content and not uploaded_file:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Cannot send empty message.'
+                }, status=400)
+
+            try:
+
+                # =====================================================
+                # GET ENCRYPTION KEYS
+                # =====================================================
+                try:
+                    recipient_keys = UserEncryptionKeys.objects.get(
+                        user=user
+                    )
+
+                    sender_keys = UserEncryptionKeys.objects.get(
+                        user=request.user
+                    )
+
+                except UserEncryptionKeys.DoesNotExist:
+
+                    logger.warning(
+                        'Encryption keys not found, creating...'
+                    )
+
+                    create_user_encryption_keys(
+                        AuthUser,
+                        request.user,
+                        True
+                    )
+
+                    create_user_encryption_keys(
+                        AuthUser,
+                        user,
+                        True
+                    )
+
+                    sender_keys = UserEncryptionKeys.objects.get(
+                        user=request.user
+                    )
+
+                    recipient_keys = UserEncryptionKeys.objects.get(
+                        user=user
+                    )
+
+                # =====================================================
+                # VALIDATE SIGNING KEY
+                # =====================================================
+                if not sender_keys.signing_private_key:
+
+                    logger.error(
+                        'Sender signing private key missing'
+                    )
+
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Signing key missing.'
+                    }, status=500)
+
+                # =====================================================
+                # GET CONVERSATION KEY
+                # =====================================================
+                conversation_key = get_or_create_conversation_key(
+                    request.user,
+                    user
+                )
+
+                # =====================================================
+                # ENCRYPT + SIGN MESSAGE
+                # =====================================================
+                encrypted_content = None
+                signature = None
+
+                if content:
+
+                    encrypted_content = encrypt_message(
+                        content,
+                        conversation_key.encode()
+                    )
+
+                    signature = sign_message(
+                        content,
+                        sender_keys.signing_private_key
+                    )
+
+                    logger.info(
+                        'Message encrypted and signed'
+                    )
+
+                # =====================================================
+                # CREATE MESSAGE
+                # =====================================================
+                new_message = Message.objects.create(
+                    sender=request.user,
+                    recipient=user,
+                    content=encrypted_content,
+                    signature=signature,
+                    file=uploaded_file
+                )
+
+                logger.info(
+                    f"✅ Message created: {new_message.id}"
+                )
+
+                # =====================================================
+                # START ASYNC FILE PROCESSING
+                # =====================================================
+                if uploaded_file:
+
+                    try:
+                        from .tasks import process_message_file
+
+                        logger.info(
+                            f"🚀 Starting Celery task "
+                            f"for message {new_message.id}"
+                        )
+
+                        process_message_file.delay(
+                            message_id=new_message.id,
+                            sender_id=request.user.id,
+                            recipient_id=user.id
+                        )
+
+                        logger.info(
+                            f"✅ Celery task queued "
+                            f"for message {new_message.id}"
+                        )
+
+                    except Exception as celery_error:
+
+                        logger.error(
+                            f"❌ Failed to queue Celery task: "
+                            f"{str(celery_error)}",
+                            exc_info=True
+                        )
+
+                # =====================================================
+                # CREATE NOTIFICATION
+                # =====================================================
+                try:
+
+                    if content:
+                        message_preview = content[:100]
+
+                    elif uploaded_file:
+                        message_preview = (
+                            f"📎 {uploaded_file.name}"
+                        )
+
+                    else:
+                        message_preview = "Sent a message"
+
+                    notification_data = (
+                        create_message_notification(
+                            sender_username=request.user.username,
+                            sender_id=request.user.id,
+                            recipient_user_id=user.id,
+                            message_preview=message_preview,
+                            message_id=new_message.id
+                        )
+                    )
+
+                    logger.info(
+                        f"🔔 Notification created "
+                        f"for message {new_message.id}"
+                    )
+
+                    send_notification_sync(
+                        user.id,
+                        notification_data
+                    )
+
+                    logger.info(
+                        f"✅ Notification sent to "
+                        f"{user.username}"
+                    )
+
+                except Exception as notification_error:
+
+                    logger.warning(
+                        f"⚠️ Notification failed: "
+                        f"{notification_error}"
+                    )
+
+                # =====================================================
+                # PREPARE RESPONSE
+                # =====================================================
+                response_data = {
+                    'success': True,
+                    'message_id': new_message.id,
+                    'sender': request.user.username,
+                    'recipient': user.username,
+                    'content': content,
+                    'timestamp': (
+                        new_message.timestamp.isoformat()
+                    ),
+
+                    'file_url': (
+                        new_message.file.url
+                        if new_message.file else None
+                    ),
+
+                    'has_file': bool(uploaded_file),
+
+                    'processing': bool(uploaded_file)
+                }
+
+                logger.info(
+                    f"Returning JSON response "
+                    f"for message {new_message.id}"
+                )
+
+                return JsonResponse(response_data)
+
+            except Exception as e:
+
+                logger.error(
+                    f'Error processing message: {str(e)}',
+                    exc_info=True
+                )
+
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Server error: {str(e)}'
+                }, status=500)
+
+        else:
+
+            logger.error(
+                f'Form validation errors: {form.errors}'
+            )
+
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid form data.',
+                'errors': dict(form.errors)
+            }, status=400)
+
+    # =====================================================
+    # HANDLE GET REQUESTS
+    # =====================================================
+    form = MessageForm(
+        initial={'recipient': user.username}
+    )
+
+    try:
+        user_keys = UserEncryptionKeys.objects.get(
+            user=request.user
+        )
+
+    except UserEncryptionKeys.DoesNotExist:
+
+        logger.error(
+            'Encryption keys not found for current user'
+        )
+
+        return HttpResponse(
+            'Your encryption keys not found.',
+            status=404
+        )
+
+    # =====================================================
+    # DECRYPT MESSAGES
+    # =====================================================
+    decrypted_messages = []
+
+    for msg in messages_qs:
+
+        conversation_key = get_or_create_conversation_key(
+            request.user,
+            msg.sender if msg.sender != request.user
+            else msg.recipient
+        )
+
+        decrypted_content = None
+
+        if msg.content:
+
+            decrypted_content = decrypt_message(
+                msg.content,
+                conversation_key.encode()
+            )
+
+            if decrypted_content is None:
+
+                logger.warning(
+                    f'Failed to decrypt message {msg.id}'
+                )
+
+                decrypted_content = "[Decryption Failed]"
+
+        signature_valid = False
+
+        if (
+            decrypted_content and
+            decrypted_content != "[Decryption Failed]" and
+            msg.signature and
+            hasattr(msg.sender, 'encryption_keys')
+        ):
+
+            if msg.sender.encryption_keys.signing_public_key:
+
+                signature_valid = verify_message(
+                    decrypted_content,
+                    msg.signature,
+                    msg.sender.encryption_keys.signing_public_key
+                )
+
+        decrypted_messages.append({
+            'id': msg.id,
+            'sender': msg.sender,
+            'content': decrypted_content,
+            'timestamp': msg.timestamp,
+            'signature_valid': signature_valid,
+            'file_url': (
+                msg.file.url if msg.file else None
+            )
+        })
+
+    # =====================================================
+    # RENDER TEMPLATE
+    # =====================================================
+    return render(request, 'user_messages.html', {
+        'messages': decrypted_messages,
+        'form': form,
+        'recipient': user
+    })
+
+#----------------------------------------------------------------------------------------
+#
+#
+#----------------------------------------------------------------------------------------
+
+
+
+
+#----------------------------------------------------------------------------------------
+#integration for push notification when messages are sent supporting the new view function
+#
+#----------------------------------------------------------------------------------------
+
+# ========================================
+# API VIEWS (Add to views.py) websocket based notification system no fcm in this part
+# ========================================
+
+@login_required
+def get_notifications_api(request):
+    """Get notifications for current user"""
+    notifications = get_notifications(request.user.id)
+    unread_count = get_unread_count(request.user.id)
+    
+    return JsonResponse({
+        'success': True,
+        'notifications': notifications,
+        'unread_count': unread_count
+    })
+ 
+ 
+@login_required
+def mark_notifications_read(request):
+    """Mark all notifications as read"""
+    clear_unread_count(request.user.id)
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Notifications marked as read'
+    })
+
+@login_required
+@require_http_methods(["POST"])
+def clear_notifications_api(request):
+    """Clear all notifications"""
+    cache_key = f'notifications:{request.user.id}'
+    cache.delete(cache_key)
+    clear_unread_count(request.user.id)
+    
+    return JsonResponse({
+        'success': True,
+        'message': 'Notifications cleared'
+    })
+
+# ========================================
+# API VIEWS (Add to views.py) websocket based notification system no fcm in this part
+# ========================================
+
+#----------------------------------------------------------------------------------------
+#integration for push notification when messages are sent supporting the new view function
+#
+#----------------------------------------------------------------------------------------
+
+
+
+
+@cache_page(60 * 10)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def search_user_message(request):
     query = request.GET.get('q')
     if query:
@@ -460,6 +879,7 @@ def search_user_message(request):
 
 
 @login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def get_messages_api(request, username):
     user = get_object_or_404(AuthUser, username=username)
     messages = Message.objects.filter(
@@ -483,10 +903,174 @@ def get_messages_api(request, username):
 
 
 
+#new update for message sending message deletion logic
+#____________________________________________________
+'''
+@login_required
+@require_POST
+def delete_messages_view(request, username):
+    """
+    Deletes messages sent by the logged-in user and
+    notifies both users via WebSocket.
+    """
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
+    message_ids = request.POST.getlist('message_ids[]')
+
+    if not message_ids:
+        return JsonResponse({'success': False, 'error': 'No messages selected.'})
+
+    # Resolve recipient
+    recipient = get_object_or_404(AuthUser, username=username)
+
+    # Only allow deleting messages SENT BY request.user
+    messages = Message.objects.filter(
+        id__in=message_ids,
+        sender=request.user,
+        recipient=recipient
+    )
+
+    deleted_ids = list(messages.values_list('id', flat=True))
+
+    if not deleted_ids:
+        return JsonResponse({'success': False, 'error': 'Unauthorized or invalid messages.'})
+
+    # Delete messages (triggers file deletion signal)
+    messages.delete()
+
+    # --- WebSocket broadcast ---
+    channel_layer = get_channel_layer()
+
+    payload = {
+        'type': 'chat_message_delete',
+        'message_ids': deleted_ids,
+        'sender': request.user.username
+    }
+
+    #async_to_sync(channel_layer.group_send)(f"user_{request.user.id}", payload)
+    #async_to_sync(channel_layer.group_send)(f"user_{recipient.id}", payload)
+    sorted_ids = sorted([request.user.id, recipient.id])
+    room_group_name = f'chat_{sorted_ids[0]}_{sorted_ids[1]}'
+
+    async_to_sync(channel_layer.group_send)(
+        room_group_name,
+        payload
+    )
+
+    return JsonResponse({
+        'success': True,
+        'deleted_ids': deleted_ids
+    })
+'''
+
+@login_required
+@require_POST
+def delete_messages_view(request, username):
+    """
+    Delete messages and related files.
+    Also notify both users via WebSocket.
+    """
+
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid request'
+        }, status=400)
+
+    message_ids = request.POST.getlist('message_ids[]')
+
+    if not message_ids:
+        return JsonResponse({
+            'success': False,
+            'error': 'No messages selected.'
+        })
+
+    # Get recipient
+    recipient = get_object_or_404(
+        AuthUser,
+        username=username
+    )
+
+    # Only allow sender to delete own messages
+    messages = Message.objects.filter(
+        id__in=message_ids,
+        sender=request.user,
+        recipient=recipient
+    )
+
+    if not messages.exists():
+        return JsonResponse({
+            'success': False,
+            'error': 'Unauthorized or invalid messages.'
+        })
+
+    # ==========================================
+    # DELETE MESSAGES INDIVIDUALLY
+    # ==========================================
+    deleted_ids = []
+
+    for message in messages:
+
+        deleted_ids.append(message.id)
+
+        logger.info(
+            f"Deleting message {message.id} "
+            f"from {request.user.username}"
+        )
+
+        # This triggers signals.py
+        message.delete()
+
+    # ==========================================
+    # WEBSOCKET BROADCAST
+    # ==========================================
+    try:
+
+        channel_layer = get_channel_layer()
+
+        sorted_ids = sorted([
+            request.user.id,
+            recipient.id
+        ])
+
+        room_group_name = (
+            f'chat_{sorted_ids[0]}_{sorted_ids[1]}'
+        )
+
+        async_to_sync(channel_layer.group_send)(
+            room_group_name,
+            {
+                'type': 'chat_message_delete',
+
+                'message_ids': deleted_ids,
+
+                'sender': request.user.username
+            }
+        )
+
+        logger.info(
+            f"Broadcast delete event "
+            f"for messages {deleted_ids}"
+        )
+
+    except Exception as e:
+
+        logger.error(
+            f"WebSocket delete broadcast failed: {e}",
+            exc_info=True
+        )
+
+    return JsonResponse({
+        'success': True,
+        'deleted_ids': deleted_ids
+    })
 
 
+#____________________________________________________
+#new update for message sending message deletion logic
 
-#new update for message sending
+
 
 
 

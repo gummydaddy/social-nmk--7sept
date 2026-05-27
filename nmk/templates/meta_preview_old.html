@@ -1,0 +1,188 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="{{ title }}">
+    <meta name="description" content="{{ description|truncatechars:160 }}">
+    <meta name="robots" content="index, follow">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ url }}">
+
+    <!-- Open Graph / Facebook / WhatsApp / Telegram / Instagram / LinkedIn -->
+    <meta property="og:type" content="{% if profile_user %}profile{% else %}article{% endif %}">
+    <meta property="og:title" content="{{ title }}">
+    <meta property="og:description" content="{{ description|truncatechars:160 }}">
+    {% if image_url %}
+        <meta property="og:image" content="{{ image_url }}">
+        <meta property="og:image:alt" content="{{ description|truncatechars:160 }}">
+    {% endif %}
+    <meta property="og:url" content="{{ url }}">
+    <meta property="og:site_name" content="Socyfie">
+    <meta property="og:locale" content="en_IN">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ title }}">
+    <meta name="twitter:description" content="{{ description|truncatechars:160 }}">
+    {% if image_url %}
+        <meta name="twitter:image" content="{{ image_url }}">
+        <meta name="twitter:image:alt" content="{{ description|truncatechars:160 }}">
+    {% endif %}
+
+    {% if profile_url %}
+        <!-- Optional: Add author/profile URL metadata -->
+        <meta property="article:author" content="{{ profile_url }}">
+    {% endif %}
+
+    <!-- ✅ Structured Data (JSON-LD for Google SEO) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "{% if profile_user %}Person{% else %}Article{% endif %}",
+        "headline": "{{ title|escapejs }}",
+        "description": "{{ description|truncatechars:160|escapejs }}",
+        "url": "{{ url }}",
+        {% if image_url %}
+        "image": "{{ image_url }}",
+        {% endif %}
+        {% if profile_url %}
+        "author": {
+            "@type": "Person",
+            "name": "{{ media.user.username|default:profile_user.username|default:'Socyfie User'|escapejs }}",
+            "url": "{{ profile_url }}"
+        },
+        {% else %}
+        "author": {
+            "@type": "Organization",
+            "name": "Socyfie"
+        },
+        {% endif %}
+        "publisher": {
+            "@type": "Organization",
+            "name": "Socyfie",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://socyfie.com/static/img/socyfie-logo.png"
+            }
+        },
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "{{ url }}"
+        },
+        "datePublished": "{% now 'Y-m-d' %}"
+    }
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            color: #333;
+            background: #fafafa;
+            text-align: center;
+            padding: 50px;
+        }
+
+        img {
+            max-width: 250px;
+            border-radius: 10px;
+            margin: 20px auto;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-name {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 1rem;
+            color: #555;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+
+        .mention-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px auto;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+{% if media %}
+    <div id="media-detail-container">
+
+        {% if media.user and media.user.id %}
+            <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
+        {% elif profile_url %}
+            <a href="{{ profile_url }}" class="mention-with-avatar">
+        {% else %}
+            <a href="#" class="mention-with-avatar">
+        {% endif %}
+
+                {% if media.user.profile %}
+                    <img src="{{ media.user.profile|profile_picture_url }}"
+                         class="mention-avatar"
+                         alt="{{ media.user.username }}'s profile picture">
+                {% endif %}
+                <h5>@{{ media.user.username }}</h5>
+            </a>
+
+        <div id="current-media">
+            {% if media.file.url|is_video %}
+                <video controls autoplay playsinline preload="metadata" loading="lazy"
+                       class="img-fluid autoplay-video">
+                    <source src="{{ media.file.url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% else %}
+                <img src="{{ media.file.url }}" alt="{{ title }}"
+                     class="img-fluid" loading="lazy">
+            {% endif %}
+        </div>
+
+        <div id="media-description" class="description">
+            <p>{{ description|safe }}</p>
+        </div>
+
+    </div>
+
+{% elif profile_user %}
+    <div class="profile-preview">
+        {% if image_url %}
+            <img src="{{ image_url }}" alt="{{ profile_user.username }}'s profile picture">
+        {% endif %}
+        <div class="profile-name">@{{ profile_user.username }}</div>
+        <div class="description">{{ description }}</div>
+    </div>
+
+{% else %}
+    <div class="generic-preview">
+        <h2>{{ title }}</h2>
+        <p class="description">{{ description|truncatechars:160 }}</p>
+        {% if image_url %}
+            <img src="{{ image_url }}" alt="{{ title }}">
+        {% endif %}
+    </div>
+{% endif %}
+
+</body>
+</html>

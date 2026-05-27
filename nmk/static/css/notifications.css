@@ -1,0 +1,163 @@
+/* nmk/static/css/notifications.css */
+/* Notification popup styles */
+
+.notification-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 400px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 15px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.notification-popup.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification-icon {
+    font-size: 32px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-size: 15px;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.notification-title strong {
+    font-weight: 600;
+}
+
+.notification-message {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 6px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.notification-time {
+    font-size: 12px;
+    color: #999;
+}
+
+.notification-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+}
+
+.notification-close:hover {
+    color: #333;
+}
+
+/* Notification badge (for unread count) */
+.notification-badge {
+    display: inline-block;
+    background: #ff4444;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+    margin-left: 5px;
+}
+
+/* Connection status indicator */
+.notification-connection-status {
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    background: #f5f5f5;
+    display: inline-block;
+}
+
+/* Mobile responsive */
+@media (max-width: 480px) {
+    .notification-popup {
+        left: 10px;
+        right: 10px;
+        min-width: auto;
+        max-width: none;
+        transform: translateY(-100px);
+    }
+    
+    .notification-popup.show {
+        transform: translateY(0);
+    }
+}
+
+/* Multiple notifications stacking */
+.notification-popup:nth-child(n+2) {
+    top: calc(20px + (80px * var(--notification-index, 0)));
+}
+
+/* Animation for new notifications */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(400px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Typing indicator animation */
+@keyframes typing {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+.typing-indicator {
+    display: inline-flex;
+    gap: 3px;
+}
+
+.typing-indicator span {
+    width: 6px;
+    height: 6px;
+    background: #999;
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}

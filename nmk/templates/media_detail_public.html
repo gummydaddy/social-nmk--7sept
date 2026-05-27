@@ -1,0 +1,264 @@
+<!-- templates/media_detail_public.html -->
+<!-- Public media detail page - for shared links -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Page Title -->
+    <title>{{ og_title }} - Socyfie</title>
+    
+    <!-- ✅ OPEN GRAPH META TAGS FOR RICH PREVIEWS -->
+    <!-- These make links look good when shared on WhatsApp, Facebook, Twitter, etc. -->
+    
+    <!-- Basic Open Graph -->
+    <meta property="og:title" content="{{ og_title }}">
+    <meta property="og:description" content="{{ og_description }}">
+    <meta property="og:url" content="{{ share_url }}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Socyfie">
+    
+    <!-- Image for preview -->
+    {% if og_image %}
+    <meta property="og:image" content="{{ og_image }}">
+    <meta property="og:image:secure_url" content="{{ og_image }}">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    {% endif %}
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ og_title }}">
+    <meta name="twitter:description" content="{{ og_description }}">
+    {% if og_image %}
+    <meta name="twitter:image" content="{{ og_image }}">
+    {% endif %}
+    
+    <!-- WhatsApp Preview -->
+    <meta property="og:image:alt" content="{{ og_title }}">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{{ share_url }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    
+    <!-- Stylesheets -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #fafafa;
+            color: #262626;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            padding: 16px;
+            border-bottom: 1px solid #dbdbdb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #000;
+            text-decoration: none;
+        }
+        
+        .share-btn-header {
+            padding: 8px 16px;
+            background: #0095f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .user-info {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dbdbdb;
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-details {
+            flex: 1;
+        }
+        
+        .username {
+            font-weight: 600;
+            color: #262626;
+            text-decoration: none;
+        }
+        
+        .post-date {
+            font-size: 12px;
+            color: #8e8e8e;
+        }
+        
+        .media-container {
+            width: 100%;
+            max-height: 600px;
+            background: #000;
+            position: relative;
+        }
+        
+        .media-container img,
+        .media-container video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .post-actions {
+            padding: 16px;
+            border-top: 1px solid #dbdbdb;
+            display: flex;
+            gap: 16px;
+        }
+        
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .description {
+            padding: 0 16px 16px;
+            line-height: 1.5;
+        }
+        
+        .description strong {
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        
+        .cta-section {
+            padding: 24px 16px;
+            text-align: center;
+            background: #fafafa;
+            border-top: 1px solid #dbdbdb;
+        }
+        
+        .cta-btn {
+            display: inline-block;
+            padding: 12px 32px;
+            background: #0095f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <a href="/" class="logo">Socyfie</a>
+            <button class="share-btn-header" onclick="shareMedia({{ media.id }}, '{{ share_url }}', '{{ og_title }}', '{{ og_description }}', '{{ og_image }}', '{% if media.is_video %}video{% else %}image{% endif %}')">
+                Share
+            </button>
+        </div>
+        
+        <!-- User Info -->
+        <div class="user-info">
+            <div class="user-avatar">
+                {% if media.user.profile.profile_picture %}
+                <img src="{{ media.user.profile.profile_picture.url }}" alt="{{ media.user.username }}">
+                {% endif %}
+            </div>
+            <div class="user-details">
+                <a href="{% url 'user_profile:profile' media.user.id %}" class="username">
+                    {{ media.user.username }}
+                </a>
+                <div class="post-date">{{ media.created_at|timesince }} ago</div>
+            </div>
+        </div>
+        
+        <!-- Media -->
+        <div class="media-container">
+            {% if media.is_video %}
+            <video controls>
+                <source src="{{ media.file.url }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+            {% else %}
+            <img src="{{ media.file.url }}" alt="Post by {{ media.user.username }}">
+            {% endif %}
+        </div>
+        
+        <!-- Post Actions -->
+        <div class="post-actions">
+            <button class="action-btn" onclick="shareMedia({{ media.id }}, '{{ share_url }}', '{{ og_title }}', '{{ og_description }}', '{{ og_image }}', '{% if media.is_video %}video{% else %}image{% endif %}')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="18" cy="5" r="3" stroke-width="2"/>
+                    <circle cx="6" cy="12" r="3" stroke-width="2"/>
+                    <circle cx="18" cy="19" r="3" stroke-width="2"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-width="2"/>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-width="2"/>
+                </svg>
+                Share
+            </button>
+        </div>
+        
+        <!-- Description -->
+        {% if media.description %}
+        <div class="description">
+            <strong>{{ media.user.username }}</strong>
+            {{ media.description }}
+        </div>
+        {% endif %}
+        
+        <!-- CTA Section -->
+        <div class="cta-section">
+            <p>Join Socyfie to see more posts like this</p>
+            <a href="{% url 'user_profile:feed_page' %}" class="cta-btn">Join Socyfie</a>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{% static 'js/sharing.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
+
+</body>
+</html>

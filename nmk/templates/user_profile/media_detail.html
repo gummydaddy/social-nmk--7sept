@@ -1,11 +1,18 @@
 {% extends 'landing_page.html' %}
 {% load static %}
 {% load custom_filters %}
+<script src="{% static 'js/sharing.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/sharing.css' %}">
 
 {% block profile_header_content %}
 {% endblock %}
 
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
 {% block main_content %}
+
 <style>
     .media-detail-container {
         max-width: none;
@@ -97,6 +104,10 @@
     }
     .description {
         color: #123;
+        max-width: 90%;
+        word-wrap: break-word;        /* Ensures long words wrap */
+        overflow-wrap: break-word;    /* Modern standard for breaking long words */
+        word-break: break-word;       /* Extra safeguard for long unbroken text */
     }
 </style>
 
@@ -110,8 +121,8 @@
 
     <div class="media-detail">
         {% if media.file.url|is_video %}
-            <video controls class="img-fluid autoplay-video" unmute>
-                <source src="{{ media.file.url }}" type="video/mp4" loading="lazy">
+            <video controls unmute autoplay playsinline preload="metadata" loading="lazy" class="img-fluid autoplay-video">
+                <source src="{{ media.file.url }}" type="video/mp4" >
                 Your browser does not support the video tag.
             </video>
         {% else %}
@@ -134,6 +145,68 @@
                     {% endif %}
                 </a> 
                 <span class="like-count">{{ media.likes.count }}</span> likes
+
+<!-- Share Button using function -->
+
+        <!--<button class="action-btn share-btn"
+                onclick="shareMedia(
+                    {{ media.id }},
+                    '{{ request.build_absolute_uri }}{% url 'user_profile:explore_detail' media.id %}',
+                    '{{ media.user.username }}\'s post on Socyfie',
+                    '{{ media.description|default:''|escapejs }}',
+                    '{{ request.scheme }}://{{ request.get_host }}{{ media.file.url }}',
+                    '{% if media.is_video %}video{% else %}image{% endif %}'
+                )">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="18" cy="5" r="3" stroke-width="2"/>
+                <circle cx="6" cy="12" r="3" stroke-width="2"/>
+                <circle cx="18" cy="19" r="3" stroke-width="2"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-width="2"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-width="2"/>
+            </svg>
+            Share
+        </button>-->
+
+            <!--  FIXED: Share Button with Correct URL pointing to explore_detail -->
+            <button class="action-btn share-btn"
+                    onclick="shareMedia(
+                        {{ media.id }},
+                        '{{ request.build_absolute_uri }}',
+                        '{{ media.user.username }}\'s post on Socyfie',
+                        '{{ media.description|default:''|escapejs }}',
+                        '{% if media.thumbnail %}{{ request.scheme }}://{{ request.get_host }}{{ media.thumbnail.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{{ media.file.url }}{% endif %}',
+                        '{% if media.file.url|is_video %}video{% else %}image{% endif %}'
+                    )">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="18" cy="5" r="3" stroke-width="2"/>
+                    <circle cx="6" cy="12" r="3" stroke-width="2"/>
+                    <circle cx="18" cy="19" r="3" stroke-width="2"/>
+                    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-width="2"/>
+                    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-width="2"/>
+                </svg>
+                Share
+            </button>
+
+        <!--<button class="action-btn share-btn"
+                onclick="shareMedia(
+                    {{ media.id }},
+                    '{{ request.scheme }}://{{ request.get_host }}/media/{{ media.id }}/',
+                    '{{ media.user.username }}\'s post',
+                    '{{ media.description|default:''|escapejs }}',
+                    '{{ request.scheme }}://{{ request.get_host }}{{ media.file.url }}',
+                    '{% if media.is_video %}video{% else %}image{% endif %}'
+                )">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="18" cy="5" r="3" stroke-width="2"/>
+                <circle cx="6" cy="12" r="3" stroke-width="2"/>
+                <circle cx="18" cy="19" r="3" stroke-width="2"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" stroke-width="2"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" stroke-width="2"/>
+            </svg>
+            Share
+        </button>-->
+
+
             </div>
             <div class="dropdown">
                 <span>☰</span>
@@ -223,34 +296,6 @@
 {% endif %}
 
 <h2>{{ media.user.username }}'s Other Uploads</h2>
-<!--
-<div class="row row-cols-2 g-4">
-    {% for upload in page_obj %}
-        <div class="col">
-            <div id="media-container-{{ upload.id }}" class="upload-item">
-                <a href="{% url 'user_profile:media_detail_view' upload.id %}">
-                    {% if upload.file.url|is_video %}
-                        <video controls class="img-fluid autoplay-video" muted>
-                            <source src="{{ upload.file.url }}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                    {% else %}
-                        <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
-                    {% endif %}
-                </a>
-
-                <div class="view-count">
-                    <p>Views: {{ upload.view_count }}</p>
-                </div>
-
-                <div class="description">
-                    <p>{{ upload.description|safe }}</p>
-                </div>
-            </div>
-        </div>
-    {% endfor %}
-</div>
--->
 
 <div class="row row-cols-2 g-4">
     {% for upload in page_obj %}
@@ -274,12 +319,10 @@
                         {% endif %}
                     {% endif %}
                 </a>
-                <!-- View Count -->
                 <div class="view-count">
                     <p>Views: {{ upload.view_count }}</p>
                 </div>
 
-                <!-- Description with clickable links -->
                 <div class="description">
                     <p>{{ upload.description|safe }}</p>
                 </div>
@@ -287,6 +330,7 @@
         </div>
     {% endfor %}
 </div>
+
 
 <!-- Pagination Controls -->
 <div class="pagination">
@@ -298,51 +342,6 @@
         <a href="?page={{ page_obj.next_page_number }}">Next</a>
     {% endif %}
 </div>
-
-            {% block footer %}
-            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
-                <div class="bottom-strip d-flex justify-content-around align-items-center">
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:following_media'  %}">
-                            <i class="fas fa-home"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'only_card:landing_page' %}">
-                            <i class="fas fa-shield-alt"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
-                            <i class="fas fa-lightbulb"></i>
-                        </a>
-                    </div>
-
-                    <!--<div class="footer-icon">
-                        <a href="{% url 'user_profile:upload_media' %}">
-                            <i class="fas fa-upload"></i>
-                        </a>
-                    </div>-->
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
-                            <i class="fas fa-user-circle"></i>
-                        </a>
-                    </div>
-
-                </div>
-            </footer>
-
-            {% endblock %}
 
 {% endblock %}
 
@@ -514,79 +513,37 @@
     });
 </script>
 
+<!--share button ascript-->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const shareBtn = document.getElementById("share-btn");
+
+    if (shareBtn) {
+        shareBtn.addEventListener("click", async function() {
+            const shareData = {
+                title: "{{ media.user.username }}'s post",
+                text: "Check out this upload on Socyfie!",
+                url: window.location.href  // Full page URL
+            };
+
+            if (navigator.share) {
+                try {
+                    await navigator.share(shareData);
+                    console.log("Share successful");
+                } catch (err) {
+                    console.error("Share failed:", err);
+                }
+            } else {
+                // Fallback: copy link to clipboard
+                navigator.clipboard.writeText(window.location.href)
+                    .then(() => alert("Link copied to clipboard!"))
+                    .catch(err => console.error("Could not copy link:", err));
+            }
+        });
+    }
+});
+</script>
+
 {% endblock %}
 
 
-{% comment %} let page = 1;
-    const mediaDetailUrl = "{% url 'user_profile:media_detail_view' media.id %}";
-    const otherUploadsContainer = document.getElementById('other-uploads');
-    const loadingSpinner = document.getElementById('loading-spinner');
-
-    function fetchMoreUploads() {
-        page += 1;
-        loadingSpinner.style.display = 'block';
-
-        fetch(`${mediaDetailUrl}?page=${page}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            loadingSpinner.style.display = 'none';
-
-            if (data.related_media.length > 0) {
-                data.related_media.forEach(upload => {
-                    const uploadItem = document.createElement('div');
-                    uploadItem.classList.add('upload-item');
-                    uploadItem.onclick = function() {
-                        // Correctly generate the URL using the media ID from the response
-                        const url = "{% url 'user_profile:media_detail_view' '0' %}".replace('0', upload.id);
-                        window.location.href = url;
-                    };
-
-                    if (upload.is_video) {
-                        const video = document.createElement('video');
-                        video.controls = true;
-                        video.style.maxWidth = '100%';
-                        video.style.height = 'auto';
-
-                        const source = document.createElement('source');
-                        source.src = upload.file_url;
-                        source.type = 'video/mp4';
-
-                        video.appendChild(source);
-                        uploadItem.appendChild(video);
-                    } else {
-                        const img = document.createElement('img');
-                        img.src = upload.file_url;
-                        img.alt = 'Image';
-                        img.style.maxWidth = '100%';
-                        img.style.height = 'auto';
-
-                        uploadItem.appendChild(img);
-                    }
-
-                    otherUploadsContainer.appendChild(uploadItem);
-                });
-            } else {
-                window.removeEventListener('scroll', handleScroll);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching more uploads:', error);
-            loadingSpinner.style.display = 'none';
-        });
-    }
-
-    function handleScroll() {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-
-        if (scrollTop + clientHeight >= scrollHeight - 5) {
-            fetchMoreUploads();
-        }
-    }
-
-    window.addEventListener('scroll', handleScroll);
-
-    fetchMoreUploads(); {% endcomment %}

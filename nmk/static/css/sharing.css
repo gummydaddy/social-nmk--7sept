@@ -1,0 +1,341 @@
+/* SHARING MODAL CSS - DROP-IN READY */
+/* Add this to your main CSS file or create static/css/sharing.css */
+
+/* Modal Overlay */
+.share-modal-overlay,
+.qr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.share-modal-overlay.active,
+.qr-modal-overlay.active {
+    opacity: 1;
+}
+
+/* Modal Container */
+.share-modal,
+.qr-modal {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.share-modal-overlay.active .share-modal,
+.qr-modal-overlay.active .qr-modal {
+    transform: scale(1);
+}
+
+/* Modal Header */
+.share-modal-header,
+.qr-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.share-modal-header h3,
+.qr-modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+}
+
+.share-close-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: #666;
+    border-radius: 50%;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.share-close-btn:hover {
+    background: #f0f0f0;
+    color: #000;
+}
+
+/* Modal Body */
+.share-modal-body,
+.qr-modal-body {
+    padding: 20px;
+}
+
+/* Native Share Button */
+.native-share-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.native-share-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.native-share-btn:active {
+    transform: translateY(0);
+}
+
+/* Share Link Section */
+.share-link-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.share-link-input {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    color: #333;
+}
+
+.copy-link-btn {
+    padding: 12px 20px;
+    background: #000;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.copy-link-btn:hover {
+    background: #333;
+    transform: translateY(-1px);
+}
+
+.copy-link-btn.copied {
+    background: #10b981;
+}
+
+/* Share Platforms Grid */
+.share-platforms {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+/* Platform Button */
+.share-platform-btn {
+    padding: 14px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.share-platform-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Platform-specific colors */
+.share-platform-btn.whatsapp:hover {
+    background: #25D366;
+    color: white;
+    border-color: #25D366;
+}
+
+.share-platform-btn.facebook:hover {
+    background: #1877F2;
+    color: white;
+    border-color: #1877F2;
+}
+
+.share-platform-btn.twitter:hover {
+    background: #1DA1F2;
+    color: white;
+    border-color: #1DA1F2;
+}
+
+.share-platform-btn.telegram:hover {
+    background: #0088cc;
+    color: white;
+    border-color: #0088cc;
+}
+
+.share-platform-btn.email:hover {
+    background: #EA4335;
+    color: white;
+    border-color: #EA4335;
+}
+
+.share-platform-btn.qr-code:hover {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+}
+
+.share-platform-btn.download:hover {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+/* QR Code Modal */
+.qr-code-image {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    display: block;
+    margin: 0 auto 20px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.qr-modal-body p {
+    text-align: center;
+    color: #666;
+    margin: 0;
+}
+
+/* Share Button in Feed */
+.share-btn {
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    font-size: 14px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.share-btn:hover {
+    background: #f0f0f0;
+    color: #000;
+}
+
+.share-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+    .share-modal,
+    .qr-modal {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+    }
+    
+    .share-platforms {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .share-link-section {
+        flex-direction: column;
+    }
+    
+    .copy-link-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .native-share-btn {
+        font-size: 14px;
+        padding: 12px 16px;
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .share-modal,
+    .qr-modal {
+        background: #1a1a1a;
+        color: #fff;
+    }
+    
+    .share-modal-header h3,
+    .qr-modal-header h3 {
+        color: #fff;
+    }
+    
+    .share-modal-header,
+    .qr-modal-header {
+        border-bottom-color: #333;
+    }
+    
+    .share-link-section {
+        background: #2a2a2a;
+    }
+    
+    .share-link-input {
+        background: #333;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .share-platform-btn {
+        background: #2a2a2a;
+        border-color: #444;
+        color: #fff;
+    }
+    
+    .share-close-btn:hover {
+        background: #333;
+        color: #fff;
+    }
+}

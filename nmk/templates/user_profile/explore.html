@@ -2,6 +2,12 @@
 {% load static %}
 {% load custom_filters %}
 
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
+
 {% block main_content %}
 <style>
 
@@ -64,16 +70,25 @@
         {% for media in page_obj %}
             <div class="col media-item">
                 <a href="{% url 'user_profile:explore_detail' media.id %}" class="media-content">
-                    {% if media.thumbnail %}
-                        <img src="{{ media.thumbnail.url }}" alt="Thumbnail" class="img-fluid" loading="lazy">
-                    {% else %}
-                        <img src="{{ media.file.url }}" alt="media" class="img-fluid" loading="lazy">
-                    {% endif %}
+                    <div class="position-relative media-thumb-square">
+                        <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}"
+                             alt="Thumbnail"
+                             class="img-fluid object-cover"
+                             loading="lazy">
+                             
+                        {% if media.file.url|is_video %}
+                            <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
+                                ▶
+                            </span>
+                        {% endif %}
+                    </div>
                 </a>
+
             </div>
         {% endfor %}
     </div>
 </div>
+
 
 
 <!-- Loading Spinner -->
@@ -121,156 +136,232 @@
     </span>
 </div>
 
-            {% block footer %}
-            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
-                <div class="bottom-strip d-flex justify-content-around align-items-center">
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:following_media'  %}">
-                            <i class="fas fa-home"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'only_card:landing_page' %}">
-                            <i class="fas fa-shield-alt"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
-                            <i class="fas fa-lightbulb"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore' %}">
-                            <i class="fas fa-globe"></i>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
-                            <i class="fas fa-user-circle"></i>
-                        </a>
-                    </div>
-
-                </div>
-            </footer>
-
-            {% endblock %}
-
 {% endblock %}
 
-{% block script %}
+{% block explore_script %}
+
 <script>
     const mediaContainer = document.getElementById('media-container');
     const loadingSpinner = document.getElementById('loading-spinner');
-    let page = {{ page_obj.number }};
+
+    let page = 1;
     let loading = false;
-    let hasNext = {{ page_obj.has_next|yesno:"true,false,false" }};
-    const scrollThreshold = 200; // Load when within 200px of the bottom
+    let hasNext = {{ page_obj.has_next|yesno:"true,false" }};
 
     function log(message, ...args) {
         console.log('[InfiniteScroll]', message, ...args);
     }
 
-    function fetchMoreMedia() {
+    async function fetchMoreMedia() {
+
         if (loading || !hasNext) {
-            log('fetchMoreMedia called, but returning early', { loading, hasNext });
             return;
         }
+
         loading = true;
-        page += 1;
 
-        const url = new URL(window.location.href);
-        const q = url.searchParams.get('q') || '';
-
-        log('Fetching page:', page, 'with query:', q);
         loadingSpinner.style.display = 'block';
 
-        fetch(`?page=${page}&q=${q}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
+        page += 1;
+
+        try {
+
+            const url = new URL(window.location.href);
+            const q = url.searchParams.get('q') || '';
+
+            log('Fetching page:', page);
+
+            const response = await fetch(`?page=${page}&q=${q}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
             if (!response.ok) {
-                log('fetchMoreMedia response not OK:', response.status);
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            loadingSpinner.style.display = 'none';
-            log('fetchMoreMedia success:', data);
+
+            const data = await response.json();
+
+            log('Data received:', data);
 
             if (data.media && data.media.length > 0) {
+
                 data.media.forEach(media => {
+
+                    /*
+                    ===================================
+                    COLUMN
+                    ===================================
+                    */
+
                     const col = document.createElement('div');
-                    col.classList.add('col', 'media-item');
+
+                    col.classList.add(
+                        'col',
+                        'media-item'
+                    );
+
+                    /*
+                    ===================================
+                    LINK
+                    ===================================
+                    */
 
                     const link = document.createElement('a');
-                    link.href = `/user_profile/explore_detail/${media.id}/`;
+
+                    link.href = `/explore_detail/${media.id}/`;
+
+                    /*
+                    ===================================
+                    MEDIA WRAPPER
+                    ===================================
+                    */
+
+                    const mediaWrapper = document.createElement('div');
+
+                    mediaWrapper.classList.add(
+                        'position-relative'
+                    );
+
+                    /*
+                    ===================================
+                    THUMBNAIL IMAGE
+                    ===================================
+                    */
+
+                    const img = document.createElement('img');
+
+                    img.src = media.thumbnail_url || media.file_url;
+
+                    img.alt = 'Thumbnail';
+
+                    img.classList.add(
+                        'img-fluid',
+                        'object-cover'
+                    );
+
+                    img.loading = 'lazy';
+
+                    mediaWrapper.appendChild(img);
+
+                    /*
+                    ===================================
+                    VIDEO PLAY ICON
+                    ===================================
+                    */
 
                     if (media.is_video) {
-                        const video = document.createElement('video');
-                        video.controls = true;
-                        video.classList.add('img-fluid');
-                        const source = document.createElement('source');
-                        source.src = media.file_url;
-                        source.type = 'video/mp4';
-                        video.appendChild(source);
-                        video.loading = 'lazy'; // Lazy load video (browser support varies)
-                        link.appendChild(video);
-                    } else {
-                        const img = document.createElement('img');
-                        img.src = media.file_url;
-                        img.alt = 'media';
-                        img.classList.add('img-fluid');
-                        img.loading = 'lazy'; // Lazy load image
-                        link.appendChild(img);
+
+                        const playIcon = document.createElement('span');
+
+                        playIcon.classList.add(
+                            'position-absolute',
+                            'top-50',
+                            'start-50',
+                            'translate-middle',
+                            'text-white',
+                            'fs-3'
+                        );
+
+                        playIcon.innerHTML = '▶';
+
+                        mediaWrapper.appendChild(playIcon);
                     }
 
+                    /*
+                    ===================================
+                    APPEND
+                    ===================================
+                    */
+
+                    link.appendChild(mediaWrapper);
+
                     col.appendChild(link);
+
                     mediaContainer.appendChild(col);
                 });
+
                 hasNext = data.has_next;
-                log('hasNext updated:', hasNext);
+
+                log('hasNext:', hasNext);
+
             } else {
-                log('No more media received or data.media is empty');
+
                 hasNext = false;
-                window.removeEventListener('scroll', handleScroll);
+
+                observer.disconnect();
+
                 const endMessage = document.createElement('div');
-                endMessage.classList.add('col-12', 'text-center', 'my-4');
+
+                endMessage.classList.add(
+                    'col-12',
+                    'text-center',
+                    'my-4'
+                );
+
                 endMessage.textContent = 'No more media to load.';
+
                 mediaContainer.appendChild(endMessage);
             }
-        })
-        .catch(error => {
-            log('fetchMoreMedia error:', error);
-            loadingSpinner.style.display = 'none';
+
+        } catch (error) {
+
+            console.error('Infinite scroll error:', error);
+
+        } finally {
+
             loading = false;
-        });
-    }
 
-    function handleScroll() {
-        const { scrollTop, scrollHeight, clientHeight } = document.documentElement;
-        const bottomReachedRaw = scrollTop + clientHeight;
-        const scrollBottomThreshold = scrollHeight - scrollThreshold;
-        const bottomReached = bottomReachedRaw >= scrollBottomThreshold;
-
-        log('Scroll Event:', { scrollTop, scrollHeight, clientHeight, bottomReachedRaw, scrollBottomThreshold, bottomReached, loading, hasNext });
-
-        if (bottomReached && !loading && hasNext) {
-            log('Bottom of page reached, calling fetchMoreMedia');
-            fetchMoreMedia();
+            loadingSpinner.style.display = 'none';
         }
     }
 
-    window.addEventListener('scroll', handleScroll);
-    log('Scroll event listener attached');
+    /*
+    ===================================
+    INTERSECTION OBSERVER
+    Better than scroll events
+    ===================================
+    */
+
+    const observerTarget = document.createElement('div');
+
+    observerTarget.id = 'observer-target';
+
+    observerTarget.style.height = '1px';
+
+    mediaContainer.after(observerTarget);
+
+    const observer = new IntersectionObserver((entries) => {
+
+        entries.forEach(entry => {
+
+            if (
+                entry.isIntersecting &&
+                !loading &&
+                hasNext
+            ) {
+
+                log('Observer triggered');
+
+                fetchMoreMedia();
+            }
+        });
+
+    }, {
+        root: null,
+        rootMargin: '300px',
+        threshold: 0
+    });
+
+    observer.observe(observerTarget);
+
+    log('IntersectionObserver initialized');
 </script>
+
 {% endblock %}
 
 
+<!--
+    let page = {{ page_obj.number }};
+-->

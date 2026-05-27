@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "co.median.android.zpxbyex",
+      "sha256_cert_fingerprints": [
+        "REPLACE_WITH_RELEASE_SHA256"
+      ]
+    }
+  }
+]
+

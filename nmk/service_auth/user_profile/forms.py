@@ -119,7 +119,7 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = ['profile_picture', 'cover_photo', 'bio']
-
+    '''
     def save(self, commit=True):
         profile = super().save(commit=False)
         
@@ -140,7 +140,7 @@ class ProfileForm(forms.ModelForm):
         if commit:
             profile.save()
         return profile
-
+    '''
 
 class CategorySelectionForm(forms.ModelForm):
     category = forms.ChoiceField(choices=[
@@ -159,6 +159,8 @@ class CategorySelectionForm(forms.ModelForm):
             ('religious_spiritual', 'Religious and Spiritual'),
             ('travel_adventure', 'Travel and Adventure'),
             ('comedy_memes', 'Comedy and Memes'),
+            ('gaming', 'Gaming'),
+            ('finance', 'Finance'),
         ], 
         widget=forms.Select(attrs={'class': 'form-control', 'aria-label': 'Category'}),
         label="Select Your Category"  # You can also add a label here if needed

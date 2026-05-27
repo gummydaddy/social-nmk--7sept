@@ -2,6 +2,11 @@
 {% load static %}
 {% load custom_filters %}
 
+
+{% block canonical %}
+<link rel="canonical" href="{{ request.build_absolute_uri }}" />
+{% endblock %}
+
 {% block main_content %}
 
 <style>
@@ -55,6 +60,40 @@
         font-size: 24px;
         vertical-align: middle;
     }
+
+.media-thumb-square {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* Makes it square */
+    overflow: hidden;
+    border-radius: 6px; /* Optional for rounded corners */
+}
+
+.media-thumb-square img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Prevents stretching */
+}
+
+.profile-picture-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    display: inline-block;
+}
+.profile-picture {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+}
+
 
 </style>
 <header>
@@ -111,17 +150,18 @@
             </p>
             <!-- Add any additional profile information here -->
         </div>
+        <!--
         <div class="cover-photo-container">
             {% if profile_user.profile.cover_photo %}
                 <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
             {% else %}
                 <div class="cover-photo" style="background-color: #f0f0f0;"></div>
             {% endif %}
-        </div>
-
+        </div>-->
+        <!--
         <div class="profile-picture-container">
             {% if active_story %}
-                    <a href="{% url 'user_profile:view_story' story_id=active_story.id %}">
+                <a href="{% url 'user_profile:view_story' story_id=active_story.id %}">
             {% else %}
                 {% if profile_user == request.user %}
                     <a href="{% url 'user_profile:add_story' %}">
@@ -134,9 +174,46 @@
                 {% endif %}
             </a>
         </div>
-        
+        -->
+
+        <div class="profile-picture-container">
+            {% if active_story %}
+                <button onclick="location.href='{% url 'user_profile:view_story' story_id=active_story.id %}'" class="profile-picture-btn">
+
+                <!--<a href="{% url 'user_profile:view_story' story_id=active_story.id %}">-->
+            {% elif profile_user.id == request.user.id %}
+                <button onclick="location.href='{% url 'user_profile:add_story' %}'" class="profile-picture-btn">
+
+                <!--<a href="{% url 'user_profile:add_story' %}">-->
+            {% else %}
+                <div>  {# fallback to non-clickable wrapper #}
+            {% endif %}
+
+                {% if profile_user.profile.profile_picture %}
+                    <img src="{{ profile_user.profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                {% else %}
+                    <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
+                {% endif %}
+
+            {% if active_story or profile_user.id == request.user.id %}
+                </button>
+
+                <!--</a>-->
+            {% else %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="cover-photo-container">
+            {% if profile_user.profile.cover_photo %}
+                <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
+            {% else %}
+                <div class="cover-photo" style="background-color: #f0f0f0;"></div>
+            {% endif %}
+        </div>
+
+
         <div class="bio">
-            {% comment %} {{ profile_user.profile.bio }} {% endcomment %}
             {{ profile_user.profile.bio|safe }}
         </div>
 
@@ -147,9 +224,11 @@
             <span>Uploads {{ uploads_count }} </span> 
 
         <!-- Follow/Unfollow button -->
+        {% csrf_token %}
         {% if profile_user != request.user %}
         <div>
             <div class="col">
+
                 <form id="follow-form" method="post" action="{% url 'user_profile:follow_user' profile_user.id %}">
                     {% csrf_token %}
                     <button type="submit" id="follow-button">
@@ -164,7 +243,14 @@
                         Follow
                         {% endif %}
                     </button>
-                </form>
+                </form><!--
+                <button
+                    type="button"
+                    class="btn btn-sm follow-btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %}"
+                    data-follow-url="{% url 'user_profile:follow_user' profile_user.id %}">
+                    {% if is_following %}Unfollow{% else %}Follow{% endif %}
+                </button>-->
+
             </div>
         </div>
         <div class="row row-cols-3 g-4">
@@ -190,68 +276,33 @@
 </div>
 
 <!-- Uploaded media with pagination -->
-<!--
-<div class="row row-cols-3 g-4">
-    {% for upload in page_obj %}
-    <div class="col">
-        <div id="media-container-{{ upload.id }}" class="upload-item">
-            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
-                {% if upload.file.url|is_video %}
-                <video controls class="img-fluid">
-                    <source src="{{ upload.file.url }}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-                {% else %}
-                <img src="{{ upload.file.url }}" alt="Image" class="img-fluid">
-                {% endif %}
-            </a>
 
-            <div class="view-count">
-                <p>Views: {{ upload.view_count }}</p>
-                
+<div class="media-wrapper">
+    <div class="row row-cols-3 g-4" id="media-container">
+        {% for media in page_obj %}
+            <div class="col media-item">
+                <a href="{% url 'user_profile:media_detail_view' media.id %}" class="media-content">
+                    <div class="position-relative media-thumb-square">
+                        <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}"
+                             alt="Thumbnail"
+                             class="img-fluid object-cover "
+                             loading="lazy">
+
+                        {% if media.file.url|is_video %}
+                            <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
+                                ▶
+                            </span>
+                        {% endif %}
+                    </div>
+                </a>
+
+                <!-- View Count -->
+                <div class="view-count mt-1 text-muted">
+                    👁️ : {{ media.view_count }}
+                </div>
             </div>
-            {% comment %}
-            <div class="description">
-                <p>{{ upload.description|safe }}</p>
-            </div> {% endcomment %}
-        </div>
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
--->
-
-<div class="row row-cols-3 g-4">
-    {% for upload in page_obj %}
-    <div class="col">
-        <div id="media-container-{{ upload.id }}" class="upload-item">
-            <a href="{% url 'user_profile:media_detail_view' upload.id %}">
-                {% if upload.file.url|is_video %}
-                <!-- Video Thumbnail -->
-                <video class="img-fluid lazyload" 
-                       data-src="{{ upload.file.url }}" 
-                       {% if upload.thumbnail %}
-                           poster="{{ upload.thumbnail.url }}"
-                       {% else %}
-                           poster="{{ upload.file.url }}"
-                       {% endif %} muted>
-                    Your browser does not support the video tag.
-                </video>
-                {% else %}
-                <!-- Image Thumbnail -->
-                <img src="{% if upload.thumbnail %}{{ upload.thumbnail.url }}{% else %}{{ upload.file.url }}{% endif %}" 
-                     data-src="{{ upload.file.url }}" 
-                     alt="Image" 
-                     class="img-fluid lazyload">
-                {% endif %}
-            </a>
-
-            <!-- View Count -->
-            <div class="view-count">
-                <p>👁️ : {{ upload.view_count }}</p>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
 </div>
 
 
@@ -273,16 +324,140 @@
     </span>
 </div>
 </div>
+
+
 {% endblock %}
 
 {% block profile_script %}
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const privacyButton = document.getElementById('privacy-button');
+
+    if (!privacyButton) return;
+
+    privacyButton.addEventListener('click', function () {
+        fetch("{% url 'user_profile:toggle_privacy' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                privacyButton.textContent = data.is_private ? 'Private' : 'Public';
+            }
+        })
+        .catch(console.error);
+    });
+
+});
+</script>
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        let lazyMedia = document.querySelectorAll(".lazyload");
+    
+        const lazyLoad = () => {
+            lazyMedia.forEach(media => {
+                if (media.getBoundingClientRect().top < window.innerHeight && media.dataset.src) {
+                    if (media.tagName === "IMG") {
+                        media.src = media.dataset.src;  // Replace thumbnail with full image
+                    } else if (media.tagName === "VIDEO") {
+                        let source = document.createElement("source");
+                        source.src = media.dataset.src;
+                        source.type = "video/mp4";
+                        media.appendChild(source);
+                        media.load();  // Load video
+                    }
+                    media.classList.remove("lazyload");
+                }
+            });
+        };
+    
+        window.addEventListener("scroll", lazyLoad);
+        window.addEventListener("resize", lazyLoad);
+        lazyLoad();  // Load visible media immediately
+    });
+</script>
+
+<!--ajax follow hook-->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("follow-form");
+    if (!form) return;
+
+    form.addEventListener("submit", function (e) {
+        e.preventDefault(); //  stop redirect
+
+        const button = document.getElementById("follow-button");
+        const url = form.action;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                alert("Something went wrong");
+                return;
+            }
+
+            //  Update UI
+            button.textContent = data.following ? "Unfollow" : "Follow";
+
+            //  Popup
+            alert(data.following ? "Followed successfully" : "Unfollowed successfully");
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Network error");
+        });
+    });
+});
+</script>
+
+
+{% endblock %}
+
+<!--
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const status = localStorage.getItem('upload_status');
+
+    if (status === 'processing') {
+        alert('Upload in process...');
+        localStorage.removeItem('upload_status');
+        // Optionally you can implement polling to check status here
+    }
+    if (status === 'failed') {
+        alert('Upload failed. Please try again.');
+        localStorage.removeItem('upload_status');
+    }
+});
+</script>
+-->
+
+
+<!--
+<script>
 
     document.addEventListener('DOMContentLoaded', function() {
-        const followForm = document.getElementById('follow-form');
+       {%comment%} const followForm = document.getElementById('follow-form');
         const followButton = document.getElementById('follow-button');
         const unfollowForm = document.getElementById('unfollow-form');
-        const unfollowButton = document.getElementById('unfollow-button');
+        const unfollowButton = document.getElementById('unfollow-button');{%endcomment%}
         const privacyButton = document.getElementById('privacy-button');
 
         if (privacyButton) {
@@ -309,6 +484,21 @@
             });
         }
     
+
+        let followButton = "";
+
+        if (item.show_follow) {
+            followButton = `
+                <button
+                    type="button"
+                    class="btn btn-sm ${item.is_following ? 'btn-secondary' : 'btn-primary'} follow-btn"
+                    data-follow-url="${item.follow_url}">
+                    ${item.is_following ? 'Unfollow' : 'Follow'}
+                </button>
+            `;
+        }
+
+
         if (followForm) {
             followForm.addEventListener('submit', function(event) {
                 event.preventDefault();
@@ -364,50 +554,4 @@
             });
         }
     });
-</script>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let lazyMedia = document.querySelectorAll(".lazyload");
-    
-        const lazyLoad = () => {
-            lazyMedia.forEach(media => {
-                if (media.getBoundingClientRect().top < window.innerHeight && media.dataset.src) {
-                    if (media.tagName === "IMG") {
-                        media.src = media.dataset.src;  // Replace thumbnail with full image
-                    } else if (media.tagName === "VIDEO") {
-                        let source = document.createElement("source");
-                        source.src = media.dataset.src;
-                        source.type = "video/mp4";
-                        media.appendChild(source);
-                        media.load();  // Load video
-                    }
-                    media.classList.remove("lazyload");
-                }
-            });
-        };
-    
-        window.addEventListener("scroll", lazyLoad);
-        window.addEventListener("resize", lazyLoad);
-        lazyLoad();  // Load visible media immediately
-    });
-</script>
-{% endblock %}
-
-<!--
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const status = localStorage.getItem('upload_status');
-
-    if (status === 'processing') {
-        alert('Upload in process...');
-        localStorage.removeItem('upload_status');
-        // Optionally you can implement polling to check status here
-    }
-    if (status === 'failed') {
-        alert('Upload failed. Please try again.');
-        localStorage.removeItem('upload_status');
-    }
-});
-</script>
--->
+</script>-->

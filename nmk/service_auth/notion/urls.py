@@ -8,11 +8,15 @@ app_name = "notion"
 urlpatterns = [
     # path('notion_home/', views.notion_home, name='notion_home'),
     path('notion_home/<int:notion_id>/', views.notion_home, name='notion_home'),
+    path("notion_home/", views.notion_home, name="notion_home"),
+
     path('explorer/', views.notion_explorer, name='notion_explorer'),
     path('following_list/<int:user_id>/', views.following_list, name='following_list'),
     path('followers_list/', views.followers_list, name='followers_list'),
     path('followers_list/<int:user_id>/', views.followers_list, name='followers_list'),
     path('post_notion/', views.post_notion, name='post_notion'),
+    #path('<str:username>/notion/<int:notion_id>/', views.notion_detail, name='notion_detail'), #for sitemap adding username and description to the site map
+
     # path('follow_user/<int:user_id>/', views.follow_user, name='follow_user'),
     path('post_comment/<int:notion_id>/', views.post_comment, name='post_comment'),
     path('delete_comment/<int:comment_id>/', views.delete_comment, name='delete_comment'),
@@ -20,6 +24,8 @@ urlpatterns = [
     path('search_users/', views.search_users, name='search_users'),
     # path('my_notions/', views.my_notions, name='my_notions'),
     path('my_notions/<int:notion_id>/', views.my_notions, name='my_notions'),
+    #path('my_notions/<int:user_id>/', views.my_notions, name='my_notions'),
+
     path('notion/<int:notion_id>/', views.notion_detail_view, name='notion_detail'),
     path('notifications/', views.notifications, name='notifications'),
     path('accounts/login/', only_card_views.login_view, name='login'),
@@ -30,5 +36,6 @@ urlpatterns = [
     path('unblock-user/<int:user_id>/', views.unblock_user, name='unblock_user'),
     path('blocked-users/', views.blocked_user_list, name='blocked_user_list'),
     path('notion/<int:notion_id>/delete/', views.delete_notion, name='delete_notion'),
+    path('<str:username>/notion/<int:notion_id>/', views.notion_detail, name='notion_detail'), #for sitemap adding username and description to the site map
 
 ]

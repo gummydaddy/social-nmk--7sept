@@ -2,6 +2,53 @@
 {% load static %}
 
 {% block main_content %}
+<style>
+.upload-section {
+    margin-bottom: 12px;
+}
+
+.upload-spinner {
+    display: none;
+    margin-top: 6px;
+    color: #555;
+    font-size: 14px;
+}
+
+.upload-progress {
+    display: none;
+    width: 100%;
+    background-color: #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.upload-progress .progress-bar {
+    height: 8px;
+    width: 0%;
+    background-color: #007bff;
+    color: white;
+    font-size: 11px;
+    text-align: center;
+    line-height: 8px;
+    transition: width 0.3s ease;
+}
+
+.upload-status {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #333;
+}
+.description {
+    color: #123;
+    max-width: 90%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+</style>
+
 <div class="container">
     <h4>Edit Profile</h4>
 
@@ -12,10 +59,41 @@
     </br>
 
     <!-- Form for Profile Picture, Cover Photo, and Username -->
-    <form method="post" enctype="multipart/form-data" action="{% url 'user_profile:edit_profile' user_id=profile_user.id %}">
+    <form method="post" enctype="multipart/form-data" action="{% url 'user_profile:edit_profile' user_id=profile_user.id %}" class="profile-edit description">
         {% csrf_token %}
         
         <h4>Profile Information</h4>
+
+        <form id="editProfileForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <div class="upload-section">
+                <label class="upload-label">{{ form.profile_picture.label }}</label>
+                {{ form.profile_picture }}
+                <div id="profileUploadSpinner" class="upload-spinner">⏳ Uploading...</div>
+                <div id="profileUploadProgress" class="upload-progress">
+                     <div class="progress-bar">0%</div>
+                </div>
+                <div id="profileUploadStatus" class="upload-status"></div>
+            </div>
+
+            <div class="upload-section" style="margin-top: 16px;">
+                <label class="upload-label">{{ form.cover_photo.label }}</label>
+                {{ form.cover_photo }}
+                <div id="coverUploadSpinner" class="upload-spinner">⏳ Uploading...</div>
+                <div id="coverUploadProgress" class="upload-progress">
+                    <div class="progress-bar">0%</div>
+                </div>
+                <div id="coverUploadStatus" class="upload-status"></div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary" name="save_changes">Save Changes</button>
+            </div>
+        </form>
+
+
+<!--
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
@@ -26,6 +104,7 @@
                 <button type="submit" class="btn btn-primary" name="save_changes">Save Changes</button>
             </div> 
         </form>
+-->
         </br>
 
         <!-- Username Form -->
@@ -137,6 +216,100 @@
         });
     });
 </script>
+
+<!--// for displaying the uploading progress bar of uploaded profile and cover photo-->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById("editProfileForm");
+    if (!form) return;
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+    const uploadConfigs = [
+        {
+            input: form.querySelector('input[name="profile_picture"]'),
+            spinner: document.getElementById("profileUploadSpinner"),
+            progress: document.getElementById("profileUploadProgress"),
+            bar: document.querySelector("#profileUploadProgress .progress-bar"),
+            status: document.getElementById("profileUploadStatus"),
+        },
+        {
+            input: form.querySelector('input[name="cover_photo"]'),
+            spinner: document.getElementById("coverUploadSpinner"),
+            progress: document.getElementById("coverUploadProgress"),
+            bar: document.querySelector("#coverUploadProgress .progress-bar"),
+            status: document.getElementById("coverUploadStatus"),
+        },
+    ];
+
+    form.addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        let hasFile = false;
+
+        uploadConfigs.forEach(cfg => {
+            const file = cfg.input.files[0];
+            if (file) {
+                hasFile = true;
+                cfg.spinner.style.display = "block";
+                cfg.progress.style.display = "block";
+                cfg.bar.style.width = "0%";
+                cfg.bar.textContent = "0%";
+                cfg.status.textContent = "Uploading...";
+            }
+        });
+
+        if (!hasFile) {
+            alert("Please select at least one image before saving.");
+            return;
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", form.action || window.location.href, true);
+        xhr.setRequestHeader("X-CSRFToken", csrfToken);
+
+        xhr.upload.addEventListener("progress", function(e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                uploadConfigs.forEach(cfg => {
+                    if (cfg.input.files[0]) {
+                        cfg.bar.style.width = percent + "%";
+                        cfg.bar.textContent = percent + "%";
+                    }
+                });
+            }
+        });
+
+        xhr.onload = function() {
+            uploadConfigs.forEach(cfg => cfg.spinner.style.display = "none");
+
+            if (xhr.status === 200) {
+                uploadConfigs.forEach(cfg => {
+                    if (cfg.input.files[0]) {
+                        cfg.bar.style.width = "100%";
+                        cfg.status.textContent = " Upload complete! Refreshing...";
+                    }
+                });
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                uploadConfigs.forEach(cfg => {
+                    if (cfg.input.files[0]) cfg.status.textContent = " Upload failed.";
+                });
+            }
+        };
+
+        xhr.onerror = function() {
+            uploadConfigs.forEach(cfg => {
+                if (cfg.input.files[0]) cfg.status.textContent = "Network error.";
+            });
+        };
+
+        xhr.send(formData);
+    });
+});
+</script>
+
 {% endblock %}
 
 
