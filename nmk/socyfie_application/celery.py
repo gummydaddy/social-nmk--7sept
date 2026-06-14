@@ -38,7 +38,7 @@ app.conf.beat_schedule =  {
     },
     'update-trending-every-20-mins': {
         'task': 'service_auth.user_profile.tasks.update_trending_scores',
-        'schedule': crontab(minute='*/19'),
+        'schedule': crontab(minute='*/13'),
     },
     'remove-private-media-from-trending': {
         'task': 'service_auth.user_profile.tasks.remove_private_media_from_trending',
@@ -48,7 +48,7 @@ app.conf.beat_schedule =  {
     },
     "dispatch-user-recommendations-every-20-min": {
         "task": "service_auth.user_profile.tasks.dispatch_recommendation_tasks",
-        "schedule": crontab(minute="*/5"),
+        "schedule": crontab(minute="*/20"),
     },
 
     'sync-not-interested': {
@@ -63,15 +63,21 @@ app.conf.beat_schedule =  {
     },
     'cleanup-redis-data': {
         'task': 'service_auth.user_profile.tasks.cleanup_stale_redis_data',
-        'schedule': crontab(minute=0, hour=2),  # Daily at 2 AM
-        #"schedule": crontab(minute="*/2"),
+        #'schedule': crontab(minute=0, hour=2),  # Daily at 2 AM
+        "schedule": crontab(minute="*/3"),
     },
     'rebuild-penalties': {
         'task': 'service_auth.user_profile.tasks.rebuild_penalties_from_not_interested',
         'schedule': crontab(minute=0, hour=3),  # Daily at 3 AM
         #"schedule": crontab(minute="*/8"),
     },
+    #  NEW: Decay old penalties daily at 1 AM
+    'decay-creator-penalties': {
+        'task': 'service_auth.user_profile.tasks.decay_old_creator_penalties',
+        #'schedule': crontab(minute=0, hour=1),  # Daily at 1 AM
+        "schedule": crontab(minute="*/17"),
 
+    },
 
 }
 

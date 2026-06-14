@@ -26,7 +26,9 @@ urlpatterns = [
     path('my_notions/<int:notion_id>/', views.my_notions, name='my_notions'),
     #path('my_notions/<int:user_id>/', views.my_notions, name='my_notions'),
 
-    path('notion/<int:notion_id>/', views.notion_detail_view, name='notion_detail'),
+    #path('notion/<int:notion_id>/', views.notion_detail_view, name='notion_detail'),
+    path('notion_detail/<int:notion_id>/', views.notion_detail, name='notion_detail'),
+
     path('notifications/', views.notifications, name='notifications'),
     path('accounts/login/', only_card_views.login_view, name='login'),
     path('accounts/logout/', only_card_views.logout_view, name='logout'),
@@ -36,6 +38,6 @@ urlpatterns = [
     path('unblock-user/<int:user_id>/', views.unblock_user, name='unblock_user'),
     path('blocked-users/', views.blocked_user_list, name='blocked_user_list'),
     path('notion/<int:notion_id>/delete/', views.delete_notion, name='delete_notion'),
-    path('<str:username>/notion/<int:notion_id>/', views.notion_detail, name='notion_detail'), #for sitemap adding username and description to the site map
+    path('<str:username>/notion_detail_map/<int:notion_id>/', views.notion_detail_map, name='notion_detail_map'), #for sitemap adding username and description to the site map
 
 ]

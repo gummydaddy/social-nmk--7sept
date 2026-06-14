@@ -1,0 +1,776 @@
+{% if request.user.is_authenticated %}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  GLOBAL AUDIO CALL UI                                                       #}
+{#  Include once in your base template (landing_page.html):                   #}
+{#      {% include 'only_message/global_call_ui.html' %}                      #}
+{#                                                                             #}
+{#  Works on EVERY page — the notification WebSocket is the signalling bus.   #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+
+<!-- ── INCOMING CALL OVERLAY ─────────────────────────────────────────────── -->
+<div id="sc-incoming-overlay" class="sc-call-overlay" aria-hidden="true">
+    <div class="sc-call-card sc-incoming-card">
+
+        <div class="sc-ring-animation" aria-hidden="true">
+            <div class="sc-ring sc-ring-1"></div>
+            <div class="sc-ring sc-ring-2"></div>
+        </div>
+
+        <div class="sc-call-avatar">
+            <img id="sc-incoming-avatar" src="" alt="Caller"
+                 onerror="this.src='/static/images/logo.png'">
+        </div>
+
+        <div class="sc-call-name" id="sc-incoming-caller-name">…</div>
+        <div class="sc-call-status-label">Incoming audio call</div>
+
+        <div class="sc-call-actions">
+            <button class="sc-btn-reject"
+                    onclick="SocyfieCall.reject()"
+                    aria-label="Decline call">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9
+                             -.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0
+                             -.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0
+                             -.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78
+                             11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l
+                             -2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28
+                             a11.27 11.27 0 00-2.67-1.85.999.999 0 01-.56-.9v-3.1
+                             C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+                <span>Decline</span>
+            </button>
+
+            <button class="sc-btn-accept"
+                    onclick="SocyfieCall.accept()"
+                    aria-label="Accept call">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                     width="20" height="20">
+                    <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07
+                             A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0
+                             012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0
+                             01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0
+                             012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+                </svg>
+                <span>Answer</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── OUTGOING CALL OVERLAY ─────────────────────────────────────────────── -->
+<div id="sc-outgoing-overlay" class="sc-call-overlay" aria-hidden="true">
+    <div class="sc-call-card sc-outgoing-card">
+
+        <div class="sc-call-pulse-ring"></div>
+
+        <div class="sc-call-avatar">
+            <img id="sc-outgoing-avatar" src="" alt="Recipient"
+                 onerror="this.src='/static/images/logo.png'">
+        </div>
+
+        <div class="sc-call-name" id="sc-outgoing-name">…</div>
+        <div class="sc-call-status-label">Calling…</div>
+
+        <div class="sc-soundwave" aria-hidden="true">
+            <span></span><span></span><span></span><span></span><span></span>
+        </div>
+
+        <div class="sc-call-actions">
+            <button class="sc-btn-end"
+                    onclick="SocyfieCall.cancel()"
+                    aria-label="Cancel call">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9
+                             -.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0
+                             -.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0
+                             -.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78
+                             11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l
+                             -2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28
+                             a11.27 11.27 0 00-2.67-1.85.999.999 0 01-.56-.9v-3.1
+                             C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── ACTIVE CALL OVERLAY ───────────────────────────────────────────────── -->
+<div id="sc-active-overlay" class="sc-call-overlay" aria-hidden="true">
+    <div class="sc-call-card sc-active-card">
+
+        <div class="sc-call-avatar">
+            <img id="sc-active-avatar" src="" alt="Peer"
+                 onerror="this.src='/static/images/logo.png'">
+            <div class="sc-audio-indicator" id="sc-audio-indicator" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+
+        <div class="sc-call-name"  id="sc-active-call-name">…</div>
+        <div class="sc-call-status-label" id="sc-active-status">Connecting…</div>
+        <div class="sc-call-timer" id="sc-call-timer" aria-live="polite">--:--</div>
+
+        <audio id="sc-remote-audio" autoplay playsinline></audio>
+
+        <div class="sc-call-actions sc-active-actions">
+
+            <button class="sc-ctrl-btn" id="sc-mute-btn"
+                    onclick="SocyfieCall.toggleMute()"
+                    aria-label="Toggle mute" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     width="20" height="20">
+                    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+                </svg>
+                <span id="sc-mute-label">Mute</span>
+            </button>
+
+            <button class="sc-btn-end sc-btn-end-lg"
+                    onclick="SocyfieCall.end()"
+                    aria-label="End call">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9
+                             -.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0
+                             -.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0
+                             -.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78
+                             11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l
+                             -2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28
+                             a11.27 11.27 0 00-2.67-1.85.999.999 0 01-.56-.9v-3.1
+                             C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ── STYLES (scoped with sc- prefix) ──────────────────────────────────── -->
+<style>
+.sc-call-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0,0,0,.65);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    animation: scFadeIn .2s ease;
+}
+.sc-call-overlay.sc-visible { display: flex; }
+@keyframes scFadeIn { from{opacity:0} to{opacity:1} }
+
+.sc-call-card {
+    position: relative;
+    background: linear-gradient(160deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 28px;
+    padding: 40px 32px 32px;
+    width: min(340px, 92vw);
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 24px 64px rgba(0,0,0,.6);
+    animation: scSlideUp .28s cubic-bezier(.34,1.56,.64,1);
+    overflow: hidden;
+}
+@keyframes scSlideUp {
+    from{transform:translateY(40px) scale(.95);opacity:0}
+    to  {transform:translateY(0)    scale(1);  opacity:1}
+}
+
+.sc-call-avatar {
+    position: relative;
+    width: 88px; height: 88px;
+    margin: 0 auto 18px;
+}
+.sc-call-avatar img {
+    width: 88px; height: 88px;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid rgba(255,255,255,.18);
+}
+
+.sc-call-name { font-size:22px;font-weight:700;margin-bottom:6px; }
+.sc-call-status-label { font-size:13px;color:rgba(255,255,255,.55);margin-bottom:22px; }
+.sc-call-timer {
+    font-size:28px;font-weight:300;letter-spacing:3px;
+    color:#4ade80;margin-bottom:26px;font-variant-numeric:tabular-nums;
+}
+
+.sc-call-pulse-ring {
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:220px;height:220px;border-radius:50%;
+    border:2px solid rgba(37,211,102,.25);
+    animation:scPulse 2s ease-out infinite;pointer-events:none;
+}
+@keyframes scPulse {
+    0%  {transform:translate(-50%,-50%) scale(.6);opacity:.8}
+    100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}
+}
+
+.sc-ring-animation{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.sc-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(250,204,21,.3);}
+.sc-ring-1{width:180px;height:180px;animation:scRingP 1.8s ease-out infinite;}
+.sc-ring-2{width:240px;height:240px;animation:scRingP 1.8s ease-out .5s infinite;}
+@keyframes scRingP{0%{opacity:.7;transform:translate(-50%,-50%) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+
+.sc-soundwave{display:flex;align-items:center;justify-content:center;gap:4px;height:24px;margin-bottom:20px;}
+.sc-soundwave span{display:block;width:4px;border-radius:2px;background:rgba(37,211,102,.6);animation:scWave 1.2s ease-in-out infinite;}
+.sc-soundwave span:nth-child(1){height:8px;animation-delay:0s}
+.sc-soundwave span:nth-child(2){height:16px;animation-delay:.1s}
+.sc-soundwave span:nth-child(3){height:24px;animation-delay:.2s}
+.sc-soundwave span:nth-child(4){height:16px;animation-delay:.3s}
+.sc-soundwave span:nth-child(5){height:8px;animation-delay:.4s}
+@keyframes scWave{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+
+.sc-audio-indicator{position:absolute;bottom:2px;right:2px;display:flex;align-items:flex-end;gap:2px;background:#16a34a;border-radius:10px;padding:4px 5px;opacity:0;transition:opacity .3s;}
+.sc-audio-indicator.sc-active{opacity:1}
+.sc-audio-indicator span{display:block;width:3px;background:#fff;border-radius:2px;animation:scAB 1s ease-in-out infinite;}
+.sc-audio-indicator span:nth-child(1){height:6px;animation-delay:0s}
+.sc-audio-indicator span:nth-child(2){height:10px;animation-delay:.15s}
+.sc-audio-indicator span:nth-child(3){height:6px;animation-delay:.3s}
+@keyframes scAB{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+
+.sc-call-actions{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
+.sc-active-actions{flex-wrap:nowrap;gap:14px;}
+
+.sc-btn-end{
+    width:60px;height:60px;border-radius:50%;border:none;
+    background:#dc2626;color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .15s,background .15s;
+    box-shadow:0 4px 16px rgba(220,38,38,.4);
+}
+.sc-btn-end:hover{background:#b91c1c;transform:scale(1.08);}
+.sc-btn-end-lg{width:68px;height:68px;}
+
+.sc-btn-accept{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:13px 20px;background:#16a34a;color:#fff;border:none;
+    border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;
+    transition:transform .15s,box-shadow .15s;
+    box-shadow:0 4px 16px rgba(22,163,74,.4);min-width:90px;
+}
+.sc-btn-accept:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(22,163,74,.55);}
+
+.sc-btn-reject{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:13px 20px;background:#dc2626;color:#fff;border:none;
+    border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;
+    transition:transform .15s,box-shadow .15s;
+    box-shadow:0 4px 16px rgba(220,38,38,.35);min-width:90px;
+}
+.sc-btn-reject:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(220,38,38,.5);}
+
+.sc-ctrl-btn{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:13px 18px;background:rgba(255,255,255,.1);color:#fff;
+    border:1px solid rgba(255,255,255,.15);border-radius:18px;
+    font-size:11px;font-weight:500;cursor:pointer;
+    transition:background .15s,transform .15s;min-width:72px;
+}
+.sc-ctrl-btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px);}
+.sc-ctrl-btn.sc-active{background:rgba(250,204,21,.2);border-color:rgba(250,204,21,.5);color:#fbbf24;}
+
+@media(max-width:400px){
+    .sc-call-card{padding:28px 18px 22px;}
+    .sc-call-name{font-size:18px;}
+    .sc-active-actions{gap:10px;}
+    .sc-ctrl-btn{padding:11px 12px;min-width:62px;}
+}
+</style>
+
+
+<!-- ── GLOBAL CALL ENGINE ────────────────────────────────────────────────── -->
+<script>
+/* ─────────────────────────────────────────────────────────────────────────
+   SocyfieCall  — global audio call engine
+   Signalling channel: /ws/notifications/  (personal, always-on)
+   Works on EVERY page of the platform, not just the chat page.
+   ───────────────────────────────────────────────────────────────────────── */
+window.SocyfieCall = (function () {
+    'use strict';
+
+    // ── constants ──────────────────────────────────────────────────────────
+    var ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302'  },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+        ]
+    };
+
+    var CURRENT_USER_ID = {{ request.user.id }};
+    var CURRENT_USER    = '{{ request.user.username }}';
+    {% if request.user.profile.profile_picture %}
+    var CURRENT_USER_PIC = '{{ request.user.profile.profile_picture.url }}';
+    {% else %}
+    var CURRENT_USER_PIC = '';
+    {% endif %}
+
+    // ── state ───────────────────────────────────────────────────────────────
+    var _pc           = null;
+    var _localStream  = null;
+    var _isMuted      = false;
+    var _isInitiator  = false;
+    var _callActive   = false;
+    var _peerId       = null;   // other party's user_id (needed to address signals)
+    var _peerName     = '';
+    var _pendingOffer = null;
+    var _pendingCallerId = null;
+
+    var _timerHandle = null;
+    var _timerSecs   = 0;
+    var _ringCtx     = null;
+    var _ringInterval= null;
+
+    // ── notification WebSocket (set by _connectNotificationWS) ─────────────
+    //    exposed as window.notificationSocket so other code can check it
+    var _ws = null;
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  NOTIFICATION WEBSOCKET — persistent, reconnecting
+    // ════════════════════════════════════════════════════════════════════════
+    var _wsReconnectAttempts = 0;
+    var _MAX_WS_RECONNECT    = 20;
+
+    function _connectNotificationWS() {
+        var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        var url      = protocol + '://' + location.host + '/ws/notifications/';
+
+        try {
+            _ws = new WebSocket(url);
+            window.notificationSocket = _ws;
+        } catch (e) {
+            console.error('SocyfieCall: cannot open notification WS', e);
+            return;
+        }
+
+        _ws.onopen = function () {
+            console.log('🔔 Notification WS connected (call signalling ready)');
+            window.notificationSocket = _ws;
+            _wsReconnectAttempts = 0;
+        };
+
+        _ws.onmessage = function (e) {
+            var msg;
+            try { msg = JSON.parse(e.data); } catch (_) { return; }
+
+            // All call signals arrive as { type:'notification', notification:{...} }
+            if (msg.type === 'notification' && msg.notification) {
+                _handleSignal(msg.notification);
+            }
+            // Also pass regular push notifications to any external handler
+            if (window.onGlobalNotification && msg.type === 'notification') {
+                window.onGlobalNotification(msg.notification);
+            }
+        };
+
+        _ws.onerror = function () {
+            console.warn('SocyfieCall: notification WS error');
+        };
+
+        _ws.onclose = function () {
+            window.notificationSocket = null;
+            if (_wsReconnectAttempts < _MAX_WS_RECONNECT) {
+                _wsReconnectAttempts++;
+                var delay = Math.min(1500 * _wsReconnectAttempts, 15000);
+                setTimeout(_connectNotificationWS, delay);
+            }
+        };
+    }
+
+    // send a call signal via the notification WS
+    function _send(obj) {
+        if (_ws && _ws.readyState === WebSocket.OPEN) {
+            _ws.send(JSON.stringify(obj));
+            return true;
+        }
+        console.warn('SocyfieCall._send: notification WS not open');
+        return false;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  OVERLAY HELPERS
+    // ════════════════════════════════════════════════════════════════════════
+    function _show(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.add('sc-visible'); el.setAttribute('aria-hidden','false'); }
+    }
+    function _hide(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.remove('sc-visible'); el.setAttribute('aria-hidden','true'); }
+    }
+    function _hideAll() {
+        ['sc-outgoing-overlay','sc-incoming-overlay','sc-active-overlay'].forEach(_hide);
+    }
+
+    function _setImg(elId, src) {
+        var el = document.getElementById(elId);
+        if (el && src) { el.src = src; }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  RTCPeerConnection factory
+    // ════════════════════════════════════════════════════════════════════════
+    function _createPC() {
+        var pc = new RTCPeerConnection(ICE_SERVERS);
+
+        pc.onicecandidate = function (evt) {
+            if (evt.candidate && _peerId) {
+                _send({
+                    type:      'ice_candidate',
+                    peer_id:   _peerId,
+                    candidate: evt.candidate
+                });
+            }
+        };
+
+        pc.ontrack = function (evt) {
+            var audio = document.getElementById('sc-remote-audio');
+            if (audio && evt.streams && evt.streams[0]) {
+                audio.srcObject = evt.streams[0];
+            }
+            var ind = document.getElementById('sc-audio-indicator');
+            if (ind) { ind.classList.add('sc-active'); }
+            var st = document.getElementById('sc-active-status');
+            if (st) { st.textContent = 'Connected'; }
+        };
+
+        pc.oniceconnectionstatechange = function () {
+            var s = pc.iceConnectionState;
+            console.log('ICE state:', s);
+            if (s === 'failed' || s === 'closed') { end(); }
+            if (s === 'disconnected') {
+                setTimeout(function () {
+                    if (_pc && _pc.iceConnectionState === 'disconnected') { end(); }
+                }, 6000);
+            }
+        };
+
+        return pc;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  MICROPHONE
+    // ════════════════════════════════════════════════════════════════════════
+    function _getMic() {
+        return navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+            .catch(function (err) {
+                var msg = err.name === 'NotAllowedError'
+                    ? 'Microphone access was denied. Please allow it in browser settings.'
+                    : 'Microphone error: ' + err.message;
+                alert(msg);
+                throw err;
+            });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  TIMER
+    // ════════════════════════════════════════════════════════════════════════
+    function _startTimer() {
+        _timerSecs = 0;
+        var el = document.getElementById('sc-call-timer');
+        if (el) { el.textContent = '00:00'; }
+        _timerHandle = setInterval(function () {
+            _timerSecs++;
+            var m = String(Math.floor(_timerSecs / 60)).padStart(2,'0');
+            var s = String(_timerSecs % 60).padStart(2,'0');
+            if (el) { el.textContent = m + ':' + s; }
+        }, 1000);
+    }
+    function _stopTimer() {
+        if (_timerHandle) { clearInterval(_timerHandle); _timerHandle = null; }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  RINGTONE
+    // ════════════════════════════════════════════════════════════════════════
+    function _startRing() {
+        try {
+            _ringCtx = new (window.AudioContext || window.webkitAudioContext)();
+            _ringInterval = setInterval(function () {
+                [480, 620].forEach(function (freq, i) {
+                    var osc  = _ringCtx.createOscillator();
+                    var gain = _ringCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(_ringCtx.destination);
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.25, _ringCtx.currentTime);
+                    osc.start(_ringCtx.currentTime + i * 0.22);
+                    osc.stop (_ringCtx.currentTime + i * 0.22 + 0.18);
+                });
+            }, 1200);
+        } catch (_) { /* AudioContext may be blocked without user gesture */ }
+    }
+    function _stopRing() {
+        if (_ringInterval)  { clearInterval(_ringInterval);  _ringInterval = null; }
+        if (_ringCtx)       { _ringCtx.close().catch(function(){}); _ringCtx = null; }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  CLEANUP
+    // ════════════════════════════════════════════════════════════════════════
+    function _cleanup() {
+        if (_pc)         { _pc.close(); _pc = null; }
+        if (_localStream){ _localStream.getTracks().forEach(function(t){ t.stop(); }); _localStream = null; }
+
+        _isInitiator  = false;
+        _callActive   = false;
+        _peerId       = null;
+        _peerName     = '';
+        _pendingOffer = null;
+        _pendingCallerId = null;
+        _isMuted      = false;
+
+        _stopTimer();
+        _stopRing();
+
+        var mBtn  = document.getElementById('sc-mute-btn');
+        var mLbl  = document.getElementById('sc-mute-label');
+        var aInd  = document.getElementById('sc-audio-indicator');
+        var rAud  = document.getElementById('sc-remote-audio');
+
+        if (mBtn)  { mBtn.classList.remove('sc-active'); mBtn.setAttribute('aria-pressed','false'); }
+        if (mLbl)  { mLbl.textContent = 'Mute'; }
+        if (aInd)  { aInd.classList.remove('sc-active'); }
+        if (rAud)  { rAud.srcObject = null; }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SIGNAL HANDLER  (called when notification WS delivers a call event)
+    // ════════════════════════════════════════════════════════════════════════
+    function _handleSignal(notif) {
+        var t = notif.type;
+        console.log('📞 Call signal received:', t);
+
+        if (t === 'incoming_call') {
+            if (notif.caller_id === CURRENT_USER_ID) { return; } // own echo
+            if (_callActive) {
+                _send({ type: 'call_busy', caller_id: notif.caller_id });
+                return;
+            }
+            _pendingOffer    = notif.offer;
+            _pendingCallerId = notif.caller_id;
+            _peerName        = notif.caller;
+            _peerId          = notif.caller_id;
+
+            var nameEl = document.getElementById('sc-incoming-caller-name');
+            if (nameEl) { nameEl.textContent = notif.caller; }
+            // Avatar: try to fetch via profile URL if possible, fallback to default
+            _setImg('sc-incoming-avatar', notif.caller_pic || '');
+
+            _show('sc-incoming-overlay');
+            _startRing();
+
+        } else if (t === 'call_answered') {
+            if (!_isInitiator || !_pc) { return; }
+            _hide('sc-outgoing-overlay');
+            _pc.setRemoteDescription(new RTCSessionDescription(notif.answer))
+               .then(function () { _showActiveScreen(); })
+               .catch(function (err) {
+                   console.error('setRemoteDescription failed:', err);
+                   end();
+               });
+
+        } else if (t === 'call_rejected') {
+            _hideAll(); _cleanup();
+            _toast((notif.rejector || 'User') + ' declined the call.');
+
+        } else if (t === 'call_ended') {
+            _hideAll(); _cleanup();
+            _toast('Call ended.');
+
+        } else if (t === 'call_busy') {
+            _hideAll(); _cleanup();
+            _toast((_peerName || 'User') + ' is busy on another call.');
+
+        } else if (t === 'ice_candidate') {
+            if (_pc && notif.candidate && notif.sender_id !== CURRENT_USER_ID) {
+                _pc.addIceCandidate(new RTCIceCandidate(notif.candidate))
+                   .catch(function (e) { console.warn('ICE candidate error:', e); });
+            }
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  ACTIVE-CALL SCREEN
+    // ════════════════════════════════════════════════════════════════════════
+    function _showActiveScreen() {
+        var nameEl = document.getElementById('sc-active-call-name');
+        var stEl   = document.getElementById('sc-active-status');
+        var tmEl   = document.getElementById('sc-call-timer');
+        if (nameEl) { nameEl.textContent = _peerName; }
+        if (stEl)   { stEl.textContent   = 'Connecting…'; }
+        if (tmEl)   { tmEl.textContent   = '00:00'; }
+        _setImg('sc-active-avatar', document.getElementById('sc-incoming-avatar')
+            ? document.getElementById('sc-incoming-avatar').src
+            : document.getElementById('sc-outgoing-avatar')
+            ? document.getElementById('sc-outgoing-avatar').src : '');
+        _show('sc-active-overlay');
+        _startTimer();
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  TOAST
+    // ════════════════════════════════════════════════════════════════════════
+    function _toast(msg) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        Object.assign(t.style, {
+            position:'fixed', bottom:'28px', left:'50%',
+            transform:'translateX(-50%)',
+            background:'rgba(0,0,0,.82)', color:'#fff',
+            padding:'10px 22px', borderRadius:'24px',
+            fontSize:'13px', zIndex:'100001',
+            transition:'opacity .4s', opacity:'1', pointerEvents:'none'
+        });
+        document.body.appendChild(t);
+        setTimeout(function(){
+            t.style.opacity = '0';
+            setTimeout(function(){ t.remove(); }, 400);
+        }, 3500);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  PUBLIC API
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Call this from the chat-page call button.
+     * @param {number} recipientId   — the other user's Django user ID
+     * @param {string} recipientName — their username
+     * @param {string} [picUrl]      — their profile picture URL (optional)
+     */
+    function initiate(recipientId, recipientName, picUrl) {
+        if (_callActive) { alert('You are already on a call.'); return; }
+        if (!_ws || _ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected to the server. Please wait a moment and try again.');
+            return;
+        }
+
+        _peerName    = recipientName;
+        _peerId      = recipientId;
+        _isInitiator = true;
+        _callActive  = true;
+
+        // Update outgoing screen
+        var nameEl = document.getElementById('sc-outgoing-name');
+        if (nameEl) { nameEl.textContent = recipientName; }
+        if (picUrl) { _setImg('sc-outgoing-avatar', picUrl); }
+        _show('sc-outgoing-overlay');
+
+        _getMic()
+            .then(function (stream) {
+                _localStream = stream;
+                _pc = _createPC();
+                stream.getTracks().forEach(function (t) { _pc.addTrack(t, stream); });
+                return _pc.createOffer({ offerToReceiveAudio: true });
+            })
+            .then(function (offer) {
+                return _pc.setLocalDescription(offer).then(function () { return offer; });
+            })
+            .then(function (offer) {
+                _send({
+                    type:         'call_initiate',
+                    recipient_id: recipientId,
+                    caller_pic:   (typeof CURRENT_USER_PIC !== 'undefined' ? CURRENT_USER_PIC : ''),
+                    offer:        offer
+                });
+            })
+            .catch(function (err) {
+                console.error('Call initiation error:', err);
+                _hideAll(); _cleanup();
+            });
+    }
+
+    function cancel() {
+        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId }); }
+        _hideAll(); _cleanup();
+    }
+
+    function accept() {
+        if (!_pendingOffer || !_pendingCallerId) { return; }
+
+        _stopRing();
+        _hide('sc-incoming-overlay');
+
+        var callerId = _pendingCallerId;
+        var offer    = _pendingOffer;
+        _pendingOffer    = null;
+        _pendingCallerId = null;
+        _callActive      = true;
+
+        _getMic()
+            .then(function (stream) {
+                _localStream = stream;
+                _pc = _createPC();
+                stream.getTracks().forEach(function (t) { _pc.addTrack(t, stream); });
+                return _pc.setRemoteDescription(new RTCSessionDescription(offer));
+            })
+            .then(function () { return _pc.createAnswer(); })
+            .then(function (answer) {
+                return _pc.setLocalDescription(answer).then(function () { return answer; });
+            })
+            .then(function (answer) {
+                _send({
+                    type:      'call_answer',
+                    caller_id: callerId,
+                    answer:    answer
+                });
+                _showActiveScreen();
+            })
+            .catch(function (err) {
+                console.error('Call accept error:', err);
+                _send({ type: 'call_end', peer_id: callerId });
+                _hideAll(); _cleanup();
+            });
+    }
+
+    function reject() {
+        _stopRing();
+        _hide('sc-incoming-overlay');
+        if (_pendingCallerId) {
+            _send({ type: 'call_reject', caller_id: _pendingCallerId });
+        }
+        _pendingOffer    = null;
+        _pendingCallerId = null;
+    }
+
+    function end() {
+        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId }); }
+        _hideAll(); _cleanup();
+    }
+
+    function toggleMute() {
+        if (!_localStream) { return; }
+        _isMuted = !_isMuted;
+        _localStream.getAudioTracks().forEach(function (t) { t.enabled = !_isMuted; });
+        var btn = document.getElementById('sc-mute-btn');
+        var lbl = document.getElementById('sc-mute-label');
+        if (btn) { btn.classList.toggle('sc-active', _isMuted); btn.setAttribute('aria-pressed', _isMuted); }
+        if (lbl) { lbl.textContent = _isMuted ? 'Unmute' : 'Mute'; }
+    }
+
+    // ── Start the notification WebSocket as soon as the page loads ──────────
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _connectNotificationWS);
+    } else {
+        _connectNotificationWS();
+    }
+
+    return { initiate: initiate, cancel: cancel, accept: accept,
+             reject: reject, end: end, toggleMute: toggleMute };
+}());
+</script>
+{% endif %}
+

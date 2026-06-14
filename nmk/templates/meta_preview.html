@@ -6,7 +6,7 @@
 <head>
 
 {% comment %} Absolute URL helpers for crawlers {% endcomment %}
-
+  {% comment %}
   <meta charset="utf-8">
   <title>{{ title }}</title>
 
@@ -48,6 +48,65 @@
     <!-- Optional: Add author/profile URL metadata -->
     <meta property="article:author" content="{{ profile_url }}">
   {% endif %}
+  {% endcomment %}
+
+  <meta property="og:type" content="article">
+
+  <meta property="og:title"
+        content="{{ title }}">
+
+  <meta property="og:description"
+        content="{{ description|truncatechars:160 }}">
+
+  <meta property="og:url"
+        content="{{ request.build_absolute_uri }}">
+
+  <meta property="og:site_name"
+        content="Socyfie">
+
+  <meta property="og:locale"
+        content="en_IN">
+
+  {% if image_url %}
+  <meta property="og:image"
+        content="{{ image_url }}">
+
+  <meta property="og:image:secure_url"
+        content="{{ image_url }}">
+
+  <meta property="og:image:width"
+        content="1200">
+
+  <meta property="og:image:height"
+        content="630">
+
+  <meta property="og:image:alt"
+        content="{{ title }}">
+  {% endif %}
+
+  {% if media and media.file.url|is_video %}
+  <meta property="og:video"
+        content="{{ media.file.url }}">
+
+  <meta property="og:video:type"
+        content="video/mp4">
+  {% endif %}
+
+
+  <meta name="twitter:card"
+        content="summary_large_image">
+
+  <meta name="twitter:title"
+        content="{{ title }}">
+
+  <meta name="twitter:description"
+        content="{{ description|truncatechars:160 }}">
+
+  {% if image_url %}
+  <meta name="twitter:image"
+        content="{{ image_url }}">
+  {% endif %}
+
 
   <!--  Structured Data (JSON-LD for Google SEO) -->
   {% comment %}
@@ -143,7 +202,6 @@
   }
   </script>
 
-{%comment%}
   {% elif media %}
   <script type="application/ld+json">
   {
@@ -170,7 +228,6 @@
   }
   </script>
   {% endif %}
-{%endcomment%}
 
   {% else %}
   <!--  FALLBACK -->
@@ -236,106 +293,154 @@
 </head>
 
 <body>
-  {% if media %}
-    <div id="media-detail-container">
-      {% if media.user and media.user.id %}
-        <a href="{% url 'user_profile:profile' user_id=media.user.id %}" class="mention-with-avatar">
-      {% elif profile_url %}
-        <a href="{{ profile_url }}" class="mention-with-avatar">
-      {% else %}
-        <a href="#" class="mention-with-avatar">
-      {% endif %}
-          {% if media.user.profile %}
-            <img src="{{ media.user.profile|profile_picture_url }}" class="mention-avatar" alt="{{ media.user.username }}'s profile picture">
-          {% endif %}
-          <h5>@{{ media.user.username }}</h5>
-        </a>
 
-      <div id="current-media">
+{% if media %}
+
+<div id="media-detail-container">
+
+    <!-- MEDIA FIRST -->
+    <div id="current-media">
+
         {% if media.file.url|is_video %}
-          <video controls autoplay playsinline preload="metadata" poster="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ image_url }}{% endif %}" 
-                 class="img-fluid autoplay-video">
-            <source src="{{ media.file.url }}" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
-        {% else %}
-          <img src="{{ media.file.url }}" alt="{{ title }}" class="img-fluid" loading="lazy">
-        {% endif %}
-      </div>
 
-      <div id="media-description" class="description">
-        <p>{{ description|safe }}</p>
-      </div>
+            <video
+                controls
+                autoplay
+                playsinline
+                preload="metadata"
+                poster="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ image_url }}{% endif %}"
+                class="img-fluid autoplay-video">
+
+                <source src="{{ media.file.url }}" type="video/mp4">
+
+                Your browser does not support the video tag.
+
+            </video>
+
+        {% else %}
+
+            <img
+                src="{{ media.file.url }}"
+                alt="{{ title }}"
+                class="img-fluid"
+                loading="eager">
+
+        {% endif %}
+
     </div>
 
-  {% elif notion %}
-    <!-- ===================== -->
-    <!-- NOTION PREVIEW BLOCK -->
-    <!-- ===================== -->
+    <!-- USER INFO BELOW MEDIA -->
+    {% if media.user and media.user.id %}
+        <a href="{% url 'user_profile:profile' user_id=media.user.id %}"
+           class="mention-with-avatar">
 
-    <div id="notion-detail-container">
+    {% elif profile_url %}
+        <a href="{{ profile_url }}"
+           class="mention-with-avatar">
 
-        {% if notion.user and notion.user.id %}
-            <a href="{% url 'user_profile:profile' user_id=notion.user.id %}" class="mention-with-avatar" rel="author">
-        {% else %}
-            <a href="#" class="mention-with-avatar">
-        {% endif %}
+    {% else %}
+        <a href="#"
+           class="mention-with-avatar">
 
-            {% if notion.user.profile %}
-                <img src="{{ notion.user.profile|profile_picture_url }}"
-                     class="mention-avatar"
-                     alt="{{ notion.user.username }}'s profile picture">
+    {% endif %}
+
+            {% if not is_bot %}
+                {% if media.user.profile %}
+                    <img
+                        src="{{ media.user.profile|profile_picture_url }}"
+                        class="mention-avatar"
+                        alt="{{ media.user.username }}">
+                {% endif %}
             {% endif %}
-            <h5>@{{ notion.user.username }}</h5>
+
+            <h5>@{{ media.user.username }}</h5>
+
         </a>
 
-        <div id="notion-content" class="description">
-            <p>{{ notion.content|truncatechars:1000|safe }}</p>
-        </div>
+    <div id="media-description"
+         class="description">
 
-        {% if image_url %}
-        <div class="notion-media">
-            <img src="{{ image_url }}" alt="{{ title }}" style="width: 100%; max-width: 500px; margin-top: 15px;">
-        </div>
-        {% endif %}
+        <p>{{ description|safe }}</p>
 
-        {% if notion.hashtags.all %}
-            <div class="description">
-                {% for tag in notion.hashtags.all %}
-                    <span>#{{ tag.name }}</span>{% if not forloop.last %}, {% endif %}
-                {% endfor %}
-            </div>
-        {% endif %}
-
-        {% if notion.created_at %}
-            <div class="description">
-                <small>
-                    Published on
-                    <time datetime="{{ notion.created_at|date:'c' }}">
-                        {{ notion.created_at|date:"F j, Y" }}
-                    </time>
-                </small>
-            </div>
-        {% endif %}
     </div>
 
-  {% elif profile_user %}
-    <div class="profile-preview">
-      {% if image_url %}
-        <img src="{{ image_url }}" alt="{{ profile_user.username }}'s profile picture">
-      {% endif %}
-      <div class="profile-name">@{{ profile_user.username }}</div>
-      <div class="description">{{ description }}</div>
+</div>
+
+{% elif notion %}
+
+<div id="notion-detail-container">
+
+    {% if notion.user and notion.user.id %}
+        <a href="{% url 'user_profile:profile' user_id=notion.user.id %}"
+           class="mention-with-avatar">
+    {% else %}
+        <a href="#">
+    {% endif %}
+
+        {% if notion.user.profile and not is_bot %}
+            <img
+                src="{{ notion.user.profile|profile_picture_url }}"
+                class="mention-avatar"
+                alt="{{ notion.user.username }}">
+        {% endif %}
+
+        <h5>@{{ notion.user.username }}</h5>
+
+    </a>
+
+    <div class="description">
+        {{ notion.content|truncatechars:1000|safe }}
     </div>
 
-  {% else %}
-    <div class="generic-preview">
-      <h2>{{ title }}</h2>
-      <p class="description">{{ description|truncatechars:160 }}</p>
-      {% if image_url %}
-        <img src="{{ image_url }}" alt="{{ title }}">
-      {% endif %}
+    {% if image_url %}
+        <img
+            src="{{ image_url }}"
+            alt="{{ title }}"
+            loading="lazy">
+    {% endif %}
+
+</div>
+
+{% elif profile_user %}
+
+<div class="profile-preview">
+
+    {% if image_url %}
+        <img
+            src="{{ image_url }}"
+            alt="{{ profile_user.username }}">
+    {% endif %}
+
+    <div class="profile-name">
+        @{{ profile_user.username }}
     </div>
-  {% endif %}
+
+    <div class="description">
+        {{ description }}
+    </div>
+
+</div>
+
+{% else %}
+
+<div class="generic-preview">
+
+    <h2>{{ title }}</h2>
+
+    <p class="description">
+        {{ description|truncatechars:160 }}
+    </p>
+
+    {% if image_url %}
+        <img
+            src="{{ image_url }}"
+            alt="{{ title }}">
+    {% endif %}
+
+</div>
+
+{% endif %}
+
 </body>
+
 </html>

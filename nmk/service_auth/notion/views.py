@@ -449,7 +449,8 @@ def my_notions(request, user_id):
 '''
 
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
-def notion_detail_view(request, notion_id):
+#def notion_detail_view(request, notion_id):
+def notion_detail(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
     related_notions = Notion.objects.filter(user=notion.user).exclude(id=notion_id)
 
@@ -980,7 +981,7 @@ def blocked_user_list(request):
 # function for sitem map
 #________________
 
-def notion_detail(request, username, notion_id):
+def notion_detail_map(request, username, notion_id):
     user = get_object_or_404(AuthUser, username=username)
     notion = get_object_or_404(Notion, id=notion_id, user=user)
     return notion_detail_view(request, notion_id=notion.id)  # reuse old view

@@ -114,7 +114,7 @@ def create_message_notification(sender_username, sender_id, recipient_user_id, m
         'message': message_preview[:100],
         'timestamp': time.time(),
         'read': False,
-        'url': f'/message/user_messages_view/{sender_username}/',
+        'url': f'/user_messages_view/{sender_username}/',
         'message_id': message_id
     }
     

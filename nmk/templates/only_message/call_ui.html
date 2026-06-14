@@ -1,0 +1,58 @@
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  call_ui.html — include this inside user_messages.html                     #}
+{#                                                                             #}
+{#  The SocyfieCall engine lives in global_call_ui.html (landing_page.html).  #}
+{#  This file contains ONLY the call button.                                  #}
+{#  Do NOT put any SocyfieCall engine or overlay HTML here.                   #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+{# Build a JS-safe profile picture URL for the recipient #}
+{% with pic_url=recipient.profile|profile_picture_url %}
+
+<button
+    id="audio-call-btn"
+    onclick="SocyfieCall.initiate({{ recipient.id }}, '{{ recipient.username|escapejs }}', '{{ pic_url|escapejs }}')"
+    title="Audio call with {{ recipient.username }}"
+    aria-label="Start audio call with {{ recipient.username }}"
+>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+         width="16" height="16" aria-hidden="true">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07
+                 A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.01 1.18 2 2 0
+                 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0
+                 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0
+                 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/>
+    </svg>
+    <span>Call</span>
+</button>
+
+{% endwith %}
+
+<style>
+#audio-call-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #25d366 0%, #128C7E 100%);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    vertical-align: middle;
+    letter-spacing: .3px;
+    box-shadow: 0 2px 8px rgba(18,140,126,.35);
+    transition: transform .15s, box-shadow .15s;
+}
+#audio-call-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(18,140,126,.45);
+}
+#audio-call-btn:active { transform: translateY(0); }
+</style>

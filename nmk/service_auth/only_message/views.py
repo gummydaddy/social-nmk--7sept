@@ -74,7 +74,7 @@ def get_or_create_conversation_key(sender, recipient):
 def _base(request):
     return render(request,'_base.html')
 
-
+'''
 def get_online_users(request):
     online_users = []
     for user in AuthUser.objects.all():
@@ -82,6 +82,38 @@ def get_online_users(request):
             online_users.append(user.id)
     return JsonResponse({'online_users': online_users})
 
+'''
+'''
+def get_online_users(request):
+    online_threshold = now() - timedelta(minutes=5)
+
+    online_users = list(
+        LoggedInUser.objects.filter(
+            last_activity__gte=online_threshold
+        ).values_list('user_id', flat=True)
+    )
+
+    return JsonResponse({
+        'online_users': online_users
+    })
+'''
+
+def get_online_users(request):
+    online_threshold = now() - timedelta(minutes=5)
+
+    online_users = [
+        {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }
+        for obj in LoggedInUser.objects.select_related('user').filter(
+            last_activity__gte=online_threshold
+        )
+    ]
+
+    return JsonResponse({
+        "online_users": online_users
+    })
 #----------------------------------------------------------------------------------------
 #
 #

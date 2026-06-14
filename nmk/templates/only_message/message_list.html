@@ -4,10 +4,77 @@
 {% load custom_filters_message %}
 {% load media_filters %}
 
-<style>
-    color: #123;
-</style>
 {% block main_content %}
+<style>
+.avatar-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.online-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    margin-right: 8px;
+    vertical-align: middle;
+    transition: background-color 0.3s ease;
+}
+
+.online-dot.online {
+    background: #28a745;
+}
+
+{%comment%}
+.online-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ccc;
+    margin-right: 8px;
+    vertical-align: middle;
+    transition: background-color 0.3s ease;
+}
+
+
+.online-dot {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+
+    width: 12px;
+    height: 12px;
+
+    border-radius: 50%;
+    background: #ccc;
+    border: 2px solid white;
+}
+
+.online-dot.online {
+    background: #28a745;
+}
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(40,167,69,.7);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(40,167,69,0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(40,167,69,0);
+    }
+}
+{%endcomment%}
+
+.mention-with-avatar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+</style>
+
     <script src="{% static 'js/pull_to_refresh.js' %}"></script>   
 
 <form method="GET" action="{% url 'only_message:search_user_message' %}">
@@ -20,58 +87,69 @@
     {% for user in users %}
     <li data-username="{{ user.username|escape }}">
 
-    <a href="{% url 'only_message:user_messages_view' username=user.username %}" 
-       class="mention-with-avatar">
+        <a href="{% url 'only_message:user_messages_view' username=user.username %}"
+           class="mention-with-avatar">
 
-        <img src="{{ user.profile|profile_picture_url }}"
-             class="mention-avatar"
-             alt="{{ user.username }}'s profile picture">
+            <span class="online-dot"></span>
 
-        <p>{{ user.username }}</p>
+            <img src="{{ user.profile|profile_picture_url }}"
+                 class="mention-avatar"
+                 alt="{{ user.username }}'s profile picture">
 
-    </a>
+            <p>{{ user.username }}</p>
+
+        </a>
 
     </li>
     {% endfor %}
 </ul>
+{% endblock %}
 
+{% block script-user-status %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        function updateOnlineStatus() {
-            fetch('{% url "only_message:get_online_users" %}', {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json' // Added Accept header
+document.addEventListener('DOMContentLoaded', function() {
+
+    function updateOnlineStatus() {
+
+        fetch('{% url "only_message:get_online_users" %}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+
+            const userListItems = document.querySelectorAll('#user-list li');
+
+            userListItems.forEach(item => {
+
+                const username = item.getAttribute('data-username');
+
+                const onlineUser = data.online_users.find(
+                    user => user.username === username
+                );
+
+                const dot = item.querySelector('.online-dot');
+
+                if (onlineUser) {
+                    dot.classList.add('online');
+                } else {
+                    dot.classList.remove('online');
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                const userListItems = document.querySelectorAll('#user-list li');
-                userListItems.forEach(item => {
-                    const username = item.getAttribute('data-username');
-                    const userId = data.online_users.find(user => user.username === username)?.id;
-                    //const userId = data.user_ids[username];
-                    const statusSpan = item.querySelector('.status');
-                    if (statusSpan) {
-                        if (userId) {
-                        //if (data.online_users.includes(userId)) {
-                            statusSpan.textContent = 'Online';
-                        } else {
-                            statusSpan.textContent = 'Offline';
-                        }
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
+
             });
-        }
-    
-        // Update status every 30 seconds
-        setInterval(updateOnlineStatus, 9000);
-    
-        // Initial update
-        updateOnlineStatus();
-    });
+
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    updateOnlineStatus();
+
+    setInterval(updateOnlineStatus, 9000);
+
+});
 </script>
 {% endblock %}

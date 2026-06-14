@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 
 class CompressedMediaStorage(S3Boto3Storage):
+    file_overwrite = False
+
+'''
+class CompressedMediaStorage(S3Boto3Storage):
     def __init__(self, *args, **kwargs):
         self.image_quality = kwargs.pop('image_quality', 85)
         self.max_image_dimension = kwargs.pop('max_image_dimension', 1920)
@@ -64,7 +68,7 @@ class CompressedMediaStorage(S3Boto3Storage):
         logger.info(f"Audio compression placeholder for: {name} (not implemented)")
         return content  # Optional: implement audio compression later
 
-
+'''
 
 
 
