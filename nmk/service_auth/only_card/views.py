@@ -175,7 +175,7 @@ def signup(request):
     return render(request, 'signup.html', {'form': form})
 
 
-
+'''
 @csrf_exempt
 #@never_cache
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
@@ -218,6 +218,116 @@ def login_view(request):
 
                     # Ensure the session remains intact after password update
                     update_session_auth_hash(request, user)
+                    # Set session expiry based on "remember me"
+                    if not remember_me:
+                        request.session.set_expiry(0)  # Session expires on browser/app close
+                    else:
+                        request.session.set_expiry(60 * 60 * 24 * 100)  # 14 days
+
+                    #response = redirect('/following_media')  # Default redirect
+                    response = redirect('/feed')  # Default redirect
+
+
+                    # Redirect based on user roles
+                    if CustomGroupAdmin.objects.filter(user=user).exists():
+                        return redirect('/subgroup_landing_page')
+                    elif user.is_staff:
+                        return redirect('/super_user_landing_page')
+
+                    # Set session/cookie/cache
+                    response.set_cookie('username', username)
+                    cache.set(f'user_{user.id}', username)
+                    return response  
+
+            except Exception as firebase_error:
+                # Handle Firebase authentication errors
+                error_message = str(firebase_error)
+                if "EMAIL_NOT_FOUND" in error_message:
+                    messages.error(request, "No account found with this email.")
+                elif "INVALID_PASSWORD" in error_message:
+                    messages.error(request, "The password is incorrect. Please try again.")
+                else:
+                    messages.error(request, f"Firebase error: {error_message}")
+
+        except User.DoesNotExist:
+            messages.error(request, 'Invalid username or email')
+
+        # Group-based authentication (if necessary)
+        try:
+            group = CustomGroup.objects.get(name=username_or_email)
+            user = group.users.first()
+            if user:
+                login(request, user)
+                # Set session expiry based on "remember me" here as well
+                if not remember_me:
+                    request.session.set_expiry(0)
+                else:
+                    request.session.set_expiry(60 * 60 * 24 * 100)
+
+                request.session['association_name'] = username_or_email
+                request.session['user_id'] = user.id
+                cache.set(f'user_{user.id}', username_or_email)
+                return redirect('/landing_page')
+        except CustomGroup.DoesNotExist:
+            #pass
+            messages.error(request, 'Invalid username, email, or group name.')
+
+        except Exception as e:
+            messages.error(request, f"Login failed: {str(e)}")
+
+        return render(request, 'login_view.html')
+
+    else:
+        return render(request, 'login_view.html')
+'''
+
+
+
+@csrf_exempt
+#@never_cache
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+def login_view(request):
+    if request.user.is_authenticated:
+
+        #return redirect('/following_media')  
+        return redirect('/feed')  
+
+    if request.method == 'POST':
+        username_or_email = request.POST['username'].strip()
+        password = request.POST['pass1']
+        remember_me = request.POST.get('remember_me')  # This is a checkbox in your HTML
+
+        try:
+            # Check if the input is an email or username
+            if '@' in username_or_email:
+                # Authenticate with email
+                user = User.objects.get(email=username_or_email)
+                username = user.username
+            else:
+                # Authenticate with username
+                username = username_or_email
+                user = User.objects.get(username=username)
+
+            # Firebase authentication: Check if the provided credentials are correct in Firebase
+            try:
+                firebase_user = auth.sign_in_with_email_and_password(user.email, password)
+
+                # At this point, the password matches Firebase. Update Django's password with Firebase password.
+                #user.set_password(password)  # Sync the Firebase password with Django's password
+                #user.save()
+
+                # Authenticate the user in Django with the updated password
+                #user = authenticate(request, username=username, password=password)
+
+                # Retrieve the Django user
+                user = User.objects.get(username=username)
+
+                if user is not None:
+                    # Log the user in Django
+                    login(request, user)
+
+                    # Ensure the session remains intact after password update
+                    #update_session_auth_hash(request, user)
                     # Set session expiry based on "remember me"
                     if not remember_me:
                         request.session.set_expiry(0)  # Session expires on browser/app close

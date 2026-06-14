@@ -3,7 +3,6 @@
 {% load media_filters %}
 {% load static %}
 
-
 <!-- 1. CSS first so UI renders correctly immediately -->
 <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
 <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
@@ -201,7 +200,7 @@
             box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
             border-radius: 20px;
             position: relative;
-            top: 20px;
+            {%comment%}top: 20px;{%endcomment%}
             transition: background-color 0.3s ease;
         }
 
@@ -460,11 +459,11 @@
         }
     
         .media-item {
-            background-color: white;
+           {% comment %} background-color: white;{% endcomment %}
             border: 0px solid #ddd;
             padding: 1px;
             border-radius: 2px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+           {% comment %} box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);{% endcomment %}
         }
 
         .row>*{ 
@@ -494,6 +493,7 @@
           }
 
         nav.navbar {
+           z-index: 1050;
            border-radius: 12px;
            margin-bottom: 10px;
 
@@ -501,6 +501,13 @@
         .navbar-dark .navbar-nav .nav-link {
           color: white;
         }
+
+        .mention-with-avatar {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
 
         #globe-button, .openbtn, .messagebtn {
           background-color: #4F46E5;
@@ -656,7 +663,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </head>
 
-
+</br>
 <body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
 
     <!-- Google Tag Manager (noscript) -->
@@ -708,10 +715,18 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <header>
               <nav class="navbar navbar-expand-lg navbar-dark bg-white">
-                <div class="container">
+                <div class="container  d-flex align-items-center">
                   <a href="{% url 'only_message:message_list_view' %}">
                     <button class="messagebtn">💬</button>
                   </a>
+
+                  <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-4">
+                      <input type="text" name="q" class="form-control me-2" placeholder="Search descriptions, hashtags..." value="{{ request.GET.q }}">
+                      <!--<button type="submit" class="btn btn-primary">Search</button> <i class="fas fa-user-circle"></i>-->
+                      <button type="submit" class="fas fa-search"></button> 
+
+                  </form>
+
                   <button class="openbtn" onclick="openNav()">☰</button>
                 </div>
               </nav>
@@ -1258,11 +1273,15 @@ document.addEventListener('DOMContentLoaded', function () {
 {% block vault_doc_script%}
 {% endblock %}
 
+{% block script-user-status %}
+{% endblock %}
 
-<!--script for loading popup messages-->
-<script src="{% static 'js/popup_loading.js' %}"></script>
+    <!-- Global Call UI -->
+    {% include 'only_message/global_call_ui.html' %}
 
-<!--script for loading popup messages-->
+    <!--script for loading popup messages-->
+    <script src="{% static 'js/popup_loading.js' %}"></script>
+    <!--script for loading popup messages-->
 
     <!--<div id="popup-container" class="popup-container"></div>-->
     </body>

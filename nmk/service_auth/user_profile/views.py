@@ -65,7 +65,7 @@ import asyncio
 
 
 import random
-from collections import deque
+from collections import deque, defaultdict
 from django.template.loader import render_to_string
 from django.utils.html import escape, mark_safe
 from django.urls import reverse
@@ -124,15 +124,15 @@ HIGH_INFLUENCER_BOOST = 6
 CATEGORY_ENGAGEMENT_WEIGHT = 13
 FRESHNESS_WEIGHT = 10
 DIVERSITY_DECAY_RATE = 0.5
-MAX_VIEWED_MEDIA_CACHE = 300
+MAX_VIEWED_MEDIA_CACHE = 69
 FALLBACK_MEDIA_COUNT = 24
 #for cacshing media in explore_detail for 20 min delay 
 COOLDOWN_MINUTES = 20
 DESCRIPTION_PRIORITY_UNIT = 5   # points per overlapping word (kept modest)
 
 SCORING_NOISE = 3.0
-PERSONALIZED_POOL_SIZE = 100  # From collaborative filtering
-CATEGORY_POOL_SIZE = 200      # From category matching
+PERSONALIZED_POOL_SIZE = 30  # From collaborative filtering
+CATEGORY_POOL_SIZE = 50      # From category matching
 
 #__________________________
 #Caching
@@ -1245,7 +1245,7 @@ def explore_me(request):
             score -= 100
         
         # ✅ 8. APPLY PENALTIES
-        penalty_multiplier = 1.0
+        penalty_multiplier = 2.0
         
         # Creator penalty
         creator_id = media.user_id
@@ -1253,6 +1253,8 @@ def explore_me(request):
             penalty_count = creator_penalty_map[creator_id]
             from .tasks import PENALTY_SAME_CREATOR
             creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
+            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+
             penalty_multiplier *= creator_penalty
         
         # Category penalty
@@ -1366,159 +1368,6 @@ def explore_me(request):
         'q_filter': q_filter,
     })
 
-'''
-@login_required
-@cache_page(60 * 4)
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
-def explore_me(request):
-    user = request.user
-
-    # Reset session and preference state
-    if request.GET.get('reset') == '1':
-        request.session.pop('explore_state', None)
-        pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
-        pref.viewed_media = []
-        pref.save()
-        cache.delete(f'user_{user.id}_explore_served_ids')
-        return redirect('user_profile:explore_me')
-
-    # --- User preferences (only what’s actually used) ---
-    pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
-    liked_ht = pref.liked_hashtags or []
-    not_int_ht = pref.not_interested_hashtags or []
-    viewed_ht = pref.viewed_hashtags or []
-    search_ht = pref.search_hashtags or []
-    viewed_media_ids = set(pref.viewed_media or [])
-    not_int_media_ids = set(pref.not_interested_media or [])
-    liked_cats = pref.liked_categories or []
-
-    hashtag_filter = request.GET.get('hashtag', '')
-    q_filter = request.GET.get('q', '')
-
-    # --- Blocked users ---
-    blocked_me = list(BlockedUser.objects.filter(blocked=user).values_list('blocker', flat=True))
-    i_blocked = list(BlockedUser.objects.filter(blocker=user).values_list('blocked', flat=True))
-
-    # --- Served IDs from cache ---
-    served_cache_key = f'user_{user.id}_explore_served_ids'
-    already_served_ids = set(cache.get(served_cache_key, []))
-
-    # --- Base Query ---
-    base_qs = Media.objects.exclude(
-        user__in=blocked_me
-    ).exclude(
-        user__in=i_blocked
-    ).exclude(
-        id__in=already_served_ids
-    ).exclude(
-        id__in=not_int_media_ids
-    ).exclude(
-        # Exclude media that is private and user not buddy
-        Q(is_private=True) & ~Q(user__buddy_list__buddy=user)
-    ).exclude(
-        # Exclude media from private profiles unless buddy/follower/self
-        Q(user__profile__is_private=True) &
-        ~Q(user__buddy_list__buddy=user) &
-        ~Q(user__follower_set__follower=user) &
-        ~Q(user=user)
-    ).order_by('-created_at')
-
-    # --- Apply filters ---
-    if hashtag_filter:
-        base_qs = base_qs.filter(hashtags__name__icontains=hashtag_filter)
-    if q_filter:
-        base_qs = base_qs.filter(
-            Q(description__icontains=q_filter) | Q(hashtags__name__icontains=q_filter)
-        ).distinct()
-
-    # --- Limit candidates ---
-    TOP_CANDIDATES = 300
-    media_ids = list(base_qs.values_list('id', flat=True)[:TOP_CANDIDATES])
-
-    # --- Fetch media with only necessary fields, preserve order ---
-    media_objs = Media.objects.filter(id__in=media_ids) \
-        .select_related('user', 'user__profile') \
-        .prefetch_related('hashtags', 'likes') \
-        .only('id', 'user_id', 'created_at', 'description', 'file', 'thumbnail', 'is_private')
-
-    media_map = {m.id: m for m in media_objs}
-    media_list = [media_map[mid] for mid in media_ids if mid in media_map]
-
-    # --- Scoring ---
-    now = timezone.now()
-    SCORING_NOISE = 3.0
-
-    def score(media):
-        base_score = calculate_media_score(
-            media,
-            liked_ht,
-            not_int_ht,
-            viewed_ht,
-            search_ht,
-            liked_cats,
-        )
-        age_hours = (now - media.created_at).total_seconds() / 3600
-        base_score += max(FRESHNESS_WEIGHT - (age_hours * DIVERSITY_DECAY_RATE), 0)
-        if media.user_id == user.id:
-            base_score -= 100
-        return base_score
-
-    def noisy_score(media):
-        return score(media) + random.uniform(-SCORING_NOISE, SCORING_NOISE)
-
-    new_media = [m for m in media_list if m.id not in viewed_media_ids]
-    old_media = [m for m in media_list if m.id in viewed_media_ids]
-
-    scored_new = sorted(new_media, key=noisy_score, reverse=True)
-    scored_old = sorted(old_media, key=noisy_score, reverse=True)
-    sorted_media = scored_new + scored_old
-
-    # --- Fallback ---
-    if len(sorted_media) < 12:
-        fallback = Media.objects.exclude(
-            id__in=not_int_media_ids.union({m.id for m in sorted_media})
-        ).annotate(
-            likes_count=Count('likes')
-        ).order_by('-likes_count', '-created_at')[:FALLBACK_MEDIA_COUNT]
-        sorted_media += list(fallback)
-
-    # --- Pagination ---
-    paginator = Paginator(sorted_media, 24)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    # --- Update served IDs cache ---
-    served_this_page = [media.id for media in page_obj]
-    updated_served_ids = list(already_served_ids.union(served_this_page))
-    cache.set(served_cache_key, updated_served_ids, timeout=60 * 30)
-
-    # --- AJAX ---
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-        media_json = []
-        for m in page_obj:
-            media_json.append({
-                'id': m.id,
-                'file_url': m.file.url,
-                'is_video': m.file.url.lower().endswith(
-                    ('.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv')
-                ),
-                'thumbnail_url': m.thumbnail.url if m.thumbnail else None,
-                'explore_detail_url': reverse('user_profile:explore_detail', args=[m.id]),
-            })
-
-        return JsonResponse({
-            'media': media_json,
-            'has_next': page_obj.has_next(),  #  fixed
-            'current_page': page_obj.number,
-        }, headers={'Cache-Control': 'public, max-age=120, s-maxage=120'})
-
-    # --- Initial render ---
-    return render(request, 'explore.html', {
-        'page_obj': page_obj,
-        'hashtag_filter': hashtag_filter,
-        'q_filter': q_filter,
-    })
-'''
 #____________________________________________________________________________
 # ENHANCED EXPLORE VIEW - INTEGRATED WITH COLLABORATIVE FILTERING
 #____________________________________________________________________________
@@ -1786,7 +1635,7 @@ def search_uploads(request):
         score -= len(not_interested_overlap) * 15
         
         # ✅ 10. APPLY PENALTIES
-        penalty_multiplier = 1.0
+        penalty_multiplier = 2.0
         
         # Creator penalty
         creator_id = media.user_id
@@ -1794,6 +1643,8 @@ def search_uploads(request):
             penalty_count = creator_penalty_map[creator_id]
             from .tasks import PENALTY_SAME_CREATOR
             creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
+            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+
             penalty_multiplier *= creator_penalty
         
         # Category penalty
@@ -1868,104 +1719,6 @@ def search_uploads(request):
     })
 
 
-'''
-@cache_page(60 * 10)
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
-@login_required
-def search_uploads(request):
-    query = request.GET.get('q', '').strip()
-    hashtag_filter = request.GET.get('hashtag', '').strip()
-
-    # Fetch user preferences
-    user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user=request.user)
-    liked_hashtags = user_hashtag_pref.liked_hashtags
-    not_interested_hashtags = user_hashtag_pref.not_interested_hashtags
-    viewed_hashtags = user_hashtag_pref.viewed_hashtags
-    search_hashtags = user_hashtag_pref.search_hashtags
-    viewed_media = user_hashtag_pref.viewed_media
-    liked_categories = user_hashtag_pref.liked_categories
-
-    # Add search query to preferences
-    if query:
-        user_hashtag_pref.add_search_hashtag(query)
-
-    # Exclude blocked users
-    blocked_users = BlockedUser.objects.filter(blocker=request.user).values_list('blocked', flat=True)
-    blocked_by_users = BlockedUser.objects.filter(blocked=request.user).values_list('blocker', flat=True)
-
-    # Base queryset with eager loading
-    media_objects = (
-        Media.objects.filter(is_private=False, user__profile__is_private=False)
-        .exclude(user__in=blocked_users)
-        .exclude(user__in=blocked_by_users)
-        .select_related("user", "user__profile")
-        .prefetch_related("hashtags", "likes")
-        .order_by("-created_at")
-    )
-
-    # Apply search filters
-    if query:
-        media_objects = media_objects.filter(
-            Q(description__icontains=query) |
-            Q(hashtags__name__icontains=query) |
-            Q(user__username__icontains=query)
-        )
-
-    if hashtag_filter:
-        media_objects = media_objects.filter(hashtags__name__icontains=hashtag_filter)
-
-    # Shuffle for randomness
-    media_list = list(media_objects.distinct())
-    random.shuffle(media_list)
-
-    # Calculate scores
-    media_scores = [
-        (media, calculate_media_score(
-            media,
-            liked_hashtags,
-            not_interested_hashtags,
-            viewed_hashtags,
-            search_hashtags,
-            liked_categories
-        ))
-        for media in media_list
-    ]
-
-    sorted_media = [m[0] for m in sorted(media_scores, key=lambda x: x[1], reverse=True)]
-
-    # Pagination
-    paginator = Paginator(sorted_media, 30)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
-
-    # Update viewed media
-    new_viewed = set(viewed_media)
-    for media in page_obj:
-        if media.id not in new_viewed:
-            new_viewed.add(media.id)
-    user_hashtag_pref.viewed_media = list(new_viewed)
-    user_hashtag_pref.save(update_fields=["viewed_media"])
-
-    # AJAX response
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        media_list = [
-            {
-                "id": m.id,
-                "file_url": m.file.url,
-                "is_video": m.file.url.lower().endswith(".mp4"),
-                "user_username": m.user.username,
-                "description": m.description,
-            }
-            for m in page_obj
-        ]
-        return JsonResponse({"media": media_list})
-
-    return render(request, "explore.html", {
-        "page_obj": page_obj,
-        "query": query,
-        "hashtag_filter": hashtag_filter,
-    })
-'''
 
 # ===============================================================
 # ENHANCED UPLOAD SEARCH WITH COLLABORATIVE FILTERING & PENALTIES
@@ -1986,7 +1739,7 @@ PERSONALIZED_RELATED_LIMIT = 20  # Limit for personalized related media
 
 RELATED_MEDIA_FETCH_MULTIPLIER = 2
 PERSONALIZED_RELATED_LIMIT = 20
-SESSION_SEEN_RELATED_LIMIT = 200  # Max related media IDs to track per session
+SESSION_SEEN_RELATED_LIMIT = 40  # Max related media IDs to track per session
 #PAGE_SIZE = 8
 # Constants
 #CATEGORY_ENGAGEMENT_WEIGHT = 13
@@ -2417,7 +2170,7 @@ def explore_detail(request, media_id):
             score += 10  # Small bonus for variety
         
         #  7. NEW: Apply penalties
-        penalty_multiplier = 1.0
+        penalty_multiplier = 2.0
         
         # Creator penalty
         creator_id = m.user_id
@@ -2425,6 +2178,8 @@ def explore_detail(request, media_id):
             penalty_count = creator_penalty_map[creator_id]
             from .tasks import PENALTY_SAME_CREATOR
             creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
+            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+
             penalty_multiplier *= creator_penalty
         
         # Category penalty
@@ -2499,13 +2254,15 @@ def explore_detail(request, media_id):
             score += 8
         
         #  6. NEW: Apply penalties
-        penalty_multiplier = 1.0
+        penalty_multiplier = 2.0
         
         creator_id = m.user_id
         if creator_id in creator_penalty_map:
             penalty_count = creator_penalty_map[creator_id]
             from .tasks import PENALTY_SAME_CREATOR
             creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
+            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+
             penalty_multiplier *= creator_penalty
         
         if media_category_str in category_penalty_map:
@@ -2687,18 +2444,18 @@ def explore_detail(request, media_id):
 #without global cache setup
 
 logger = logging.getLogger(__name__)
-PAGE_SIZE = 6
-CANDIDATE_POOL_SIZE = 120
-GLOBAL_EXPLORE_CAP = 400
+PAGE_SIZE = 9
+CANDIDATE_POOL_SIZE = 30
+GLOBAL_EXPLORE_CAP = 89
 CREATOR_COOLDOWN = 7          # posts before same creator can reappear strongly
 CATEGORY_STREAK_LIMIT = 3     # avoid too many same-category posts in a row
-CREATOR_FATIGUE_WINDOW = 8   # if user saw too many from same creator recently → downrank
-TRENDING_FETCH_LIMIT = 80  # Number of trending IDs to pull from Redis
-DISCOVERY_FETCH_LIMIT = 200
-FOLLOWING_FETCH_LIMIT = 50
-MEDIA_OBJECT_CACHE_TIMEOUT = 60 * 30  # 30 minutes
-SESSION_SEEN_LIMIT =350  # prevent session from growing forever
-CACHE_EXPIRY_DAYS = 2
+CREATOR_FATIGUE_WINDOW = 4   # if user saw too many from same creator recently → downrank
+TRENDING_FETCH_LIMIT = 20  # Number of trending IDs to pull from Redis
+DISCOVERY_FETCH_LIMIT = 50
+FOLLOWING_FETCH_LIMIT = 20
+MEDIA_OBJECT_CACHE_TIMEOUT = 60 * 5  # 30 minutes
+SESSION_SEEN_LIMIT =69  # prevent session from growing forever
+CACHE_EXPIRY_DAYS = 1
 
 PERSONALIZED_FETCH_LIMIT = 30  # Limit for personalized recommendations per fetch
 
@@ -2713,7 +2470,7 @@ GAUSSIAN_STD_DEV = 25  # Standard deviation
 
 # Lucky boost
 LUCKY_BOOST_CHANCE = 0.05  # 5% chance
-LUCKY_BOOST_VALUES = [100, 200, 300]  # Possible boost amounts
+LUCKY_BOOST_VALUES = [50, 100, 150]  # Possible boost amounts
 
 # Configuration constants
 FEED_ROTATION_DAYS = 5  # Default rotation period
@@ -2768,8 +2525,9 @@ class FeedMediaFetcher:
             # Fetch more than needed for rotation
             recommended_raw = self.redis_conn.zrevrange(
                 recommendation_key, 
-                0, 
-                PERSONALIZED_FETCH_LIMIT * 2 - 1, 
+                0,
+                #30 - 1,  # ← CHANGED FROM 150
+                PERSONALIZED_FETCH_LIMIT - 1, 
                 withscores=True
             )
             
@@ -2778,7 +2536,7 @@ class FeedMediaFetcher:
                 (int(mid), score) 
                 for mid, score in recommended_raw 
                 if int(mid) not in self.seen_media_ids
-            ][:PERSONALIZED_FETCH_LIMIT]
+            ] [:PERSONALIZED_FETCH_LIMIT]
             
             if not recommended_with_scores:
                 return [], {}
@@ -2796,7 +2554,21 @@ class FeedMediaFetcher:
                 .prefetch_related('hashtags', 'likes')
                 .annotate(likes_count=Count('likes'))
             )
-            
+            '''
+
+            # new ✅ Only fetch what passed Redis filter
+            personalized_media = list(
+                Media.objects.filter(id__in=recommended_ids)
+                .filter(self.get_privacy_filter())
+                .exclude(user__in=self.users_blocked_me | self.users_i_blocked)
+                .exclude(id__in=self.not_interested_media_ids)
+                .select_related('user', 'user__profile')
+                .prefetch_related('hashtags')  # ← Reduced: removed 'likes'
+                .only('id', 'user_id', 'file', 'thumbnail', 'description', 
+                      'category', 'created_at', 'view_count', 'is_private')  # ← Only needed fields
+            )
+            '''
+
             # Map scores
             scores_map = {mid: score for mid, score in recommended_with_scores}
             
@@ -2891,6 +2663,70 @@ class FeedMediaFetcher:
             .order_by('-created_at')[:DISCOVERY_FETCH_LIMIT]
         )
 
+    '''
+    def enforce_creator_diversity(self, sorted_media, max_consecutive=2):
+        """
+        Ensure no more than max_consecutive posts from same creator
+        """
+        result = []
+        creator_streak = {}
+    
+        for media in sorted_media:
+            creator_id = media.user_id
+            current_streak = creator_streak.get(creator_id, 0)
+        
+            if current_streak < max_consecutive:
+                result.append(media)
+                creator_streak[creator_id] = current_streak + 1
+            else:
+                # Skip this media, reset when we add different creator
+                for other_creator in creator_streak:
+                    if other_creator != creator_id:
+                        creator_streak[creator_id] = 0
+                        result.append(media)
+                        break
+    
+        return result
+
+    '''
+
+    '''
+    def enforce_category_diversity(self, sorted_media, max_same_category=3):
+        """
+        Prevent too many consecutive media from same category
+        """
+        result = []
+        category_streak = {}
+        last_category = None
+    
+        for media in sorted_media:
+            category = str(media.category or 'uncategorized')
+        
+            if category != last_category:
+                result.append(media)
+                last_category = category
+                category_streak[category] = 1
+            elif category_streak.get(category, 0) < max_same_category:
+                result.append(media)
+                category_streak[category] += 1
+            # else: skip to enforce diversity
+    
+        return result
+
+
+    def apply_hashtag_diversity_bonus(self, media, base_score):
+        """
+        Boost media with hashtags NOT recently seen
+        """
+        media_hashtags = set(h.name.lower() for h in media.hashtags.all())
+        viewed_hashtags = set(t.lower() for t in (self.pref_obj.viewed_hashtags or []))
+    
+        # Bonus for fresh hashtags
+        fresh_hashtags = media_hashtags - viewed_hashtags
+        diversity_bonus = len(fresh_hashtags) * 5
+    
+        return base_score + diversity_bonus
+    '''
 
 from .tasks import (
     PENALTY_SAME_CREATOR,
@@ -2994,6 +2830,61 @@ class FeedScorer:
             self.profile_category = None
             self.category_exposure_count = {}
     
+    '''
+    # ✅ ADD THIS NEW METHOD
+    def add_intelligent_noise(self, base_score, priority_tier):
+        """
+        Add intelligent noise proportional to score magnitude and tier.
+        
+        Logic:
+        - Personalized (tier 0): Small noise (5% of score) - preserve ranking
+        - Fresh Following (tier 1): Medium noise (10%) - some variation  
+        - Preference-matched (tier 2): Higher noise (15%) - more discovery
+        - Older Following (tier 3): High noise (25%) - shuffle diversity
+        - Discovery (tier 4): Very high noise (30%) - maximum serendipity
+        
+        Args:
+            base_score: Score before noise
+            priority_tier: 0-4 (0=highest priority, 4=lowest)
+            
+        Returns:
+            Score with intelligent noise applied
+        """
+        import random
+        
+        # Define noise intensity per tier
+        noise_factors = {
+            0: 0.05,   # Personalized: 5% noise
+            1: 0.10,   # Fresh following: 10% noise
+            2: 0.15,   # Preference-matched: 15% noise
+            3: 0.25,   # Older following: 25% noise
+            4: 0.30,   # Discovery: 30% noise
+        }
+        
+        noise_intensity = noise_factors.get(priority_tier, 0.20)
+        
+        # Calculate noise magnitude as percentage of base score
+        # This ensures high-scoring items stay high, but get shuffled
+        noise_magnitude = base_score * noise_intensity
+        
+        # Apply Gaussian noise (bell curve distribution)
+        # Mean = 0, StdDev = noise_magnitude / 2
+        # This gives 95% of noise values between -noise_magnitude and +noise_magnitude
+        try:
+            gaussian_noise = random.gauss(0, noise_magnitude / 2)
+        except:
+            # Fallback if gauss fails
+            gaussian_noise = random.uniform(-noise_magnitude, noise_magnitude)
+        
+        # Apply noise
+        noisy_score = base_score + gaussian_noise
+        
+        # Optional: Ensure score doesn't go negative
+        noisy_score = max(0, noisy_score)
+        
+        return noisy_score
+    '''
+
 
     def apply_penalties(self, media, base_score):
         """
@@ -3006,7 +2897,7 @@ class FeedScorer:
         Returns:
             Penalized score (float)
         """
-        penalty_multiplier = 1.0
+        penalty_multiplier = 2.0
         penalties_applied = []
         
         # 1. Creator penalty (60% reduction per strike, graduated)
@@ -3015,6 +2906,8 @@ class FeedScorer:
             penalty_count = self.creator_penalty_map[creator_id]
             # Graduated: 1 strike = 0.4, 2 strikes = 0.16, 3+ strikes = 0.064
             creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
+            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+
             penalty_multiplier *= creator_penalty
             penalties_applied.append(f"creator({penalty_count})")
         
@@ -3118,6 +3011,92 @@ class FeedScorer:
         """Set the followed media IDs for scoring"""
         self.all_followed_media_ids = {m.id for m in fresh_media} | {m.id for m in older_media}
     
+
+    from collections import deque, defaultdict
+
+    '''
+    def enforce_creator_diversity(self, sorted_media, max_consecutive=1):
+        diversified = []
+        recent_creators = deque(maxlen=max_consecutive)
+
+        remaining = list(sorted_media)
+
+        while remaining:
+            placed = False
+
+            for i, media in enumerate(remaining):
+                creator_id = media.user_id
+
+                if len(recent_creators) < max_consecutive:
+                    diversified.append(media)
+                    recent_creators.append(creator_id)
+                    remaining.pop(i)
+                    placed = True
+                    break
+
+                # Check if last N posts are all from same creator
+                if not all(c == creator_id for c in recent_creators):
+                    diversified.append(media)
+                    recent_creators.append(creator_id)
+                    remaining.pop(i)
+                    placed = True
+                    break
+
+            if not placed:
+                diversified.extend(remaining)
+                break
+
+        return diversified
+    '''
+
+    def enforce_creator_diversity(
+        self,
+        sorted_media,
+        max_consecutive=1,
+        max_posts_per_creator=2
+    ):
+        diversified = []
+        recent_creators = deque(maxlen=max_consecutive)
+
+        # Total posts shown per creator in this feed
+        creator_counts = defaultdict(int)
+
+        remaining = list(sorted_media)
+
+        while remaining:
+            placed = False
+
+            for i, media in enumerate(remaining):
+                creator_id = media.user_id
+
+                # Hard cap: max 2 posts from creator
+                if creator_counts[creator_id] >= max_posts_per_creator:
+                    continue
+
+                # First few posts
+                if len(recent_creators) < max_consecutive:
+                    diversified.append(media)
+                    recent_creators.append(creator_id)
+                    creator_counts[creator_id] += 1
+                    remaining.pop(i)
+                    placed = True
+                    break
+
+                # Prevent consecutive creator repetition
+                if not all(c == creator_id for c in recent_creators):
+                    diversified.append(media)
+                    recent_creators.append(creator_id)
+                    creator_counts[creator_id] += 1
+                    remaining.pop(i)
+                    placed = True
+                    break
+
+            if not placed:
+                break
+
+        return diversified
+
+
     def calculate_priority_and_score(self, media, source, is_fresh_followed=False, is_personalized=False):
         """
         Calculate priority tier and score for media with ENHANCED RANDOMIZATION
@@ -3160,7 +3139,7 @@ class FeedScorer:
         if is_personalized:
             priority = 0
             redis_score = self.personalized_scores_map.get(media.id, 0)
-            base_score += redis_score * 100 + 500  # Massive boost for personalized
+            base_score += redis_score * 5 + 50  # Massive boost for personalized
         
         # Tier 1: Fresh media from followed users (<24 hours old)
         elif is_fresh_followed:
@@ -3168,16 +3147,16 @@ class FeedScorer:
             # Add recency bonus
             age_hours = (self.now - media.created_at).total_seconds() / 3600
             if age_hours < 6:  # Less than 6 hours
-                base_score += 100
+                base_score += 70
             elif age_hours < 12:  # Less than 12 hours
-                base_score += 75
+                base_score += 35
             elif age_hours < 24:  # Less than 24 hours
-                base_score += 50
+                base_score += 19
         
         # Tier 3: Older media from followed users (>24 hours old)
         elif source == 'older_followed':
             priority = 3
-            base_score += 20  # Small boost for being from followed users
+            base_score += 5  # Small boost for being from followed users
         
         # Tier 2: Preference-matched content (trending/discovery with user interests)
         elif source in ['trending', 'discovery']:
@@ -3192,7 +3171,7 @@ class FeedScorer:
                 
                 if has_liked_hashtag or has_search_hashtag or has_liked_category:
                     priority = 2
-                    base_score += 40  # Boost for matching preferences
+                    base_score += 51  # Boost for matching preferences
             except Exception as e:
                 logger.warning(f"Error checking preferences for {media.id}: {e}")
         
@@ -3234,12 +3213,25 @@ class FeedScorer:
         # This creates occasional surprises in the feed
         lucky_boost = 0
         if random.random() < 0.05:  # 5% chance
-            lucky_boost = random.choice([100, 200, 300])
+            lucky_boost = random.choice([50, 100, 150])
         
         # Calculate final score
         final_score = base_score + random_factor + gaussian_noise + lucky_boost
         
+        '''
+        # ✅ NEW: Use intelligent noise instead of fixed ranges
+        final_score = self.add_intelligent_noise(base_score, priority)
+    
+        # Optional: Keep lucky boost for serendipity (rare surprise)
+        if random.random() < 0.05:  # 5% chance
+            lucky_boost = random.choice([50, 100, 150])  # Smaller boosts now
+            final_score += lucky_boost
+            logger.debug(f"Lucky boost applied to media {media.id}: +{lucky_boost}")
+        '''
+
         return (priority, final_score, media)
+
+
     
     def score_and_sort_media(self, personalized, fresh_following, older_following, 
                             trending, discovery):
@@ -3288,8 +3280,25 @@ class FeedScorer:
             unique_scored.values(),
             key=lambda x: (x[0], -x[1])  # Sort by priority ASC, then score DESC
         )
-        
-        return [media for _, _, media in sorted_feed], scored_media
+        #original
+        #return [media for _, _, media in sorted_feed], scored_media
+
+
+        #new implementation for creator diversity
+        final_feed = [media for _, _, media in sorted_feed]
+
+        # ------------------------------------
+        # Creator diversity
+        # ------------------------------------
+        final_feed = self.enforce_creator_diversity(
+            final_feed,
+            max_consecutive=1,
+            max_posts_per_creator=2
+        )
+
+        return final_feed, scored_media
+
+
 
 # ----------------------------------------------------------------------------------
 #  ENHANCED: this part GET BOTH CACHE LAYERS entire caching included in this section 
@@ -3784,6 +3793,9 @@ def following_media(request):
         personalized_media, fresh_following, older_following,
         trending_media, discovery_media
     )
+
+    #final_feed = scorer.enforce_creator_diversity(final_feed, max_consecutive=2)
+
     
     # Apply description formatting
     for media in final_feed:
@@ -5293,19 +5305,25 @@ def not_interested(request, media_id: int):
         redis_conn = get_redis_connection("default")
 
         redis_conn.sadd(f"user:not_interested:media:{user.id}", media_id)
+        redis_conn.expire(f"user:not_interested:media:{user.id}", 60*60*24*30)  # 30 days
+
 
         creator_id = getattr(media, "creator_id", None) or media.user_id
         if creator_id:
             redis_conn.sadd(f"user:not_interested:creator:{user.id}", creator_id)
+            redis_conn.expire(f"user:not_interested:creator:{user.id}", 60*60*24*30)  # 30 days
+
 
         # Collaborative Filtering Keys
         redis_conn.sadd(f"user:ni:media:{user.id}", media_id)
+        redis_conn.expire(f"user:ni:media:{user.id}", 60*60*24*30)  # ✅ ADD THIS
 
         creator_key = f"media:creator:{media_id}"
         if not redis_conn.exists(creator_key):
             redis_conn.set(creator_key, media.user_id)
 
         redis_conn.sadd(f"user:ni:creator:{user.id}", media.user_id)
+        redis_conn.expire(f"user:ni:creator:{user.id}", 60*60*24*30)  # ✅ ADD THIS
 
         # ---------------------------
         #  NEW: PENALTY TRACKING
@@ -6310,8 +6328,8 @@ def share_media(request, media_id):
     media = get_object_or_404(Media, id=media_id)
     
     # Build absolute URL for sharing
-    share_url = request.build_absolute_uri(f'/media/{media.id}/')
-    #share_url = request.build_absolute_uri(f'/explore_detail/{media.id}/')
+    #share_url = request.build_absolute_uri(f'/media/{media.id}/')
+    share_url = request.build_absolute_uri(f'/explore_detail/{media.id}/')
 
     # Media details for sharing
     title = f"{media.user.username}'s post on Socyfie"
@@ -6361,8 +6379,9 @@ def share_media(request, media_id):
         'media_url': media_url,
     }
     
-    return render(request, 'share_media.html', context)
+    #return render(request, 'share_media.html', context)
     #return redirect('user_profile:explore_detail', media_id=media_id)
+    return redirect('user_profile:explore_detail', context)
 
  
 @cache_control(public=True, max_age=3600)

@@ -96,8 +96,9 @@
 
 
 </style>
+{% comment %}
 <header>
-    {% comment %} <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> {% endcomment %}
+    <!-- <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> -->
         
         <nav class="navbar navbar-expand-lg navbar-dark bg-white">
             <div class="container">
@@ -105,13 +106,13 @@
                     <button class="messagebtn"> 💬 </button>
                 </a>
 
-                {% comment %} <form method="GET" action="{% url 'user_profile:search_users' %}">
+                <form method="GET" action="{% url 'user_profile:search_users' %}">
                     <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
                     <button type="submit">Search</button>
                 </form> 
                 <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
                     <i class="fas fa-globe"></i>
-                </button>{% endcomment %}
+                </button>
                 
                 <button class="openbtn" onclick="openNav()">☰ </button>
             </div>
@@ -120,6 +121,7 @@
         
     <!-- Profile Picture Section -->
 </header>
+{% endcomment %}
 <div class="profile-container">
     {% block profile_header_content %}
     <div class="profile-section">

@@ -1,0 +1,86 @@
+
+{% extends 'landing_page.html' %}
+{% load tz %}
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
+
+<style>
+    color: #123;
+</style>
+
+{% block header %}
+</br>
+</br>
+</br>
+{% endblock %}
+{% block main_content %}
+    <script src="{% static 'js/pull_to_refresh.js' %}"></script>   
+
+<form method="GET" action="{% url 'only_message:search_user_message' %}">
+    <input type="text" name="q" placeholder="Search users">
+    <button type="submit">Search</button>
+</form>
+
+<h2>Messages</h2>
+<ul id="user-list">
+    {% for user in users %}
+    <li data-username="{{ user.username|escape }}">
+
+    <a href="{% url 'only_message:user_messages_view' username=user.username %}" 
+       class="mention-with-avatar">
+
+        <img src="{{ user.profile|profile_picture_url }}"
+             class="mention-avatar"
+             alt="{{ user.username }}'s profile picture">
+
+        <p>{{ user.username }}</p>
+
+    </a>
+
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}
+
+{% block script-user-status %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        function updateOnlineStatus() {
+            fetch('{% url "only_message:get_online_users" %}', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json' // Added Accept header
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const userListItems = document.querySelectorAll('#user-list li');
+                userListItems.forEach(item => {
+                    const username = item.getAttribute('data-username');
+                    const userId = data.online_users.find(user => user.username === username)?.id;
+                    //const userId = data.user_ids[username];
+                    const statusSpan = item.querySelector('.status');
+                    if (statusSpan) {
+                        if (userId) {
+                        //if (data.online_users.includes(userId)) {
+                            statusSpan.textContent = 'Online';
+                        } else {
+                            statusSpan.textContent = 'Offline';
+                        }
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    
+        // Update status every 30 seconds
+        setInterval(updateOnlineStatus, 9000);
+    
+        // Initial update
+        updateOnlineStatus();
+    });
+</script>
+{% endblock %}

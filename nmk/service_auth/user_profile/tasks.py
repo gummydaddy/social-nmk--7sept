@@ -584,6 +584,171 @@ def time_decay(view_ts, now):
     return max(0.2, math.exp(-hours_ago / 24))
 
 
+
+
+def get_cold_start_recommendations(user_id, redis, all_blocked_users=None):
+    """
+    Generate cold start recommendations for new users.
+    
+    Strategy:
+    1. Get trending media (proven popular)
+    2. Get media from popular creators (quality indicator)
+    3. Get diverse categories (discover interests)
+    4. Blend with time decay (recent > old)
+    5. Filter blocked users
+    
+    Returns:
+        List of (media_id, score) tuples
+    """
+    from django.db.models import Count
+    from .models import Media
+    from service_auth.notion.models import Follow
+    
+    if all_blocked_users is None:
+        all_blocked_users = set()
+    
+    all_blocked_users = set(all_blocked_users) if all_blocked_users else set()
+    
+    recommendations = {}
+    now = int(time.time())
+    cutoff = now - WINDOW_SECONDS
+    
+    try:
+        # ==========================================
+        # 1. TRENDING MEDIA (40% of recommendations)
+        # ==========================================
+        trending_ids = redis.zrevrange(
+            TRENDING_ZSET_KEY,
+            0, 40  # Top 40 trending
+        )
+        
+        for idx, media_id in enumerate(trending_ids):
+            mid = int(media_id)
+            # Score: 1000 for top, decreases down to 500
+            score = 1000 - (idx * 12.5)
+            recommendations[mid] = score
+        
+        logger.debug(f"Cold start: Added {len(trending_ids)} trending media")
+        
+        
+        # ==========================================
+        # 2. POPULAR CREATORS (30% of recommendations)
+        # ==========================================
+        # Users with 50+ followers and recent activity
+        popular_creators = (
+            Media.objects
+            .filter(created_at__gte=timezone.now() - timedelta(days=30))
+            .exclude(user__in=all_blocked_users)
+            .values('user')
+            .annotate(follower_count=Count('user__follower_set', distinct=True))
+            .filter(follower_count__gte=50)
+            .order_by('-follower_count')[:20]
+        )
+        
+        creator_ids = [p['user'] for p in popular_creators]
+        
+        popular_media = (
+            Media.objects
+            .filter(
+                user__in=creator_ids,
+                is_private=False,
+                created_at__gte=timezone.now() - timedelta(days=14)
+            )
+            .order_by('-created_at', '-view_count')[:30]
+            .values_list('id', flat=True)
+        )
+        
+        for idx, media_id in enumerate(popular_media):
+            if media_id not in recommendations:
+                # Score: 700-600 range (less than trending but solid)
+                score = 700 - (idx * 3.3)
+                recommendations[media_id] = score
+        
+        logger.debug(f"Cold start: Added {len(popular_media)} from popular creators")
+        
+        
+        # ==========================================
+        # 3. DIVERSE CATEGORIES (20% of recommendations)
+        # ==========================================
+        # Get one media from each category to expose variety
+        from service_auth.user_profile.models import Media
+        
+        categories = (
+            Media.objects
+            .exclude(user__in=all_blocked_users)
+            .values_list('category', flat=True)
+            .distinct()
+        )
+        
+        category_media = []
+        for category in categories[:15]:  # Top 15 categories
+            media = (
+                Media.objects
+                .filter(
+                    category=category,
+                    is_private=False,
+                    created_at__gte=timezone.now() - timedelta(days=7)
+                )
+                .exclude(user__in=all_blocked_users)
+                .order_by('-view_count')
+                .first()
+            )
+            if media and media.id not in recommendations:
+                category_media.append(media.id)
+        
+        for idx, media_id in enumerate(category_media):
+            # Score: 500-400 range (discovery tier)
+            score = 500 - (idx * 6.7)
+            recommendations[media_id] = score
+        
+        logger.debug(f"Cold start: Added {len(category_media)} diverse categories")
+        
+        
+        # ==========================================
+        # 4. RECENCY BONUS
+        # ==========================================
+        # Boost slightly newer media within each group
+        media_data = Media.objects.filter(
+            id__in=recommendations.keys()
+        ).values('id', 'created_at')
+        
+        for media in media_data:
+            age_hours = (now - media['created_at'].timestamp()) / 3600
+            
+            # Max 10% boost for very fresh content (< 24 hours)
+            if age_hours < 24:
+                recency_bonus = 50 * (1 - age_hours / 24)
+                recommendations[media['id']] += recency_bonus
+        
+        logger.debug(f"Cold start: Applied recency bonuses")
+        
+        
+        # ==========================================
+        # 5. FINAL FILTERING & RANKING
+        # ==========================================
+        # Remove any blocked creators that sneaked through
+        final_recommendations = [
+            (mid, score) for mid, score in recommendations.items()
+            if mid not in [m.id for m in Media.objects.filter(user__in=all_blocked_users)]
+        ]
+        
+        # Sort by score descending
+        final_recommendations.sort(key=lambda x: x[1], reverse=True)
+        
+        # Cap at MAX_RECO_ITEMS
+        final_recommendations = final_recommendations[:MAX_RECO_ITEMS]
+        
+        logger.info(f"Cold start: Final {len(final_recommendations)} recommendations")
+        
+        return final_recommendations
+    
+    except Exception as e:
+        logger.exception(f"Cold start recommendation generation failed: {e}")
+        # Fallback: just return trending
+        trending = redis.zrevrange(TRENDING_ZSET_KEY, 0, 50, withscores=True)
+        return [(int(mid), score) for mid, score in trending]
+
+
 @shared_task(
     bind=True,
     autoretry_for=(Exception,),
@@ -630,6 +795,7 @@ def build_user_recommendations_WITH_BLOCK_FILTER(self, user_id):
     # ---------------------------
     # COLD START
     # ---------------------------
+    '''
     if len(user_media) < MIN_USER_VIEWS:
         trending = redis.zrevrange(
             TRENDING_ZSET_KEY,
@@ -657,8 +823,32 @@ def build_user_recommendations_WITH_BLOCK_FILTER(self, user_id):
                 {mid.decode(): score for mid, score in trending}
             )
         return "cold_start"
+    '''
+
+    # ---------------------------
+    # ✅ SMARTER COLD START (NEW USERS)
+    # ---------------------------
+    if len(user_media) < MIN_USER_VIEWS:
+        logger.info(f"Cold start for user {user_id}: only {len(user_media)} views")
+        
+        recommendations = get_cold_start_recommendations(
+            user_id=user_id,
+            redis=redis,
+            all_blocked_users=all_blocked_users
+        )
+        
+        if recommendations:
+            redis.zadd(
+                reco_key,
+                {str(mid): float(score) for mid, score in recommendations}
+            )
+            logger.info(f"Cold start: {len(recommendations)} recommendations for user {user_id}")
+        
+        return f"cold_start:{len(recommendations)}_items"
+
 
     user_media_ids = {mid.decode() for mid, _ in user_media}
+
 
     # ---------------------------
     # FIND SIMILAR USERS (EXCLUDE BLOCKED)
@@ -1125,7 +1315,7 @@ def populate_creator_mappings():
         logger.exception(f"Error populating creator mappings: {e}")
         return f"error:{str(e)}"
 
-
+'''
 @shared_task
 def cleanup_stale_redis_data():
     """
@@ -1168,8 +1358,132 @@ def cleanup_stale_redis_data():
     except Exception as e:
         logger.exception(f"Error during cleanup: {e}")
         return f"error:{str(e)}"
+'''
+
+@shared_task
+def cleanup_stale_redis_data():
+    """Clean up old Redis data to prevent memory bloat"""
+    redis = get_redis_connection("default")
+    
+    def safe_decode(value):
+        """Safely decode bytes to string"""
+        if isinstance(value, bytes):
+            return value.decode('utf-8')
+        return str(value)
+    
+    try:
+        cleaned = {'seen_feeds': 0, 'view_tracking': 0}
+        
+        # 1. Clean old seen feeds
+        pattern = "user:seen_feed:*"
+        for key in redis.scan_iter(pattern, count=100):
+            key_str = safe_decode(key)  # ✅ Decode first
+            ttl = redis.ttl(key_str)
+            if ttl == -1:  # No expiry set
+                redis.expire(key_str, 60 * 60 * 24 * 30)  # 30 days
+                cleaned['seen_feeds'] += 1
+        
+        # 2. Clean old view tracking
+        cutoff = int((timezone.now() - timedelta(days=30)).timestamp())
+        
+        for pattern in ["user:viewed:*", "media:viewed_by:*"]:
+            for key in redis.scan_iter(pattern, count=100):
+                key_str = safe_decode(key)  # ✅ Decode first
+                removed = redis.zremrangebyscore(key_str, 0, cutoff)
+                if removed > 0:
+                    cleaned['view_tracking'] += removed
+        
+        logger.info(f"Cleanup: {cleaned}")
+        return f"success:{cleaned}"
+        
+    except Exception as e:
+        logger.exception(f"Error during cleanup: {e}")
+        return f"error:{str(e)}"
 
 
+'''
+@shared_task
+def decay_old_creator_penalties():
+    """Gradually reduce old penalties to reset user preferences"""
+    redis = get_redis_connection("default")
+    
+    for key in redis.scan_iter("user:creator_penalty:*", count=100):
+        # Reduce all penalties by 20%
+        penalties = redis.zrange(key, 0, -1, withscores=True)
+        for creator_id, penalty_count in penalties:
+            new_count = max(0, penalty_count - 1)
+            if new_count > 0:
+                redis.zadd(key, {creator_id: new_count})
+            else:
+                redis.zrem(key, creator_id)
+'''
+
+@shared_task
+def decay_old_creator_penalties():
+    """
+    Gradually reduce old creator penalties to reset user preferences.
+    
+    Safely handles Redis bytes responses.
+    """
+    redis = get_redis_connection("default")
+    
+    try:
+        decayed_users = 0
+        total_penalties_reduced = 0
+        
+        # Helper function to safely decode Redis bytes
+        def safe_decode(value):
+            """Safely decode bytes to string"""
+            if isinstance(value, bytes):
+                return value.decode('utf-8')
+            return str(value)
+        
+        # Scan all user penalty keys
+        for key in redis.scan_iter("user:creator_penalty:*", count=100):
+            # Decode key (returned as bytes from scan_iter)
+            key_str = safe_decode(key)
+            user_id = key_str.split(":")[-1]
+            
+            try:
+                # Get all penalties for this user
+                penalties = redis.zrange(key_str, 0, -1, withscores=True)
+                
+                if not penalties:
+                    continue
+                
+                for creator_id_raw, penalty_count in penalties:
+                    # Decode creator_id (may be bytes)
+                    creator_id = safe_decode(creator_id_raw)
+                    penalty_count = float(penalty_count)
+                    
+                    # Reduce penalty by 1 each day
+                    new_count = max(0, penalty_count - 1)
+                    
+                    if new_count > 0:
+                        # Update penalty
+                        redis.zadd(key_str, {creator_id: new_count})
+                    else:
+                        # Remove penalty if it reaches 0
+                        redis.zrem(key_str, creator_id)
+                    
+                    total_penalties_reduced += 1
+                
+                decayed_users += 1
+                
+            except Exception as inner_e:
+                logger.warning(f"Error processing penalties for {key_str}: {inner_e}")
+                continue
+        
+        logger.info(
+            f"Decayed penalties for {decayed_users} users, "
+            f"reduced {total_penalties_reduced} total penalties"
+        )
+        
+        return f"success:{decayed_users}_users,{total_penalties_reduced}_penalties"
+    
+    except Exception as e:
+        logger.exception(f"Error decaying creator penalties: {e}")
+        return f"error:{str(e)}"
 #---------------------------------------------------------------------------
 #
 #

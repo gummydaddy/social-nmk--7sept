@@ -1,0 +1,540 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
+
+
+{% block main_content %}
+<style>
+    .message-container {
+        width: 100%;
+        height: 60vh;
+        border: 1px solid #ccc;
+        background-color: #fff0ff;
+        overflow-y: scroll;
+        overflow-x: hidden;
+        padding: 2px;
+        margin-bottom: 5px;
+        color: #123;
+    }
+    .message-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .message-container ul li {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 60%;
+        font-size: 12px;
+        position: relative;
+    }
+    .sender-message,
+    .recipient-message {
+        max-width: 60%;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        display: block;
+    }
+    .sender-message {
+        background-color: #e1ffc7;
+        text-align: right;
+        margin-left: auto;
+    }
+    .recipient-message {
+        background-color: #f1f1f1;
+        text-align: left;
+        margin-right: auto;
+    }
+    .message-delete-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #ff4444;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 2px 8px;
+        font-size: 11px;
+        cursor: pointer;
+        display: none;
+    }
+    .sender-message:hover .message-delete-btn { display: block; }
+    .message-delete-btn:hover { background: #cc0000; }
+    .message-file { margin-top: 5px; border-top: 1px dashed #bbb; padding-top: 5px; }
+    .message-file img { max-width: 100%; height: auto; display: block; margin-bottom: 5px; }
+    .message-file a {
+        display: inline-block;
+        background-color: #007bff;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 3px;
+        text-decoration: none;
+        font-size: 11px;
+    }
+    .message-file a:hover { background-color: #0056b3; }
+    .connection-status {
+        padding: 8px 12px;
+        margin-bottom: 2px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .status-connected    { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-disconnected { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status-connecting   { background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    #send-btn { cursor: pointer; font-size: 24px; user-select: none; padding-bottom: 8px; }
+    #send-btn:hover { transform: scale(1.1); }
+    .notification-badge {
+        display: none;
+        background: #ff4444;
+        color: white;
+        border-radius: 10px;
+        padding: 2px 6px;
+        font-size: 11px;
+        font-weight: bold;
+        min-width: 18px;
+        text-align: center;
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 9999;
+    }
+</style>
+
+<span id="notification-badge" class="notification-badge">0</span>
+
+</br>
+
+{# ── Recipient header row: avatar + name + CALL BUTTON ── #}
+<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+    <a href="{% url 'user_profile:profile' user_id=recipient.id %}" class="mention-with-avatar">
+        <img src="{{ recipient.profile|profile_picture_url }}"
+             class="mention-avatar"
+             alt="{{ recipient.username }}'s profile picture">
+        <p>{{ recipient.username }}</p>
+    </a>
+
+    {# ── Audio call button & overlays ── #}
+    {% include 'only_message/call_ui.html' %}
+</div>
+
+{# ── Connection status bar ── #}
+<div id="connection-status" class="connection-status status-connecting">
+    ⏳ Connecting to chat server...
+</div>
+
+{# ── Chat message list ── #}
+<div id="chat-box" class="message-container" data-recipient="{{ recipient.username }}">
+    <ul id="message-list">
+        {% for message in messages %}
+            <li class="{% if message.sender == request.user %}sender-message{% else %}recipient-message{% endif %}"
+                data-message-id="{{ message.id }}">
+                {% if message.content %}
+                    <p>{{ message.content|make_clickable }}</p>
+                {% endif %}
+
+                {% if message.file_url %}
+                    <div class="message-file">
+                        {% if message.file_url|ends_with:".jpg" or message.file_url|ends_with:".jpeg" or message.file_url|ends_with:".png" or message.file_url|ends_with:".gif" or message.file_url|ends_with:".webp" %}
+                            <img src="{{ message.file_url }}" alt="Uploaded Image">
+                        {% elif message.file_url|ends_with:".mp4" or message.file_url|ends_with:".webm" or message.file_url|ends_with:".ogg" %}
+                            <video controls style="max-width:100%;height:auto;display:block;margin-bottom:5px;">
+                                <source src="{{ message.file_url }}" type="video/mp4">
+                            </video>
+                        {% else %}
+                            <p><a href="{{ message.file_url }}" target="_blank" download>
+                                Download File: {{ message.file_url|basename }}
+                            </a></p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                <em>{{ message.timestamp|date:"c" }}</em>
+                {% if message.signature_valid %}
+                    <span style="color:green;">(✓)</span>
+                {% else %}
+                    <span style="color:red;">(✗)</span>
+                {% endif %}
+
+                {% if message.sender == request.user %}
+                    <button class="message-delete-btn"
+                            onclick="deleteMessage({{ message.id }})">🗑️ Delete</button>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{# ── Compose form ── #}
+<form id="chat-message-form" method="post" enctype="multipart/form-data" onsubmit="return false;">
+    {% csrf_token %}
+    <input type="hidden" name="recipient" value="{{ recipient.username }}">
+
+    <div style="display:flex;align-items:flex-end;gap:2px;justify-content:center;">
+
+        <input type="file" id="id_file" name="file" style="display:none;">
+
+        <button type="button"
+                onclick="document.getElementById('id_file').click();"
+                style="width:30px;height:30px;border-radius:50%;border:none;
+                       background:#007bff;color:white;font-size:10px;cursor:pointer;">
+            ➕
+        </button>
+
+        <textarea id="id_content" name="content"
+                  placeholder="Type your message..."
+                  style="width:80%;height:80px;resize:none;"></textarea>
+
+        <span id="send-btn">➣➤</span>
+    </div>
+</form>
+
+{# Prevent accidental form submit via Enter #}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var f = document.getElementById('chat-message-form');
+    if (f) { f.onsubmit = function(e){ e.preventDefault(); return false; }; }
+});
+</script>
+{% endblock %}
+
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{# MESSAGE SCRIPT — all chat + call WebSocket logic lives here                #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{% block Message_script %}
+<script>
+(function () {
+    'use strict';
+
+    /* ── wait for DOM ─────────────────────────────────────────────────────── */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initChat);
+    } else {
+        initChat();
+    }
+
+    /* ════════════════════════════════════════════════════════════════════════
+       initChat
+       ════════════════════════════════════════════════════════════════════════ */
+    function initChat() {
+
+        /* ── element refs ─────────────────────────────────────────────────── */
+        var chatBox        = document.getElementById('chat-box');
+        var messageForm    = document.getElementById('chat-message-form');
+        var contentInput   = document.getElementById('id_content');
+        var fileInput      = document.getElementById('id_file');
+        var sendBtn        = document.getElementById('send-btn');
+        var messageList    = document.getElementById('message-list');
+        var statusBar      = document.getElementById('connection-status');
+
+        if (!chatBox || !messageForm || !contentInput || !sendBtn) {
+            console.error('🔴 Chat: required DOM elements missing');
+            return;
+        }
+
+        var recipientUsername = chatBox.dataset.recipient;
+        var currentUser       = "{{ request.user.username }}";
+
+        /* ── state ────────────────────────────────────────────────────────── */
+        var reconnectAttempts    = 0;
+        var MAX_RECONNECT        = 10;
+        var displayedMessageIds  = new Set();
+
+        /* scroll to bottom on load */
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        /* ── connection status helper ─────────────────────────────────────── */
+        function setStatus(s) {
+            var labels = {
+                connecting:   '⏳ Connecting…',
+                connected:    '✓ Connected',
+                disconnected: '✗ Disconnected',
+                reconnecting: '🔄 Reconnecting…'
+            };
+            var classes = {
+                connecting:   'status-connecting',
+                connected:    'status-connected',
+                disconnected: 'status-disconnected',
+                reconnecting: 'status-connecting'
+            };
+            statusBar.textContent  = labels[s]  || s;
+            statusBar.className    = 'connection-status ' + (classes[s] || 'status-disconnected');
+        }
+
+        /* ════════════════════════════════════════════════════════════════════
+           initializeWebSocket
+           ════════════════════════════════════════════════════════════════════ */
+        function initializeWebSocket() {
+            setStatus('connecting');
+
+            var protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+            var wsUrl    = protocol + '://' + window.location.host +
+                           '/ws/chat/' + recipientUsername + '/';
+
+            console.log('🌐 Connecting WebSocket:', wsUrl);
+
+            var ws;
+            try {
+                ws = new WebSocket(wsUrl);
+            } catch (err) {
+                console.error('WebSocket constructor failed:', err);
+                setStatus('disconnected');
+                return;
+            }
+
+            /* ── CRITICAL: expose socket globally so SocyfieCall can use it ── */
+            window.chatSocket = ws;
+
+            /* ── onopen ───────────────────────────────────────────────────── */
+            ws.onopen = function () {
+                console.log('✅ WebSocket CONNECTED');
+                window.chatSocket = ws;   /* re-confirm after handshake */
+                setStatus('connected');
+                reconnectAttempts = 0;
+            };
+
+            /* ── onmessage ────────────────────────────────────────────────── */
+            ws.onmessage = function (e) {
+                var data;
+                try {
+                    data = JSON.parse(e.data);
+                } catch (err) {
+                    console.error('Invalid JSON from server:', err);
+                    return;
+                }
+
+                console.log('📨 WS message received, type:', data.type);
+
+                /* ── chat message ─────────────────────────────────────────── */
+                if (data.type === 'message') {
+                    if (data.message_id && !displayedMessageIds.has(data.message_id)) {
+                        addMessageToChat(data);
+                        displayedMessageIds.add(data.message_id);
+                    } else {
+                        console.log('Duplicate message skipped:', data.message_id);
+                    }
+
+                /* ── message deleted by sender ────────────────────────────── */
+                } else if (data.type === 'message_delete') {
+                    console.log('🗑️ WS delete received:', data.message_ids);
+                    data.message_ids.forEach(function (id) {
+                        displayedMessageIds.delete(id);
+                        var el = document.querySelector('[data-message-id="' + id + '"]');
+                        if (el) {
+                            el.style.transition = 'opacity 0.3s';
+                            el.style.opacity    = '0';
+                            setTimeout(function () { el.remove(); }, 300);
+                        }
+                    });
+
+                /* ── server error ─────────────────────────────────────────── */
+                } else if (data.type === 'error') {
+                    console.error('Server error:', data.error);
+                    alert('Error: ' + data.error);
+
+                /* ── audio call signaling ─────────────────────────────────── *
+                 *   ALL call types are forwarded to SocyfieCall.handleSignal  *
+                 *   This block MUST be inside the onmessage handler and INSIDE *
+                 *   the if/else-if chain — do not move it outside.             */
+                } else if (
+                    data.type === 'call_incoming'  ||
+                    data.type === 'call_answered'  ||
+                    data.type === 'call_rejected'  ||
+                    data.type === 'call_ended'     ||
+                    data.type === 'call_busy'      ||
+                    data.type === 'ice_candidate'
+                ) {
+                    if (window.SocyfieCall) {
+                        window.SocyfieCall.handleSignal(data);
+                    } else {
+                        console.warn('SocyfieCall not loaded yet — call signal dropped:', data.type);
+                    }
+
+                /* ── unknown / file-status / other ───────────────────────── */
+                } else {
+                    console.log('Unhandled WS message type:', data.type);
+                }
+            };  /* end onmessage */
+
+            /* ── onerror ──────────────────────────────────────────────────── */
+            ws.onerror = function () {
+                console.error('❌ WebSocket error');
+                setStatus('disconnected');
+            };
+
+            /* ── onclose ──────────────────────────────────────────────────── */
+            ws.onclose = function (e) {
+                console.warn('🔌 WebSocket closed, code:', e.code);
+                setStatus('disconnected');
+                window.chatSocket = null;   /* mark stale so call engine detects it */
+
+                if (reconnectAttempts < MAX_RECONNECT) {
+                    reconnectAttempts++;
+                    var delay = Math.min(1000 * reconnectAttempts, 10000);
+                    console.log('Reconnecting in', delay, 'ms (attempt', reconnectAttempts + ')');
+                    setStatus('reconnecting');
+                    setTimeout(initializeWebSocket, delay);
+                }
+            };
+        }  /* end initializeWebSocket */
+
+        /* ════════════════════════════════════════════════════════════════════
+           addMessageToChat
+           ════════════════════════════════════════════════════════════════════ */
+        function addMessageToChat(data) {
+            var li = document.createElement('li');
+            li.className = (data.sender === currentUser) ? 'sender-message' : 'recipient-message';
+            if (data.message_id) { li.dataset.messageId = data.message_id; }
+
+            var html = '';
+
+            if (data.content) {
+                var div = document.createElement('div');
+                div.textContent = data.content;
+                html += '<p>' + div.innerHTML + '</p>';
+            }
+
+            if (data.file_url) {
+                var ext = data.file_url.split('.').pop().toLowerCase();
+                html += '<div class="message-file">';
+                if (['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1) {
+                    html += '<img src="' + data.file_url + '" alt="Image">';
+                } else if (['mp4','webm','ogg'].indexOf(ext) !== -1) {
+                    html += '<video controls style="max-width:100%;">' +
+                            '<source src="' + data.file_url + '"></video>';
+                } else {
+                    html += '<p><a href="' + data.file_url + '" download>Download File</a></p>';
+                }
+                html += '</div>';
+            }
+
+            var ts = data.timestamp ? new Date(data.timestamp).toLocaleTimeString() : '';
+            html += '<em>' + ts + '</em>';
+
+            if (data.signature_valid) { html += '<span style="color:green;">(✓)</span>'; }
+
+            if (data.sender === currentUser) {
+                html += '<button class="message-delete-btn" ' +
+                        'onclick="deleteMessage(' + data.message_id + ')">🗑️ Delete</button>';
+            }
+
+            li.innerHTML = html;
+            messageList.appendChild(li);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            console.log('✓ Message added from', data.sender);
+        }
+
+        /* ════════════════════════════════════════════════════════════════════
+           handleSendMessage  — saves to DB via HTTP, then broadcasts over WS
+           ════════════════════════════════════════════════════════════════════ */
+        function handleSendMessage(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+
+            var message = contentInput.value.trim();
+            var file    = fileInput.files[0];
+
+            if (!message && !file) { return false; }
+
+            var formData = new FormData();
+            formData.append('csrfmiddlewaretoken',
+                document.querySelector('[name=csrfmiddlewaretoken]').value);
+            formData.append('recipient', recipientUsername);
+            if (message) { formData.append('content', message); }
+            if (file)    { formData.append('file',    file);    }
+
+            fetch("{% url 'only_message:user_messages_view' username=recipient.username %}", {
+                method:  'POST',
+                body:    formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    var ws = window.chatSocket;
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({
+                            type:       'chat_message',
+                            message_id: data.message_id,
+                            content:    message,
+                            timestamp:  data.timestamp,
+                            file_url:   data.file_url || null
+                        }));
+                    } else {
+                        console.warn('WS not open — message saved to DB but not broadcast live');
+                    }
+                    contentInput.value = '';
+                    fileInput.value    = '';
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to send'));
+                }
+            })
+            .catch(function (err) {
+                console.error('Fetch error:', err);
+                alert('Network error. Please try again.');
+            });
+
+            return false;
+        }
+
+        /* ── event listeners ──────────────────────────────────────────────── */
+        sendBtn.addEventListener('click', handleSendMessage);
+        messageForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleSendMessage(e);
+            return false;
+        });
+        contentInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.ctrlKey) { handleSendMessage(); }
+        });
+
+        /* ── start WebSocket ──────────────────────────────────────────────── */
+        initializeWebSocket();
+
+        /* ── disable back-button navigation ──────────────────────────────── */
+        window.history.pushState(null, '', window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, '', window.location.href);
+        };
+
+        console.log('✅ Chat fully initialised');
+    }  /* end initChat */
+
+}());  /* end IIFE */
+
+
+/* ════════════════════════════════════════════════════════════════════════════
+   deleteMessage  — global because template inline onclick= needs it
+   ════════════════════════════════════════════════════════════════════════════ */
+function deleteMessage(messageId) {
+    if (!confirm('Delete this message?')) { return; }
+
+    var formData = new FormData();
+    formData.append('csrfmiddlewaretoken',
+        document.querySelector('[name=csrfmiddlewaretoken]').value);
+    formData.append('message_ids[]', messageId);
+
+    fetch("{% url 'only_message:delete_messages_view' username=recipient.username %}", {
+        method:  'POST',
+        body:    formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (!data.success) {
+            alert('Failed to delete: ' + data.error);
+        }
+        /* UI removal is handled by the WS broadcast (message_delete event) */
+    })
+    .catch(function (err) {
+        console.error('Delete error:', err);
+        alert('Network error while deleting.');
+    });
+}
+</script>
+{% endblock %}

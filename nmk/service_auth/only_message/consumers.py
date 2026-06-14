@@ -72,11 +72,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
         """Handle WebSocket disconnection"""
         if hasattr(self, 'room_group_name'):
             logger.info(f"User {self.user.username} leaving room: {self.room_group_name}")
+
+            # new calling intigeration Notify the other party that the call (if any) is ending
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'call_ended',
+                    'ender': self.user.username,
+                    'reason': 'disconnected'
+                }
+            )
+            # new calling intigeration Notify the other party that the call (if any) is ending
+
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
             )
             logger.info(f"✗ WebSocket DISCONNECTED: {self.user.username} (code: {close_code})")
+
 
     async def receive(self, text_data):
         """Handle incoming WebSocket messages"""
@@ -88,6 +101,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             if message_type == 'chat_message':
                 await self.handle_chat_message(data)
+
+ 
+            # ── Audio call signaling ───────────────────────────────────
+            elif message_type == 'call_initiate':
+                await self.handle_call_initiate(data)
+ 
+            elif message_type == 'call_answer':
+                await self.handle_call_answer(data)
+ 
+            elif message_type == 'call_reject':
+                await self.handle_call_reject(data)
+ 
+            elif message_type == 'call_end':
+                await self.handle_call_end(data)
+ 
+            elif message_type == 'ice_candidate':
+                await self.handle_ice_candidate(data)
+ 
+            elif message_type == 'call_busy':
+                await self.handle_call_busy(data)
+ 
+
             else:
                 logger.warning(f"Unknown message type: {message_type}")
                 
@@ -211,3 +246,159 @@ class ChatConsumer(AsyncWebsocketConsumer):
         logger.info(
             f"✓ Delete broadcast sent to {self.user.username}"
         )
+
+
+
+
+
+
+    # ==========================================================================
+    # AUDIO CALL SIGNALING HANDLERS — SEND SIDE
+    # ==========================================================================
+ 
+    async def handle_call_initiate(self, data):
+        """
+        Caller created an SDP offer and wants to ring the other user.
+        Relay the offer to every connection in the room (the other user).
+        """
+        logger.info(f"📞 Call initiated by {self.user.username} in room {self.room_group_name}")
+ 
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'call_incoming',
+                'caller': self.user.username,
+                'caller_id': self.user.id,
+                'offer': data.get('offer'),
+            }
+        )
+ 
+    async def handle_call_answer(self, data):
+        """
+        Callee accepted; relay their SDP answer back to the caller.
+        """
+        logger.info(f"✅ Call answered by {self.user.username}")
+ 
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'call_answered',
+                'answerer': self.user.username,
+                'answer': data.get('answer'),
+            }
+        )
+ 
+    async def handle_call_reject(self, data):
+        """Callee explicitly rejected the call."""
+        logger.info(f"❌ Call rejected by {self.user.username}")
+ 
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'call_rejected',
+                'rejector': self.user.username,
+            }
+        )
+ 
+    async def handle_call_end(self, data):
+        """Either party ended the call."""
+        logger.info(f"📵 Call ended by {self.user.username}")
+ 
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'call_ended',
+                'ender': self.user.username,
+                'reason': data.get('reason', 'hangup'),
+            }
+        )
+ 
+    async def handle_ice_candidate(self, data):
+        """
+        Relay an ICE candidate from one peer to the other.
+        Tag with sender so the recipient's consumer can drop its own candidates.
+        """
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'ice_candidate_relay',
+                'candidate': data.get('candidate'),
+                'sender': self.user.username,
+            }
+        )
+ 
+    async def handle_call_busy(self, data):
+        """The callee is already on another call."""
+        logger.info(f"📵 Busy signal from {self.user.username}")
+ 
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'call_busy_signal',
+                'from_user': self.user.username,
+            }
+        )
+ 
+    # ==========================================================================
+    # CHANNEL LAYER EVENT HANDLERS — RECEIVE SIDE (group_send → WebSocket send)
+    # ==========================================================================
+
+ 
+    # ── Call event forwarders ──────────────────────────────────────────────────
+ 
+    async def call_incoming(self, event):
+        """
+        Forward the incoming-call signal (with SDP offer) to this WebSocket
+        connection.  The caller's own consumer also receives the group_send,
+        but the client-side JS filters it out by comparing caller == currentUser.
+        """
+        await self.send(text_data=json.dumps({
+            'type': 'call_incoming',
+            'caller': event.get('caller'),
+            'caller_id': event.get('caller_id'),
+            'offer': event.get('offer'),
+        }))
+ 
+    async def call_answered(self, event):
+        """Forward the SDP answer back to both peers; caller uses it, callee ignores."""
+        await self.send(text_data=json.dumps({
+            'type': 'call_answered',
+            'answerer': event.get('answerer'),
+            'answer': event.get('answer'),
+        }))
+ 
+    async def call_rejected(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'call_rejected',
+            'rejector': event.get('rejector'),
+        }))
+ 
+    async def call_ended(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'call_ended',
+            'ender': event.get('ender'),
+            'reason': event.get('reason', 'hangup'),
+        }))
+ 
+    async def ice_candidate_relay(self, event):
+        """
+        Forward ICE candidate ONLY to the other peer — skip the sender's own
+        connection so they don't add their own candidates to themselves.
+        """
+        if event.get('sender') != self.user.username:
+            await self.send(text_data=json.dumps({
+                'type': 'ice_candidate',
+                'candidate': event.get('candidate'),
+                'sender': event.get('sender'),
+            }))
+ 
+    async def call_busy_signal(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'call_busy',
+            'from_user': event.get('from_user'),
+        }))
+ 
+    # ==========================================================================
+    # CHANNEL LAYER EVENT HANDLERS — RECEIVE SIDE (group_send → WebSocket send)
+    # ==========================================================================
+
