@@ -100,7 +100,8 @@
         display: block;
     }
 </style>
-
+</br>
+</br>
 <div class="notion-detail-container">
     <div class="notion-detail">
         <!--<a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>-->
@@ -130,7 +131,7 @@
 <button
     class="btn btn-outline-primary share-btn"
     data-username="{{ notion.user.username }}"
-    data-url="{% url 'notion:notion_detail' notion.id %}">
+    data-url="{% url 'notion:notion_detail' notion.user.username notion.id %}">
     📤 Share
 </button>
 
@@ -184,7 +185,7 @@
     <div class="related-notion-item">
         <p>{{ related_notion.content |safe }}</p>
         <p>{{ related_notion.created_at }}</p>
-        <a href="{% url 'notion:notion_detail' related_notion.id %}">View</a>
+        <a href="{% url 'notion:notion_detail' related.notion.user.username related_notion.id %}">View</a>
     </div>
     {% endfor %}
 </div>

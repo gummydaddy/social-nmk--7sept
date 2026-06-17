@@ -76,13 +76,20 @@
 </style>
 
     <script src="{% static 'js/pull_to_refresh.js' %}"></script>   
-
+</br>
+</br>
 <form method="GET" action="{% url 'only_message:search_user_message' %}">
     <input type="text" name="q" placeholder="Search users">
     <button type="submit">Search</button>
 </form>
 
 <h2>Messages</h2>
+</br>
+
+<a href="{% url 'only_message:stranger_chat_view' %}" style="display:inline-block;margin:8px 0;padding:8px 16px;background:#16a34a;color:#fff;border-radius:20px;text-decoration:none;font-weight:600;">
+   Crumbing 🎥 Chat
+</a>
+
 <ul id="user-list">
     {% for user in users %}
     <li data-username="{{ user.username|escape }}">

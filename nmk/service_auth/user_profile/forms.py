@@ -12,6 +12,8 @@ import bleach
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 
+from django_countries.fields import CountryField
+
 
 
 class MediaForm(forms.ModelForm):
@@ -192,3 +194,10 @@ class MultiMediaForm(forms.Form):
     ], required=False)
     description = forms.CharField(widget=forms.Textarea, required=False)
     video_parts = forms.CharField(widget=forms.HiddenInput, required=False)  # Hidden input to hold selected parts
+
+
+
+class CountrySelectionForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['country']

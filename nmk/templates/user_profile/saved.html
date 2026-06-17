@@ -3,9 +3,7 @@
 {% load custom_filters %}
 
 {% block main_content %}
-{% comment %} <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
-    <i class="fas fa-globe"></i>
-</button> {% endcomment %}
+<br>
 <div>
     <form method="GET" action=".">
         <input type="text" name="hashtag" placeholder="Search by hashtag" value="{{ hashtag_filter }}">

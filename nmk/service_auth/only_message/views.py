@@ -97,7 +97,7 @@ def get_online_users(request):
         'online_users': online_users
     })
 '''
-
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def get_online_users(request):
     online_threshold = now() - timedelta(minutes=5)
 
@@ -897,8 +897,6 @@ def clear_notifications_api(request):
 
 
 
-
-@cache_page(60 * 10)
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def search_user_message(request):
     query = request.GET.get('q')
@@ -937,64 +935,6 @@ def get_messages_api(request, username):
 
 #new update for message sending message deletion logic
 #____________________________________________________
-'''
-@login_required
-@require_POST
-def delete_messages_view(request, username):
-    """
-    Deletes messages sent by the logged-in user and
-    notifies both users via WebSocket.
-    """
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
-
-    message_ids = request.POST.getlist('message_ids[]')
-
-    if not message_ids:
-        return JsonResponse({'success': False, 'error': 'No messages selected.'})
-
-    # Resolve recipient
-    recipient = get_object_or_404(AuthUser, username=username)
-
-    # Only allow deleting messages SENT BY request.user
-    messages = Message.objects.filter(
-        id__in=message_ids,
-        sender=request.user,
-        recipient=recipient
-    )
-
-    deleted_ids = list(messages.values_list('id', flat=True))
-
-    if not deleted_ids:
-        return JsonResponse({'success': False, 'error': 'Unauthorized or invalid messages.'})
-
-    # Delete messages (triggers file deletion signal)
-    messages.delete()
-
-    # --- WebSocket broadcast ---
-    channel_layer = get_channel_layer()
-
-    payload = {
-        'type': 'chat_message_delete',
-        'message_ids': deleted_ids,
-        'sender': request.user.username
-    }
-
-    #async_to_sync(channel_layer.group_send)(f"user_{request.user.id}", payload)
-    #async_to_sync(channel_layer.group_send)(f"user_{recipient.id}", payload)
-    sorted_ids = sorted([request.user.id, recipient.id])
-    room_group_name = f'chat_{sorted_ids[0]}_{sorted_ids[1]}'
-
-    async_to_sync(channel_layer.group_send)(
-        room_group_name,
-        payload
-    )
-
-    return JsonResponse({
-        'success': True,
-        'deleted_ids': deleted_ids
-    })
-'''
 
 @login_required
 @require_POST
@@ -1103,6 +1043,12 @@ def delete_messages_view(request, username):
 #new update for message sending message deletion logic
 
 
-
+#@login_required
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+def stranger_chat_view(request):
+    from django_countries import countries
+    return render(request, 'only_message/stranger_chat.html', {
+        'country_list': list(countries),
+    })
 
 

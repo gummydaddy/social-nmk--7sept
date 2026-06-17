@@ -50,36 +50,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             )
             logger.info(f"❌ Notification WebSocket DISCONNECTED: user={self.user.username}, code={close_code}")
 
-
-    '''
-    async def receive(self, text_data):
-        """Handle messages from client (e.g., mark as read)"""
-        try:
-            data = json.loads(text_data)
-            message_type = data.get('type')
-            
-            logger.info(f"📨 Received from client: {message_type}")
-            
-            if message_type == 'mark_read':
-                # Handle marking notifications as read
-                await self.send(text_data=json.dumps({
-                    'type': 'marked_read',
-                    'success': True
-                }))
-                
-            elif message_type == 'ping':
-                # Respond to ping to keep connection alive
-                await self.send(text_data=json.dumps({
-                    'type': 'pong'
-                }))
-                
-        except json.JSONDecodeError as e:
-            logger.error(f"Invalid JSON from client: {e}")
-        except Exception as e:
-            logger.error(f"Error handling client message: {e}", exc_info=True)
-    '''
-
-
  
     # ──────────────────────────────────────────────────────────────────────────
     # Incoming messages from the browser
@@ -131,85 +101,92 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     #   call_end       → peer_id
     #   ice_candidate  → peer_id
     #   call_busy      → caller_id
- 
+
     async def _call_initiate(self, data):
         recipient_id = data.get('recipient_id')
         if not recipient_id:
             logger.warning('call_initiate: missing recipient_id')
             return
- 
+
         caller_pic = data.get('caller_pic') or await _get_pic(self.user)
- 
-        logger.info(f'📞 call_initiate: {self.user.username} → user {recipient_id}')
- 
+        call_type = data.get('call_type', 'audio')
+
+        logger.info(f'📞 call_initiate ({call_type}): {self.user.username} → user {recipient_id}')
+
         await send_notification_via_websocket(recipient_id, {
             'type':       'incoming_call',
             'caller':     self.user.username,
             'caller_id':  self.user.id,
             'caller_pic': caller_pic,
             'offer':      data.get('offer'),
+            'call_type':  call_type,
             'chat_url':   f'/message/user_messages_view/{self.user.username}/',
         })
- 
+
     async def _call_answer(self, data):
         caller_id = data.get('caller_id')
         if not caller_id:
             return
- 
         logger.info(f'✅ call_answer: {self.user.username} → user {caller_id}')
- 
+
         await send_notification_via_websocket(caller_id, {
             'type':        'call_answered',
             'answerer':    self.user.username,
             'answerer_id': self.user.id,
             'answer':      data.get('answer'),
+            'call_type':   data.get('call_type', 'audio'),
         })
- 
+
     async def _call_reject(self, data):
         caller_id = data.get('caller_id')
         if not caller_id:
             return
- 
         logger.info(f'❌ call_reject: {self.user.username} → user {caller_id}')
- 
+
         await send_notification_via_websocket(caller_id, {
-            'type':     'call_rejected',
-            'rejector': self.user.username,
+            'type':      'call_rejected',
+            'rejector':  self.user.username,
+            'call_type': data.get('call_type', 'audio'),
         })
- 
+
     async def _call_end(self, data):
         peer_id = data.get('peer_id')
         if not peer_id:
             return
- 
         logger.info(f'📵 call_end: {self.user.username} → user {peer_id}')
- 
+
         await send_notification_via_websocket(peer_id, {
-            'type':  'call_ended',
-            'ender': self.user.username,
+            'type':      'call_ended',
+            'ender':     self.user.username,
+            'call_type': data.get('call_type', 'audio'),
         })
- 
+
     async def _ice_candidate(self, data):
         peer_id = data.get('peer_id')
         if not peer_id:
             return
- 
+
         await send_notification_via_websocket(peer_id, {
             'type':      'ice_candidate',
             'candidate': data.get('candidate'),
             'sender_id': self.user.id,
             'sender':    self.user.username,
+            'call_type': data.get('call_type', 'audio'),
         })
- 
+
     async def _call_busy(self, data):
         caller_id = data.get('caller_id')
         if not caller_id:
             return
- 
+
         await send_notification_via_websocket(caller_id, {
             'type':      'call_busy',
             'from_user': self.user.username,
+            'call_type': data.get('call_type', 'audio'),
         })
+
+
+
  
     # ──────────────────────────────────────────────────────────────────────────
     # Channel-layer → WebSocket forwarder

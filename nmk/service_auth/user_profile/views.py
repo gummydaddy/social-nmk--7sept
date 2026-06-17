@@ -18,7 +18,7 @@ from django.contrib import messages
 from service_auth.notion.models import Follow, Notification, Comment, Hashtag, BlockedUser
 from django.views.generic import ListView
 from .models import Media, Profile, Engagement, AdminNotification, UserHashtagPreference, Story, Buddy, Audio#, Comment
-from .forms import MediaForm, ProfileForm, CommentForm, AudioForm, CategorySelectionForm
+from .forms import MediaForm, ProfileForm, CommentForm, AudioForm, CategorySelectionForm, CountrySelectionForm
 from django.core.files.storage import get_storage_class
 from .storage import CompressedMediaStorage
 
@@ -350,7 +350,7 @@ logger = logging.getLogger(__name__)
 #with video upload support
 @login_required
 @csrf_exempt
-@cache_page(60 * 2)
+#@cache_page(60 * 2)
 def upload_media(request):
     logger.info(f"User {request.user.username} is uploading media")
 
@@ -4970,7 +4970,6 @@ def profile_notifications(request):
 
 
 @login_required
-@cache_page(60 * 30)
 @cache_control(private=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def edit_profile(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
@@ -4980,6 +4979,7 @@ def edit_profile(request, user_id):
     profile_form = ProfileForm(instance=profile)
     username_form = UsernameUpdateForm(initial={'new_username': profile_user.username})
     category_form = CategorySelectionForm(instance=profile)  # Category selection form
+    country_form = CountrySelectionForm(instance=profile)
 
     if request.method == 'POST':
         if 'save_changes' in request.POST:  # Handle profile updates
@@ -5017,10 +5017,29 @@ def edit_profile(request, user_id):
             else:
                 messages.error(request, 'Error updating your category')
 
+        elif 'update_country' in request.POST:
+            country_form = CountrySelectionForm(
+                request.POST,
+                instance=profile
+            )
+
+            if country_form.is_valid():
+                country_form.save()
+                messages.success(request, 'Country updated successfully!')
+                return redirect(
+                    'user_profile:profile',
+                    user_id=user_id
+                )
+            else:
+                messages.error(request, 'Error updating your country')
+
+
     return render(request, 'edit_profile.html', {
         'form': profile_form,
         'username_form': username_form,
         'category_form': category_form,  # Include the category form
+        'country_form': country_form,
+
         'profile_user': profile_user
     })
 
@@ -5048,7 +5067,6 @@ CATEGORY_CHOICES = [
 ]
 
 @login_required
-@cache_page(60 * 30)
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def update_category(request):
     profile = request.user.profile  # Access the Profile instance for the logged-in user
@@ -5081,8 +5099,47 @@ def update_category(request):
     return render(request, 'edit_profile.html', {'form': form})
 
 
+
+
 @login_required
-@cache_page(60 * 30)
+@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+def update_country(request):
+    profile = request.user.profile
+
+    if request.method == 'POST':
+        form = CountrySelectionForm(request.POST, instance=profile)
+
+        if form.is_valid():
+            form.save()
+
+            # AJAX request
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'status': 'success',
+                    'country': str(form.cleaned_data['country'])
+                })
+
+            messages.success(request, "Your country has been updated.")
+            return redirect(
+                'user_profile:profile',
+                user_id=request.user.id
+            )
+
+    else:
+        form = CountrySelectionForm(instance=profile)
+
+    # AJAX GET request
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'country': str(profile.country) if profile.country else ''
+        })
+
+    return render(request, 'edit_profile.html', {'form': form})
+
+
+
+@login_required
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def fetch_categories(request):
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -5094,7 +5151,6 @@ def fetch_categories(request):
 
 
 @login_required
-@cache_page(60 * 30)
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def save_bio(request):
     profile = request.user.profile  # Assuming Profile is related to the user
@@ -5843,7 +5899,6 @@ def add_to_buddy(request, user_id):
     
 
 @login_required
-@cache_page(60 * 30)
 @cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def buddy_list(request):
     """Display all users in the current user's buddy list."""

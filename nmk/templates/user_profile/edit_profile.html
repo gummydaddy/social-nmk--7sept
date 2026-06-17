@@ -142,6 +142,16 @@
     </form>
 
 
+    <form method="POST">
+        {% csrf_token %}
+
+        {{ country_form.country }}
+
+        <button type="submit" name="update_country">
+            Save Country
+        </button>
+    </form>
+
 
     <!-- Password Reset Link -->
     <div class="text-center mt-4">
@@ -312,84 +322,3 @@ document.addEventListener("DOMContentLoaded", function() {
 
 {% endblock %}
 
-
-
-
-
-{% comment %} // Reference to the category form
-        const categoryForm = document.getElementById('category-form');
-
-        // Function to populate the dropdown dynamically
-        function populateDropdown(categories) {
-            const selectElement = categoryForm.querySelector('select[name="category"]');
-
-            // Clear existing options
-            selectElement.innerHTML = '';
-
-            // Add a placeholder option
-            const placeholderOption = document.createElement('option');
-            placeholderOption.value = '';
-            placeholderOption.textContent = 'Select a category';
-            selectElement.appendChild(placeholderOption);
-
-            // Add new category options
-            categories.forEach(([value, label]) => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = label;
-                selectElement.appendChild(option);
-            });
-        }
-
-        // Fetch category choices dynamically (optional)
-        function fetchCategories() {
-            const url = "{% url 'user_profile:fetch_categories' %}"; // Endpoint to get category options
-            fetch(url, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success' && data.categories) {
-                    populateDropdown(data.categories); // Populate dropdown with fetched data
-                } else {
-                    console.error('Failed to fetch categories.');
-                }
-            })
-            .catch(error => console.error('Error fetching categories:', error));
-        }
-
-        // Fetch categories on page load (if needed)
-        if (categoryForm) {
-            fetchCategories(); // Call this only if categories are not hardcoded in the template
-
-            // Handle form submission for category updates
-            categoryForm.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const url = "{% url 'user_profile:update_category' %}";
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                const formData = new FormData(categoryForm);
-
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert(`Category updated to: ${data.category}`);
-                    } else {
-                        alert('Failed to update category.');
-                    }
-                })
-                .catch(error => console.error('Error updating category:', error));
-            });
-        }
-    }); {% endcomment %}

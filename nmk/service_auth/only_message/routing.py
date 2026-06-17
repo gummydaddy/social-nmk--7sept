@@ -28,6 +28,7 @@ from channels.security.websocket import AllowedHostsOriginValidator
 from . import consumers
 from .consumers import ChatConsumer
 from .notification_consumer import NotificationConsumer
+from .stranger_consumer import StrangerChatConsumer
 
 # Just export the websocket_urlpatterns
 websocket_urlpatterns = [
@@ -39,10 +40,8 @@ websocket_urlpatterns = [
     # Notification WebSocket (for push notifications)
     path('ws/notifications/', NotificationConsumer.as_asgi()),
 
-    #re_path(r'ws/chat/(?P<username>\w+)/$', consumers.ChatConsumer.as_asgi()),
-    #added this modification to the routing after making updates to the cousumer.py using with modified user_message_view and updated user_message.html
-    #re_path(r'ws/chat/(?P<username>\w+)/$', ChatConsumer.as_asgi()),
-    #re_path(r'ws/chat/(?P<username>[\w.@+-]+)/$', ChatConsumer.as_asgi()),
+    # ── NEW: random stranger video chat ──
+    path('ws/stranger/', StrangerChatConsumer.as_asgi()),
 
 ]
 

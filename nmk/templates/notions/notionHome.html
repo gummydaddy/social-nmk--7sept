@@ -222,18 +222,17 @@
       {% endif %}
     </a> 
     <span class="like-count">{{ notion.likes.count }}</span>
-    <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>
+    <button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.user.username notion.id %}'">💬</button>
 
 <!-- Share Button -->
 <button
     class="btn btn-outline-primary share-btn"
     data-username="{{ notion.user.username }}"
-    data-url="{% url 'notion:notion_detail' notion.id %}">
+    data-url="{% url 'notion:notion_detail' notion.user.username notion.id %}">
     📤 Share
 </button>
 
   </div>
-  <!--<button class="btn btn-primary mt-2" onclick="location.href='{% url 'notion:notion_detail' notion.id %}'">💬</button>-->
 
   <div class="comments mt-3">
     <form method="post" action="{% url 'notion:post_comment' notion.id %}">

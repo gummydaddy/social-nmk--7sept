@@ -288,6 +288,56 @@
             left: 0;
             right: 0;        
         }
+
+/* Keep all items on one line */
+header .container {
+    display: flex !important;
+    align-items: center;
+    flex-wrap: nowrap !important;
+    gap: 4px;
+}
+
+/* Search form should occupy remaining space */
+header form {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    margin-bottom: 0 !important; /* overrides mb-4 */
+    min-width: 0;
+}
+
+/* Search input shrinks when needed */
+header form input {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Prevent icons from shrinking */
+.messagebtn,
+.openbtn {
+    flex-shrink: 0;
+}
+
+/* Reduce spacing on small screens */
+@media (max-width: 576px) {
+    .openbtn,
+    .messagebtn {
+        background-color: #4F46E5;
+        border-radius: 50px;
+        padding: 6px 8px;
+        margin: 0 2px;
+        font-size: 19px;
+    }
+
+    header form input {
+        font-size: 14px;
+        padding: 6px 8px;
+    }
+
+    header form button {
+        padding: 6px;
+    }
+}
         footer {
             position: fixed;
             bottom: 0;
@@ -374,14 +424,7 @@
         .comment {
             margin-bottom: 10px;
         }
-{% comment %}
-        .notions-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 2rem;
-            border: 4px solid lightgray;
-        }
-{% endcomment %}
+
         /* Sidebar styling */
         .sidebar {
             height: 100%;
@@ -436,13 +479,6 @@
             padding: 2px;
         }
 
-        .openbtn {
-            font-size: 15px;
-            cursor: pointer;
-            background-color: #fffff0;
-            color: black;
-            border: 1px;
-        }
           
         form {
             width: auto;
@@ -476,7 +512,7 @@
         .media-content video {
             Display":flex;
             width: 85%;
-            height: 650px;
+            height: 580px;
             justify-content: center;
             align-items: center;
             border-radius: 8px;
@@ -493,7 +529,7 @@
           }
 
         nav.navbar {
-           z-index: 1050;
+           z-index: 1950;
            border-radius: 12px;
            margin-bottom: 10px;
 
@@ -507,19 +543,6 @@
             align-items: center;
             gap: 4px;
         }
-
-
-        #globe-button, .openbtn, .messagebtn {
-          background-color: #4F46E5;
-          border: none;
-          color: white;
-          padding: 8px 12px;
-          border-radius: 50px;
-          font-size: 18px;
-          margin: 0 5px;
-        }
-
-
         
     </style>
 <!--for pull-to-refresh gesture-->
@@ -703,7 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 <a><div id="google_translate_element"></div></a>
 
-                <div class="footer-icon text-center py-3 flex justify-center items-center" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;">
+                <div class="footer-icon text-center py-3 flex justify-center items-center" style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;">
                     <a href="{% url 'only_card:landing_page' %}" class="bg-black text-white px-4 py-2 rounded shadow-md flex items-center gap-2">
                         <i class="fas fa-shield-alt"></i>
                         Vault
@@ -714,25 +737,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
             </div>
             <header>
-              <nav class="navbar navbar-expand-lg navbar-dark bg-white">
+              <nav class="navbar navbar-expand-lg navbar-dark ">
                 <div class="container  d-flex align-items-center">
                   <a href="{% url 'only_message:message_list_view' %}">
                     <button class="messagebtn">💬</button>
                   </a>
-
                   <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-4">
-                      <input type="text" name="q" class="form-control me-2" placeholder="Search descriptions, hashtags..." value="{{ request.GET.q }}">
-                      <!--<button type="submit" class="btn btn-primary">Search</button> <i class="fas fa-user-circle"></i>-->
+                      <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
                       <button type="submit" class="fas fa-search"></button> 
-
                   </form>
-
                   <button class="openbtn" onclick="openNav()">☰</button>
                 </div>
               </nav>
             </header>
 
-    
             <main id="main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
@@ -889,7 +907,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             {% block footer %}
 
-            <footer style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); border-top: 1px solid #e5e7eb;" class="text-center py-3">
+            <footer style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;" class="text-center py-3">
                 <div class="bottom-strip d-flex justify-content-around align-items-center">
 
                     <!--<div class="footer-icon">
@@ -1278,7 +1296,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <!-- Global Call UI -->
     {% include 'only_message/global_call_ui.html' %}
-
+    {% include 'only_message/global_video_call_ui.html' %}
     <!--script for loading popup messages-->
     <script src="{% static 'js/popup_loading.js' %}"></script>
     <!--script for loading popup messages-->
