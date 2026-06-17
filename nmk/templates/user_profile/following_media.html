@@ -178,8 +178,45 @@
     transform: translate(-50%, -50%) scale(0.85);
 }
 </style>
-{% comment %}
-<header>
+
+<style>
+.action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+
+.action-buttons .btn {
+    flex: 1;
+}
+
+.video-chat-btn {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    border-radius: 50%;
+    background: #16a34a;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.3);
+    transition: all 0.2s ease;
+}
+
+.video-chat-btn:hover {
+    background: #15803d;
+    color: #fff;
+    transform: scale(1.05);
+}
+</style>
+
+
+<div class="uploads-section">
     <!--for displaying install button to the users who have not installed the app-->
     <link rel="manifest" href="{% static 'manifest.json' %}">
 
@@ -193,23 +230,11 @@
 
 
     <!--for displaying install button to the users who have not installed the app-->
-
-        <nav class="navbar navbar-expand-lg navbar-dark bg-white">
-            <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
-            <div class="container">
-                <a href="{% url 'only_message:message_list_view' %}" class="button-link">
-                    <button class="messagebtn"> 💬 </button>
-                </a>
-
-                <button class="openbtn" onclick="openNav()">☰ </button>
-            </div>
-        </nav>
+</div>
 
 
-    <!-- Profile Picture Section -->
-</header>
-{% endcomment %}
 <br>
+{%comment%}
 <div class="uploads-section">
     <div class="row row-cols-2 g-4">
         {% if request.user.is_authenticated %}
@@ -218,6 +243,41 @@
         {% else %}
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' %}'">Tags 🔖</button>
         <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
+        {% endif %}
+    </div>
+</div>
+{%endcomment%}
+
+<div class="uploads-section">
+    <div class="action-buttons">
+        {% if request.user.is_authenticated %}
+            <button type="button" class="btn btn-primary"
+                onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">
+                Tags 🔖
+            </button>
+
+            <a href="{% url 'only_message:stranger_chat_view' %}" class="video-chat-btn">
+                🎥 
+            </a>
+
+            <button type="button" class="btn btn-primary"
+                onclick="location.href='{% url 'user_profile:saved_uploads' %}'">
+                Saved
+            </button>
+        {% else %}
+            <button type="button" class="btn btn-primary"
+                onclick="location.href='{% url 'user_profile:media_tags' %}'">
+                Tags 🔖
+            </button>
+
+            <a href="{% url 'only_message:stranger_chat_view' %}" class="video-chat-btn">
+                🎥 
+            </a>
+
+            <button type="button" class="btn btn-primary"
+                onclick="location.href='{% url 'user_profile:saved_uploads' %}'">
+                Saved
+            </button>
         {% endif %}
     </div>
 </div>
@@ -246,18 +306,4 @@
 
 {% endblock %}
 
-<!--comment section java script ajax commenting -->
 
-<!--  <script type="application/ld+json"
-  {
-    "@context": "https://schema.org",
-    "@type": "SocialMediaPosting",
-    "headline": "{{ media.description|truncatewords:10|escapejs }}",
-    "articleBody": "{{ media.description|escapejs }}",
-    "author": {
-      "@type": "Person",
-      "name": "{{ media.user.username }}"
-    },
-    "datePublished": "{{ media.created_at|date:'c' }}"
-  }
-  </script-->

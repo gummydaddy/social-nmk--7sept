@@ -131,7 +131,7 @@
     background-color: #4338CA;
   }
 </style>
-
+{%comment%}
 <header>
   <nav class="navbar navbar-expand-lg navbar-dark bg-white">
     <div class="container">
@@ -143,7 +143,7 @@
     </div>
   </nav>
 </header>
-
+{%endcomment%}
 <!-- Search Form -->
 <form method="GET" action="{% url 'notion:notion_explorer' %}" class="search-form">
   <input type="text" name="q" placeholder="Search notions, hashtags, users">
@@ -183,13 +183,13 @@
             {% endif %}
           </a>
           <span class="like-count">{{ notion.likes.count }}</span> likes
-          <button onclick="location.href='{% url 'notion:notion_detail' notion.id %}'" class="btn btn-primary btn-sm">💬</button>
+          <button onclick="location.href='{% url 'notion:notion_detail' notion.user.username notion.id %}'" class="btn btn-primary btn-sm">💬</button>
 
 <!-- Share Button -->
 <button
     class="btn btn-outline-primary share-btn"
     data-username="{{ notion.user.username }}"
-    data-url="{% url 'notion:notion_detail' notion.id %}">
+    data-url="{% url 'notion:notion_detail' notion.user.username notion.id %}">
     📤 Share
 </button>
 

@@ -286,6 +286,7 @@
 
         try {
 
+            console.trace("notifications.js creating websocket");
             notificationSocket = new WebSocket(wsUrl);
 
             notificationSocket.onopen = function(e) {

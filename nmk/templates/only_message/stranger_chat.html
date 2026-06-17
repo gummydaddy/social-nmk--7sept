@@ -1,0 +1,462 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block main_content %}
+<style>
+    #sc-wrap {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 10px; padding: 10px;
+    }
+    #sc-stage {
+        position: relative; width: 100%; max-width: 640px;
+        aspect-ratio: 4/3; background: #111; border-radius: 12px;
+        overflow: hidden;
+    }
+    #sc-remote-video {
+        width: 100%; height: 100%; object-fit: cover; background: #000;
+    }
+    #sc-local-video {
+        position: absolute; bottom: 10px; right: 10px;
+        width: 110px; height: 82px; object-fit: cover;
+        border-radius: 8px; border: 2px solid rgba(255,255,255,.6);
+        transform: scaleX(-1); background: #222;
+    }
+    #sc-status {
+        position: absolute; top: 10px; left: 10px; right: 10px;
+        color: #fff; font-size: 13px; text-align: center;
+        background: rgba(0,0,0,.4); padding: 6px 10px; border-radius: 8px;
+    }
+    #sc-partner-info {
+        position: absolute; bottom: 10px; left: 10px;
+        color: #fff; font-size: 12px; background: rgba(0,0,0,.4);
+        padding: 4px 8px; border-radius: 6px;
+    }
+    #sc-controls {
+        display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+        width: 100%; max-width: 640px;
+    }
+    #sc-controls button, #sc-controls select {
+        padding: 10px 16px; border: none; border-radius: 20px;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .sc-btn-start  { background:#16a34a; color:#fff; }
+    .sc-btn-skip   { background:#007bff; color:#fff; }
+    .sc-btn-stop   { background:#dc2626; color:#fff; }
+    .sc-btn-mute   { background:#6b7280; color:#fff; }
+    .sc-btn-mute.sc-muted { background:#fbbf24; color:#1a1a1a; }
+    #sc-pref { padding: 10px; border-radius: 20px; border:1px solid #ccc; }
+    #sc-controls button:disabled { opacity:.5; cursor:not-allowed; }
+
+    /* ── Ephemeral chat panel ────────────────────────────────── */
+    #sc-chat-panel {
+        width: 100%; max-width: 640px; display: flex; flex-direction: column;
+        border: 1px solid #ccc; border-radius: 10px; overflow: hidden;
+        background: #fff; opacity: 0.5; pointer-events: none; transition: opacity .2s;
+    }
+    #sc-chat-panel.sc-active { opacity: 1; pointer-events: auto; }
+    #sc-chat-messages {
+        height: 160px; overflow-y: auto; padding: 8px 10px; font-size: 13px;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .sc-msg { max-width: 75%; padding: 6px 10px; border-radius: 12px; word-break: break-word; }
+    .sc-msg-me   { background: #e1ffc7; align-self: flex-end; text-align: right; }
+    .sc-msg-them { background: #f1f1f1; align-self: flex-start; }
+    .sc-msg-system { align-self: center; font-size: 11px; color: #888; font-style: italic; }
+    #sc-chat-input-row { display: flex; border-top: 1px solid #eee; }
+    #sc-chat-input {
+        flex: 1; border: none; padding: 8px 10px; font-size: 13px; outline: none;
+    }
+    #sc-chat-send {
+        border: none; background: #007bff; color: #fff; padding: 0 16px;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    #sc-chat-send:disabled { background: #aab; cursor: not-allowed; }
+</style>
+
+<div id="sc-wrap">
+    <h3>Crumbing 🎥 Chat</h3>
+
+    <div id="sc-stage">
+        <video id="sc-remote-video" autoplay playsinline></video>
+        <video id="sc-local-video" autoplay playsinline muted></video>
+        <div id="sc-status">Press Start to find someone to chat with, if new then SIGN IN to chat</div>
+        <div id="sc-partner-info" style="display:none;"></div>
+    </div>
+
+    <div id="sc-controls">
+        <select id="sc-pref">
+            <option value="ANY">🌍 Anyone</option>
+            {% for code, name in country_list %}
+            <option value="{{ code }}">{{ name }}</option>
+            {% endfor %}
+        </select>
+        <button id="sc-start-btn" class="sc-btn-start">▶ Start</button>
+        <button id="sc-skip-btn" class="sc-btn-skip" disabled>⏭ Skip</button>
+        <button id="sc-mute-btn" class="sc-btn-mute" disabled>🎤 Mute</button>
+        <button id="sc-stop-btn" class="sc-btn-stop" disabled>⏹ Stop</button>
+    </div>
+
+    {# ── Ephemeral peer-to-peer chat (never saved to DB) ───────── #}
+    <div id="sc-chat-panel">
+        <div id="sc-chat-messages"></div>
+        <div id="sc-chat-input-row">
+            <input type="text" id="sc-chat-input" placeholder="Type a message…" disabled maxlength="500">
+            <button id="sc-chat-send" disabled>Send</button>
+        </div>
+    </div>
+    <p>This platform lets you video chat with strangers around the world • Since june 2026</p>
+</div>
+{% endblock %}
+
+{% block Message_script %}
+<script>
+(function () {
+    'use strict';
+
+    const ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+        ]
+    };
+
+    /* ── Video / status DOM refs ─────────────────────────────── */
+    const remoteVideo = document.getElementById('sc-remote-video');
+    const localVideo  = document.getElementById('sc-local-video');
+    const statusEl    = document.getElementById('sc-status');
+    const partnerInfo = document.getElementById('sc-partner-info');
+    const prefSelect  = document.getElementById('sc-pref');
+    const startBtn    = document.getElementById('sc-start-btn');
+    const skipBtn     = document.getElementById('sc-skip-btn');
+    const stopBtn     = document.getElementById('sc-stop-btn');
+    const muteBtn     = document.getElementById('sc-mute-btn');
+
+    /* ── Chat DOM refs ────────────────────────────────────────── */
+    const chatPanel    = document.getElementById('sc-chat-panel');
+    const chatMessages = document.getElementById('sc-chat-messages');
+    const chatInput    = document.getElementById('sc-chat-input');
+    const chatSendBtn  = document.getElementById('sc-chat-send');
+
+    let ws = null;
+    let pc = null;
+    let dataChannel = null;
+    let localStream = null;
+    let isMuted = false;
+    let active = false;
+    let fallbackTimer = null;
+
+    function setStatus(msg) { statusEl.textContent = msg; }
+
+    function setButtons({ start, skip, stop, mute }) {
+        startBtn.disabled = !start;
+        skipBtn.disabled  = !skip;
+        stopBtn.disabled  = !stop;
+        muteBtn.disabled  = !mute;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       EPHEMERAL CHAT — runs entirely over the WebRTC data channel.
+       Nothing here ever touches the server / DB. Messages are wiped
+       on skip, stop, partner-disconnect, or page refresh.
+       ════════════════════════════════════════════════════════════ */
+    function clearChat() {
+        chatMessages.innerHTML = '';
+        chatPanel.classList.remove('sc-active');
+        chatInput.value = '';
+        chatInput.disabled = true;
+        chatSendBtn.disabled = true;
+    }
+
+    function appendChatMessage(text, who) {
+        const div = document.createElement('div');
+        div.className = 'sc-msg ' +
+            (who === 'me' ? 'sc-msg-me' : (who === 'system' ? 'sc-msg-system' : 'sc-msg-them'));
+        div.textContent = text;
+        chatMessages.appendChild(div);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function setupDataChannel(channel) {
+        dataChannel = channel;
+
+        dataChannel.onopen = function () {
+            chatPanel.classList.add('sc-active');
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+            appendChatMessage('Connected — say hi!', 'system');
+        };
+
+        dataChannel.onmessage = function (e) {
+            try {
+                const msg = JSON.parse(e.data);
+                appendChatMessage(msg.text, 'them');
+            } catch (err) {
+                console.warn('Bad chat payload:', err);
+            }
+        };
+
+        dataChannel.onclose = function () {
+            chatInput.disabled = true;
+            chatSendBtn.disabled = true;
+        };
+    }
+
+    function sendChatMessage() {
+        const text = chatInput.value.trim();
+        if (!text || !dataChannel || dataChannel.readyState !== 'open') return;
+
+        dataChannel.send(JSON.stringify({ text: text }));
+        appendChatMessage(text, 'me');
+        chatInput.value = '';
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       SIGNALLING WEBSOCKET
+       ════════════════════════════════════════════════════════════ */
+    function connectWS() {
+        const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/stranger/');
+
+        ws.onopen = function () {
+            sendFind();
+        };
+
+        ws.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            handleMessage(data);
+        };
+
+        ws.onclose = function () {
+            if (active) {
+                setStatus('Disconnected. Press Start to try again. If new then SIGN IN to chat');
+                cleanup(false);
+            }
+        };
+
+        ws.onerror = function () {
+            setStatus('Connection error.');
+        };
+    }
+
+    function sendFind() {
+        const country = prefSelect.value;
+        setStatus('🔎 Searching for a stranger…');
+        partnerInfo.style.display = 'none';
+        ws.send(JSON.stringify({ type: 'find', country: country }));
+
+        // fallback: if no match in 20s and a specific country was chosen,
+        // widen the search to "Anyone"
+        clearTimeout(fallbackTimer);
+        if (country !== 'ANY') {
+            fallbackTimer = setTimeout(function () {
+                if (ws && ws.readyState === WebSocket.OPEN) {
+                    setStatus('🔎 No one nearby — widening search to Anyone…');
+                    ws.send(JSON.stringify({ type: 'find', country: 'ANY' }));
+                }
+            }, 20000);
+        }
+    }
+
+    function handleMessage(data) {
+        switch (data.type) {
+            case 'searching':
+                setStatus('🔎 Searching for a stranger…');
+                break;
+
+            case 'matched':
+                clearTimeout(fallbackTimer);
+                onMatched(data);
+                break;
+
+            case 'webrtc_offer':
+                onOffer(data.payload);
+                break;
+
+            case 'webrtc_answer':
+                onAnswer(data.payload);
+                break;
+
+            case 'ice_candidate':
+                onRemoteIce(data.payload);
+                break;
+
+            case 'partner_left':
+                setStatus('Stranger disconnected. Searching for someone new…');
+                closePeerConnection();
+                clearChat();
+                partnerInfo.style.display = 'none';
+                if (active) { sendFind(); }
+                break;
+
+            case 'stopped':
+                setStatus('Chat stopped. Press Start to begin again.');
+                cleanup(false);
+                break;
+        }
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       WEBRTC PEER CONNECTION (video + audio + data channel)
+       ════════════════════════════════════════════════════════════ */
+    function createPeerConnection() {
+        pc = new RTCPeerConnection(ICE_SERVERS);
+
+        pc.onicecandidate = function (evt) {
+            if (evt.candidate) {
+                ws.send(JSON.stringify({ type: 'ice_candidate', payload: evt.candidate }));
+            }
+        };
+
+        pc.ontrack = function (evt) {
+            if (evt.streams && evt.streams[0]) {
+                remoteVideo.srcObject = evt.streams[0];
+            }
+        };
+
+        // Answerer receives the offerer's data channel here
+        pc.ondatachannel = function (evt) {
+            setupDataChannel(evt.channel);
+        };
+
+        pc.oniceconnectionstatechange = function () {
+            if (pc && (pc.iceConnectionState === 'failed')) {
+                setStatus('Connection issue — skipping…');
+                doSkip();
+            }
+        };
+
+        localStream.getTracks().forEach(function (t) { pc.addTrack(t, localStream); });
+    }
+
+    async function onMatched(data) {
+        partnerInfo.textContent = '👤 ' + data.partner.username +
+            (data.partner.country && data.partner.country !== 'ANY' ? ' · ' + data.partner.country : '');
+        partnerInfo.style.display = 'block';
+        setStatus('Connected!');
+
+        closePeerConnection();
+        clearChat();
+        createPeerConnection();
+
+        if (data.role === 'offerer') {
+            // Create the chat channel BEFORE the offer so it's negotiated in the SDP
+            const channel = pc.createDataChannel('chat', { ordered: true });
+            setupDataChannel(channel);
+
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            ws.send(JSON.stringify({ type: 'webrtc_offer', payload: offer }));
+        }
+    }
+
+    async function onOffer(offer) {
+        if (!pc) { createPeerConnection(); }
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        ws.send(JSON.stringify({ type: 'webrtc_answer', payload: answer }));
+    }
+
+    async function onAnswer(answer) {
+        if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        }
+    }
+
+    async function onRemoteIce(candidate) {
+        if (pc) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); }
+            catch (e) { console.warn('ICE add error:', e); }
+        }
+    }
+
+    function closePeerConnection() {
+        if (pc) { pc.close(); pc = null; }
+        if (dataChannel) { dataChannel.close(); dataChannel = null; }
+        remoteVideo.srcObject = null;
+    }
+
+    function doSkip() {
+        closePeerConnection();
+        clearChat();
+        partnerInfo.style.display = 'none';
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'skip' }));
+        }
+        setStatus('🔎 Searching for a stranger…');
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       START / STOP / MUTE
+       ════════════════════════════════════════════════════════════ */
+    async function start() {
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } catch (err) {
+            setStatus('Camera/microphone access denied.');
+            return;
+        }
+
+        localVideo.srcObject = localStream;
+        active = true;
+        setButtons({ start: false, skip: true, stop: true, mute: true });
+        prefSelect.disabled = true;
+        connectWS();
+    }
+
+    function cleanup(sendStop) {
+        active = false;
+        closePeerConnection();
+        clearChat();
+
+        if (ws) {
+            if (sendStop && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'stop' }));
+            }
+            ws.close();
+            ws = null;
+        }
+
+        if (localStream) {
+            localStream.getTracks().forEach(function (t) { t.stop(); });
+            localStream = null;
+        }
+
+        localVideo.srcObject = null;
+        partnerInfo.style.display = 'none';
+        isMuted = false;
+        muteBtn.textContent = '🎤 Mute';
+        muteBtn.classList.remove('sc-muted');
+        setButtons({ start: true, skip: false, stop: false, mute: false });
+        prefSelect.disabled = false;
+    }
+
+    function toggleMute() {
+        if (!localStream) return;
+        isMuted = !isMuted;
+        localStream.getAudioTracks().forEach(function (t) { t.enabled = !isMuted; });
+        muteBtn.textContent = isMuted ? '🔇 Unmute' : '🎤 Mute';
+        muteBtn.classList.toggle('sc-muted', isMuted);
+    }
+
+    /* ── Event listeners ─────────────────────────────────────── */
+    startBtn.addEventListener('click', start);
+    skipBtn.addEventListener('click', doSkip);
+    stopBtn.addEventListener('click', function () {
+        cleanup(true);
+        setStatus('Chat stopped. Press Start to begin again.');
+    });
+    muteBtn.addEventListener('click', toggleMute);
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    window.addEventListener('beforeunload', function () { cleanup(true); });
+})();
+</script>
+{% endblock %}

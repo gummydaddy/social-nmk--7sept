@@ -1,10 +1,9 @@
 {% if request.user.is_authenticated %}
 {# ═══════════════════════════════════════════════════════════════════════════ #}
-{#  GLOBAL AUDIO CALL UI                                                       #}
+{#  GLOBAL AUDIO CALL UI {%comment%}                                           #}
 {#  Include once in your base template (landing_page.html):                   #}
-{#      {% include 'only_message/global_call_ui.html' %}                      #}
 {#                                                                             #}
-{#  Works on EVERY page — the notification WebSocket is the signalling bus.   #}
+{#  Works on EVERY page — the notification WebSocket is the signalling bus.{%endcomment%}#}
 {# ═══════════════════════════════════════════════════════════════════════════ #}
 
 
@@ -348,6 +347,8 @@ window.SocyfieCall = (function () {
         var url      = protocol + '://' + location.host + '/ws/notifications/';
 
         try {
+
+            console.trace("global_call_ui creating websocket");
             _ws = new WebSocket(url);
             window.notificationSocket = _ws;
         } catch (e) {
@@ -550,6 +551,14 @@ window.SocyfieCall = (function () {
     //  SIGNAL HANDLER  (called when notification WS delivers a call event)
     // ════════════════════════════════════════════════════════════════════════
     function _handleSignal(notif) {
+        // Route video calls to the video-call engine; leave audio untouched.
+        if (notif.call_type === 'video') {
+            if (window.SocyfieVideoCall && window.SocyfieVideoCall._handleSignal) {
+                window.SocyfieVideoCall._handleSignal(notif);
+            }
+            return;
+        }
+
         var t = notif.type;
         console.log('📞 Call signal received:', t);
 
@@ -762,14 +771,22 @@ window.SocyfieCall = (function () {
     }
 
     // ── Start the notification WebSocket as soon as the page loads ──────────
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', _connectNotificationWS);
+
+    if (!window._socyfieNotifWSStarted) {
+        window._socyfieNotifWSStarted = true;
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', _connectNotificationWS);
+        } else {
+            _connectNotificationWS();
+        }
     } else {
-        _connectNotificationWS();
+        console.warn('SocyfieCall: notification WS already initialized — skipping duplicate connection.');
     }
 
     return { initiate: initiate, cancel: cancel, accept: accept,
-             reject: reject, end: end, toggleMute: toggleMute };
+             reject: reject, end: end, toggleMute: toggleMute,
+             isActive: function () { return _callActive; } };
 }());
 </script>
 {% endif %}

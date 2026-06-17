@@ -1,0 +1,55 @@
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  video_call_ui.html — include this inside user_messages.html              #}
+{#                                                                             #}
+{#  The SocyfieVideoCall engine lives in global_video_call_ui.html            #}
+{#  (included once in landing_page.html). This file contains ONLY the        #}
+{#  video-call button. Do NOT put any engine or overlay HTML here.            #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+{% with pic_url=recipient.profile|profile_picture_url %}
+
+<button
+    id="video-call-btn"
+    onclick="SocyfieVideoCall.initiate({{ recipient.id }}, '{{ recipient.username|escapejs }}', '{{ pic_url|escapejs }}')"
+    title="Video call with {{ recipient.username }}"
+    aria-label="Start video call with {{ recipient.username }}"
+>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+         width="16" height="16" aria-hidden="true">
+        <path d="M23 7l-7 5 7 5V7z"/>
+        <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+    </svg>
+    <span>Video</span>
+</button>
+
+{% endwith %}
+
+<style>
+#video-call-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    vertical-align: middle;
+    letter-spacing: .3px;
+    box-shadow: 0 2px 8px rgba(67,56,202,.35);
+    transition: transform .15s, box-shadow .15s;
+    margin-left: 6px;
+}
+#video-call-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(67,56,202,.45);
+}
+#video-call-btn:active { transform: translateY(0); }
+</style>

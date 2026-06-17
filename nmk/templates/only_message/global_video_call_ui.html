@@ -1,0 +1,734 @@
+{% if request.user.is_authenticated %}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  GLOBAL VIDEO CALL UI{%comment%}                                            #}
+{#  Include once in landing_page.html, right next to:                          #}
+{#                                                                             #}
+{#  Shares the SAME notification WebSocket as SocyfieCall                     #}
+{#  (window.notificationSocket) — no extra connection is opened.             #}
+{#  Signals are tagged call_type:'video' so SocyfieCall._handleSignal         #}
+{#  routes incoming notifications here without affecting audio calls.{%endcomment%}#}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+<!-- ── INCOMING VIDEO CALL OVERLAY ───────────────────────────────────────── -->
+<div id="scv-incoming-overlay" class="scv-call-overlay" aria-hidden="true">
+    <div class="scv-call-card scv-incoming-card">
+
+        <div class="scv-ring-animation" aria-hidden="true">
+            <div class="scv-ring scv-ring-1"></div>
+            <div class="scv-ring scv-ring-2"></div>
+        </div>
+
+        <div class="scv-call-avatar">
+            <img id="scv-incoming-avatar" src="" alt="Caller"
+                 onerror="this.src='/static/images/logo.png'">
+        </div>
+
+        <div class="scv-call-name" id="scv-incoming-caller-name">…</div>
+        <div class="scv-call-status-label">Incoming video call</div>
+
+        <div class="scv-call-actions">
+            <button class="scv-btn-reject"
+                    onclick="SocyfieVideoCall.reject()"
+                    aria-label="Decline video call">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9
+                             -.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0
+                             -.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0
+                             -.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78
+                             11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l
+                             -2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28
+                             a11.27 11.27 0 00-2.67-1.85.999.999 0 01-.56-.9v-3.1
+                             C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+                <span>Decline</span>
+            </button>
+
+            <button class="scv-btn-accept"
+                    onclick="SocyfieVideoCall.accept()"
+                    aria-label="Accept video call">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+                     width="20" height="20" aria-hidden="true">
+                    <path d="M23 7l-7 5 7 5V7z"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+                <span>Answer</span>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── OUTGOING VIDEO CALL OVERLAY ───────────────────────────────────────── -->
+<div id="scv-outgoing-overlay" class="scv-call-overlay" aria-hidden="true">
+    <div class="scv-call-card scv-outgoing-card">
+
+        <div class="scv-call-pulse-ring"></div>
+
+        <div class="scv-call-avatar">
+            <img id="scv-outgoing-avatar" src="" alt="Recipient"
+                 onerror="this.src='/static/images/logo.png'">
+        </div>
+
+        <div class="scv-call-name" id="scv-outgoing-name">…</div>
+        <div class="scv-call-status-label">Calling…</div>
+
+        {# Self-preview while ringing #}
+        <video id="scv-outgoing-local-video" class="scv-self-preview" autoplay playsinline muted></video>
+
+        <div class="scv-call-actions">
+            <button class="scv-btn-end"
+                    onclick="SocyfieVideoCall.cancel()"
+                    aria-label="Cancel call">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+                    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9
+                             -.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0
+                             -.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0
+                             -.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78
+                             11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l
+                             -2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28
+                             a11.27 11.27 0 00-2.67-1.85.999.999 0 01-.56-.9v-3.1
+                             C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ── ACTIVE VIDEO CALL OVERLAY ─────────────────────────────────────────── -->
+<div id="scv-active-overlay" class="scv-call-overlay" aria-hidden="true">
+    <div class="scv-call-card scv-active-card">
+
+        <div class="scv-call-name" id="scv-active-call-name">…</div>
+        <div class="scv-call-status-label" id="scv-active-status">Connecting…</div>
+        <div class="scv-call-timer" id="scv-call-timer" aria-live="polite">--:--</div>
+
+        <div class="scv-video-stage">
+            <video id="scv-remote-video" class="scv-remote-video" autoplay playsinline></video>
+            <video id="scv-local-video"  class="scv-local-video"  autoplay playsinline muted></video>
+        </div>
+
+        <div class="scv-call-actions scv-active-actions">
+
+            <button class="scv-ctrl-btn" id="scv-mute-btn"
+                    onclick="SocyfieVideoCall.toggleMute()"
+                    aria-label="Toggle microphone" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     width="20" height="20" aria-hidden="true">
+                    <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                    <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+                </svg>
+                <span id="scv-mute-label">Mute</span>
+            </button>
+
+            <button class="scv-ctrl-btn" id="scv-cam-btn"
+                    onclick="SocyfieVideoCall.toggleCamera()"
+                    aria-label="Toggle camera" aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     width="20" height="20" aria-hidden="true">
+                    <path d="M23 7l-7 5 7 5V7z"/>
+                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+                <span id="scv-cam-label">Camera Off</span>
+            </button>
+
+            <button class="scv-btn-end scv-btn-end-lg"
+                    onclick="SocyfieVideoCall.end()"
+                    aria-label="End call">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                    <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9
+                             -.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0
+                             -.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0
+                             -.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78
+                             11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l
+                             -2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28
+                             a11.27 11.27 0 00-2.67-1.85.999.999 0 01-.56-.9v-3.1
+                             C15.15 9.25 13.6 9 12 9z"/>
+                </svg>
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ── STYLES (scoped with scv- prefix) ─────────────────────────────────── -->
+<style>
+.scv-call-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99998; /* just below audio overlay (99999) in case of cross-signal busy */
+    background: rgba(0,0,0,.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    animation: scvFadeIn .2s ease;
+}
+.scv-call-overlay.scv-visible { display: flex; }
+@keyframes scvFadeIn { from{opacity:0} to{opacity:1} }
+
+.scv-call-card {
+    position: relative;
+    background: linear-gradient(160deg,#1a1a2e 0%,#16213e 55%,#0f3460 100%);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 28px;
+    padding: 32px 28px 28px;
+    width: min(420px, 94vw);
+    text-align: center;
+    color: #fff;
+    box-shadow: 0 24px 64px rgba(0,0,0,.6);
+    animation: scvSlideUp .28s cubic-bezier(.34,1.56,.64,1);
+    overflow: hidden;
+}
+@keyframes scvSlideUp {
+    from{transform:translateY(40px) scale(.95);opacity:0}
+    to  {transform:translateY(0)    scale(1);  opacity:1}
+}
+
+.scv-call-avatar {
+    position: relative;
+    width: 84px; height: 84px;
+    margin: 0 auto 16px;
+}
+.scv-call-avatar img {
+    width: 84px; height: 84px;
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid rgba(255,255,255,.18);
+}
+
+.scv-call-name { font-size:21px;font-weight:700;margin-bottom:6px; }
+.scv-call-status-label { font-size:13px;color:rgba(255,255,255,.55);margin-bottom:16px; }
+.scv-call-timer {
+    font-size:24px;font-weight:300;letter-spacing:3px;
+    color:#4ade80;margin-bottom:14px;font-variant-numeric:tabular-nums;
+}
+
+.scv-call-pulse-ring {
+    position:absolute;top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:220px;height:220px;border-radius:50%;
+    border:2px solid rgba(37,211,102,.25);
+    animation:scvPulse 2s ease-out infinite;pointer-events:none;
+}
+@keyframes scvPulse {
+    0%  {transform:translate(-50%,-50%) scale(.6);opacity:.8}
+    100%{transform:translate(-50%,-50%) scale(1.8);opacity:0}
+}
+
+.scv-ring-animation{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;}
+.scv-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;border:2px solid rgba(250,204,21,.3);}
+.scv-ring-1{width:170px;height:170px;animation:scvRingP 1.8s ease-out infinite;}
+.scv-ring-2{width:230px;height:230px;animation:scvRingP 1.8s ease-out .5s infinite;}
+@keyframes scvRingP{0%{opacity:.7;transform:translate(-50%,-50%) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+
+/* ── Video stage (active call) ───────────────────────────────────────── */
+.scv-video-stage {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #000;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+.scv-remote-video {
+    width: 100%; height: 100%; object-fit: cover; background: #000;
+}
+.scv-local-video {
+    position: absolute; bottom: 10px; right: 10px;
+    width: 92px; height: 68px; object-fit: cover;
+    border-radius: 8px; border: 2px solid rgba(255,255,255,.5);
+    transform: scaleX(-1); background: #222;
+}
+
+/* ── Self preview while ringing (outgoing) ───────────────────────────── */
+.scv-self-preview {
+    width: 140px; height: 105px; object-fit: cover;
+    border-radius: 10px; border: 2px solid rgba(255,255,255,.3);
+    transform: scaleX(-1); background: #222;
+    margin: 4px auto 18px; display: block;
+}
+
+.scv-call-actions{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
+.scv-active-actions{flex-wrap:nowrap;gap:14px;}
+
+.scv-btn-end{
+    width:58px;height:58px;border-radius:50%;border:none;
+    background:#dc2626;color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:transform .15s,background .15s;
+    box-shadow:0 4px 16px rgba(220,38,38,.4);
+}
+.scv-btn-end:hover{background:#b91c1c;transform:scale(1.08);}
+.scv-btn-end-lg{width:66px;height:66px;}
+
+.scv-btn-accept{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:13px 20px;background:#16a34a;color:#fff;border:none;
+    border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;
+    transition:transform .15s,box-shadow .15s;
+    box-shadow:0 4px 16px rgba(22,163,74,.4);min-width:90px;
+}
+.scv-btn-accept:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(22,163,74,.55);}
+
+.scv-btn-reject{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:13px 20px;background:#dc2626;color:#fff;border:none;
+    border-radius:18px;font-size:12px;font-weight:600;cursor:pointer;
+    transition:transform .15s,box-shadow .15s;
+    box-shadow:0 4px 16px rgba(220,38,38,.35);min-width:90px;
+}
+.scv-btn-reject:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(220,38,38,.5);}
+
+.scv-ctrl-btn{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:12px 16px;background:rgba(255,255,255,.1);color:#fff;
+    border:1px solid rgba(255,255,255,.15);border-radius:18px;
+    font-size:11px;font-weight:500;cursor:pointer;
+    transition:background .15s,transform .15s;min-width:78px;
+}
+.scv-ctrl-btn:hover{background:rgba(255,255,255,.18);transform:translateY(-1px);}
+.scv-ctrl-btn.scv-active{background:rgba(250,204,21,.2);border-color:rgba(250,204,21,.5);color:#fbbf24;}
+
+@media(max-width:440px){
+    .scv-call-card{padding:24px 16px 20px;}
+    .scv-call-name{font-size:18px;}
+    .scv-active-actions{gap:8px;}
+    .scv-ctrl-btn{padding:10px 10px;min-width:64px;}
+    .scv-local-video{width:74px;height:55px;}
+}
+</style>
+
+
+<!-- ── GLOBAL VIDEO CALL ENGINE ──────────────────────────────────────────── -->
+<script>
+/* ─────────────────────────────────────────────────────────────────────────
+   SocyfieVideoCall  — global video call engine
+   Reuses the notification WebSocket opened by SocyfieCall
+   (window.notificationSocket). All outgoing signals are tagged
+   call_type:'video'; incoming ones are routed here by
+   SocyfieCall._handleSignal when notif.call_type === 'video'.
+   ───────────────────────────────────────────────────────────────────────── */
+window.SocyfieVideoCall = (function () {
+    'use strict';
+
+    var ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302'  },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+        ]
+    };
+
+    var CURRENT_USER_ID = {{ request.user.id }};
+    {% if request.user.profile.profile_picture %}
+    var CURRENT_USER_PIC = '{{ request.user.profile.profile_picture.url }}';
+    {% else %}
+    var CURRENT_USER_PIC = '';
+    {% endif %}
+
+    // ── state ────────────────────────────────────────────────────────────
+    var _pc           = null;
+    var _localStream  = null;
+    var _isMuted      = false;
+    var _isCamOff     = false;
+    var _isInitiator  = false;
+    var _callActive   = false;
+    var _peerId       = null;
+    var _peerName     = '';
+    var _pendingOffer    = null;
+    var _pendingCallerId = null;
+    var _pendingCallerPic = '';
+
+    var _timerHandle = null;
+    var _timerSecs   = 0;
+    var _ringCtx     = null;
+    var _ringInterval = null;
+
+    // ── send via the shared notification socket ────────────────────────────
+    function _send(obj) {
+        var ws = window.notificationSocket;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            obj.call_type = 'video';
+            ws.send(JSON.stringify(obj));
+            return true;
+        }
+        console.warn('SocyfieVideoCall._send: notification WS not open');
+        return false;
+    }
+
+    // ── overlay helpers ─────────────────────────────────────────────────────
+    function _show(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.add('scv-visible'); el.setAttribute('aria-hidden','false'); }
+    }
+    function _hide(id) {
+        var el = document.getElementById(id);
+        if (el) { el.classList.remove('scv-visible'); el.setAttribute('aria-hidden','true'); }
+    }
+    function _hideAll() {
+        ['scv-outgoing-overlay','scv-incoming-overlay','scv-active-overlay'].forEach(_hide);
+    }
+    function _setImg(elId, src) {
+        var el = document.getElementById(elId);
+        if (el && src) { el.src = src; }
+    }
+
+    // ── RTCPeerConnection factory ───────────────────────────────────────────
+    function _createPC() {
+        var pc = new RTCPeerConnection(ICE_SERVERS);
+
+        pc.onicecandidate = function (evt) {
+            if (evt.candidate && _peerId) {
+                _send({ type: 'ice_candidate', peer_id: _peerId, candidate: evt.candidate });
+            }
+        };
+
+        pc.ontrack = function (evt) {
+            var remote = document.getElementById('scv-remote-video');
+            if (remote && evt.streams && evt.streams[0]) {
+                remote.srcObject = evt.streams[0];
+            }
+            var st = document.getElementById('scv-active-status');
+            if (st) { st.textContent = 'Connected'; }
+        };
+
+        pc.oniceconnectionstatechange = function () {
+            var s = pc.iceConnectionState;
+            console.log('Video ICE state:', s);
+            if (s === 'failed' || s === 'closed') { end(); }
+            if (s === 'disconnected') {
+                setTimeout(function () {
+                    if (_pc && _pc.iceConnectionState === 'disconnected') { end(); }
+                }, 6000);
+            }
+        };
+
+        return pc;
+    }
+
+    // ── camera + mic ─────────────────────────────────────────────────────────
+    function _getCam() {
+        return navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .catch(function (err) {
+                var msg = err.name === 'NotAllowedError'
+                    ? 'Camera/microphone access was denied. Please allow it in browser settings.'
+                    : 'Could not access camera/microphone: ' + err.message;
+                alert(msg);
+                throw err;
+            });
+    }
+
+    // ── timer ────────────────────────────────────────────────────────────────
+    function _startTimer() {
+        _timerSecs = 0;
+        var el = document.getElementById('scv-call-timer');
+        if (el) { el.textContent = '00:00'; }
+        _timerHandle = setInterval(function () {
+            _timerSecs++;
+            var m = String(Math.floor(_timerSecs / 60)).padStart(2,'0');
+            var s = String(_timerSecs % 60).padStart(2,'0');
+            if (el) { el.textContent = m + ':' + s; }
+        }, 1000);
+    }
+    function _stopTimer() {
+        if (_timerHandle) { clearInterval(_timerHandle); _timerHandle = null; }
+    }
+
+    // ── ringtone ─────────────────────────────────────────────────────────────
+    function _startRing() {
+        try {
+            _ringCtx = new (window.AudioContext || window.webkitAudioContext)();
+            _ringInterval = setInterval(function () {
+                [480, 620].forEach(function (freq, i) {
+                    var osc  = _ringCtx.createOscillator();
+                    var gain = _ringCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(_ringCtx.destination);
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.25, _ringCtx.currentTime);
+                    osc.start(_ringCtx.currentTime + i * 0.22);
+                    osc.stop (_ringCtx.currentTime + i * 0.22 + 0.18);
+                });
+            }, 1200);
+        } catch (_) { /* AudioContext may be blocked without user gesture */ }
+    }
+    function _stopRing() {
+        if (_ringInterval) { clearInterval(_ringInterval); _ringInterval = null; }
+        if (_ringCtx)      { _ringCtx.close().catch(function(){}); _ringCtx = null; }
+    }
+
+    // ── cleanup ──────────────────────────────────────────────────────────────
+    function _cleanup() {
+        if (_pc)          { _pc.close(); _pc = null; }
+        if (_localStream) { _localStream.getTracks().forEach(function(t){ t.stop(); }); _localStream = null; }
+
+        _isInitiator  = false;
+        _callActive   = false;
+        _peerId       = null;
+        _peerName     = '';
+        _pendingOffer = null;
+        _pendingCallerId  = null;
+        _pendingCallerPic = '';
+        _isMuted      = false;
+        _isCamOff     = false;
+
+        _stopTimer();
+        _stopRing();
+
+        ['scv-remote-video', 'scv-local-video', 'scv-outgoing-local-video'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) { el.srcObject = null; }
+        });
+
+        var mBtn = document.getElementById('scv-mute-btn');
+        var mLbl = document.getElementById('scv-mute-label');
+        var cBtn = document.getElementById('scv-cam-btn');
+        var cLbl = document.getElementById('scv-cam-label');
+
+        if (mBtn) { mBtn.classList.remove('scv-active'); mBtn.setAttribute('aria-pressed','false'); }
+        if (mLbl) { mLbl.textContent = 'Mute'; }
+        if (cBtn) { cBtn.classList.remove('scv-active'); cBtn.setAttribute('aria-pressed','false'); }
+        if (cLbl) { cLbl.textContent = 'Camera Off'; }
+    }
+
+    // ── signal handler (called by SocyfieCall._handleSignal dispatch) ────────
+    function _handleSignal(notif) {
+        var t = notif.type;
+        console.log('🎥 Video call signal received:', t);
+
+        if (t === 'incoming_call') {
+            if (notif.caller_id === CURRENT_USER_ID) { return; } // own echo
+
+            if (_callActive || (window.SocyfieCall && window.SocyfieCall.isActive && window.SocyfieCall.isActive())) {
+                _send({ type: 'call_busy', caller_id: notif.caller_id });
+                return;
+            }
+
+            _pendingOffer     = notif.offer;
+            _pendingCallerId  = notif.caller_id;
+            _pendingCallerPic = notif.caller_pic || '';
+            _peerName         = notif.caller;
+            _peerId           = notif.caller_id;
+
+            var nameEl = document.getElementById('scv-incoming-caller-name');
+            if (nameEl) { nameEl.textContent = notif.caller; }
+            _setImg('scv-incoming-avatar', _pendingCallerPic);
+
+            _show('scv-incoming-overlay');
+            _startRing();
+
+        } else if (t === 'call_answered') {
+            if (!_isInitiator || !_pc) { return; }
+            _hide('scv-outgoing-overlay');
+            _pc.setRemoteDescription(new RTCSessionDescription(notif.answer))
+               .then(function () { _showActiveScreen(); })
+               .catch(function (err) {
+                   console.error('Video setRemoteDescription failed:', err);
+                   end();
+               });
+
+        } else if (t === 'call_rejected') {
+            _hideAll(); _cleanup();
+            _toast((notif.rejector || 'User') + ' declined the video call.');
+
+        } else if (t === 'call_ended') {
+            _hideAll(); _cleanup();
+            _toast('Call ended.');
+
+        } else if (t === 'call_busy') {
+            _hideAll(); _cleanup();
+            _toast((_peerName || 'User') + ' is busy on another call.');
+
+        } else if (t === 'ice_candidate') {
+            if (_pc && notif.candidate && notif.sender_id !== CURRENT_USER_ID) {
+                _pc.addIceCandidate(new RTCIceCandidate(notif.candidate))
+                   .catch(function (e) { console.warn('ICE candidate error:', e); });
+            }
+        }
+    }
+
+    // ── active-call screen ──────────────────────────────────────────────────
+    function _showActiveScreen() {
+        var nameEl = document.getElementById('scv-active-call-name');
+        var stEl   = document.getElementById('scv-active-status');
+        var tmEl   = document.getElementById('scv-call-timer');
+        if (nameEl) { nameEl.textContent = _peerName; }
+        if (stEl)   { stEl.textContent   = 'Connecting…'; }
+        if (tmEl)   { tmEl.textContent   = '00:00'; }
+
+        var lv = document.getElementById('scv-local-video');
+        if (lv && _localStream) { lv.srcObject = _localStream; }
+
+        _show('scv-active-overlay');
+        _startTimer();
+    }
+
+    // ── toast ────────────────────────────────────────────────────────────────
+    function _toast(msg) {
+        var t = document.createElement('div');
+        t.textContent = msg;
+        Object.assign(t.style, {
+            position:'fixed', bottom:'28px', left:'50%',
+            transform:'translateX(-50%)',
+            background:'rgba(0,0,0,.82)', color:'#fff',
+            padding:'10px 22px', borderRadius:'24px',
+            fontSize:'13px', zIndex:'100001',
+            transition:'opacity .4s', opacity:'1', pointerEvents:'none'
+        });
+        document.body.appendChild(t);
+        setTimeout(function(){
+            t.style.opacity = '0';
+            setTimeout(function(){ t.remove(); }, 400);
+        }, 3500);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  PUBLIC API
+    // ════════════════════════════════════════════════════════════════════════
+
+    /**
+     * Start a video call.
+     * @param {number} recipientId   — the other user's Django user ID
+     * @param {string} recipientName — their username
+     * @param {string} [picUrl]      — their profile picture URL (optional)
+     */
+    function initiate(recipientId, recipientName, picUrl) {
+        if (_callActive) { alert('You are already on a call.'); return; }
+        if (window.SocyfieCall && window.SocyfieCall.isActive && window.SocyfieCall.isActive()) {
+            alert('You are already on an audio call.'); return;
+        }
+
+        var ws = window.notificationSocket;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            alert('Not connected to the server. Please wait a moment and try again.');
+            return;
+        }
+
+        _peerName    = recipientName;
+        _peerId      = recipientId;
+        _isInitiator = true;
+        _callActive  = true;
+
+        var nameEl = document.getElementById('scv-outgoing-name');
+        if (nameEl) { nameEl.textContent = recipientName; }
+        if (picUrl) { _setImg('scv-outgoing-avatar', picUrl); }
+        _show('scv-outgoing-overlay');
+
+        _getCam()
+            .then(function (stream) {
+                _localStream = stream;
+
+                var lv = document.getElementById('scv-outgoing-local-video');
+                if (lv) { lv.srcObject = stream; }
+
+                _pc = _createPC();
+                stream.getTracks().forEach(function (t) { _pc.addTrack(t, stream); });
+                return _pc.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+            })
+            .then(function (offer) {
+                return _pc.setLocalDescription(offer).then(function () { return offer; });
+            })
+            .then(function (offer) {
+                _send({
+                    type:         'call_initiate',
+                    recipient_id: recipientId,
+                    caller_pic:   CURRENT_USER_PIC,
+                    offer:        offer
+                });
+            })
+            .catch(function (err) {
+                console.error('Video call initiation error:', err);
+                _hideAll(); _cleanup();
+            });
+    }
+
+    function cancel() {
+        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId }); }
+        _hideAll(); _cleanup();
+    }
+
+    function accept() {
+        if (!_pendingOffer || !_pendingCallerId) { return; }
+
+        _stopRing();
+        _hide('scv-incoming-overlay');
+
+        var callerId = _pendingCallerId;
+        var offer    = _pendingOffer;
+        _pendingOffer    = null;
+        _pendingCallerId = null;
+        _callActive      = true;
+
+        _getCam()
+            .then(function (stream) {
+                _localStream = stream;
+                _pc = _createPC();
+                stream.getTracks().forEach(function (t) { _pc.addTrack(t, stream); });
+                return _pc.setRemoteDescription(new RTCSessionDescription(offer));
+            })
+            .then(function () { return _pc.createAnswer(); })
+            .then(function (answer) {
+                return _pc.setLocalDescription(answer).then(function () { return answer; });
+            })
+            .then(function (answer) {
+                _send({ type: 'call_answer', caller_id: callerId, answer: answer });
+                _showActiveScreen();
+            })
+            .catch(function (err) {
+                console.error('Video call accept error:', err);
+                _send({ type: 'call_end', peer_id: callerId });
+                _hideAll(); _cleanup();
+            });
+    }
+
+    function reject() {
+        _stopRing();
+        _hide('scv-incoming-overlay');
+        if (_pendingCallerId) {
+            _send({ type: 'call_reject', caller_id: _pendingCallerId });
+        }
+        _pendingOffer    = null;
+        _pendingCallerId = null;
+    }
+
+    function end() {
+        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId }); }
+        _hideAll(); _cleanup();
+    }
+
+    function toggleMute() {
+        if (!_localStream) { return; }
+        _isMuted = !_isMuted;
+        _localStream.getAudioTracks().forEach(function (t) { t.enabled = !_isMuted; });
+        var btn = document.getElementById('scv-mute-btn');
+        var lbl = document.getElementById('scv-mute-label');
+        if (btn) { btn.classList.toggle('scv-active', _isMuted); btn.setAttribute('aria-pressed', _isMuted); }
+        if (lbl) { lbl.textContent = _isMuted ? 'Unmute' : 'Mute'; }
+    }
+
+    function toggleCamera() {
+        if (!_localStream) { return; }
+        _isCamOff = !_isCamOff;
+        _localStream.getVideoTracks().forEach(function (t) { t.enabled = !_isCamOff; });
+        var btn = document.getElementById('scv-cam-btn');
+        var lbl = document.getElementById('scv-cam-label');
+        if (btn) { btn.classList.toggle('scv-active', _isCamOff); btn.setAttribute('aria-pressed', _isCamOff); }
+        if (lbl) { lbl.textContent = _isCamOff ? 'Camera On' : 'Camera Off'; }
+    }
+
+    return {
+        initiate: initiate, cancel: cancel, accept: accept, reject: reject, end: end,
+        toggleMute: toggleMute, toggleCamera: toggleCamera,
+        _handleSignal: _handleSignal,
+        isActive: function () { return _callActive; }
+    };
+}());
+</script>
+{% endif %}
