@@ -83,6 +83,33 @@
         <div id="sc-partner-info" style="display:none;"></div>
     </div>
 
+    {% if not user.is_authenticated %}
+    <!-- Google One Tap Login Setup -->
+
+    <!-- Structural UI configuration -->
+        <div id="g_id_onload"
+             data-client_id="820366895033-d3sjtgalbr0corm5ne6a2ur63fl2hn37.apps.googleusercontent.com"
+             data-login_uri="https://socyfie.com/google-one-tap-callback/"
+             data-auto_prompt="true"
+             data-ux_mode="https://socyfie.com/crumbing/"
+             data-use_fedcm_for_prompt="true"
+             data-itp_support="true"
+             data-state="{{ csrf_token }}">
+        </div>
+
+    <!-- Backup Sign-In button -->
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
+
+    <!-- End Google One Tap Login Setup -->
+    {% endif %}
+
     <div id="sc-controls">
         <select id="sc-pref">
             <option value="ANY">🌍 Anyone</option>
@@ -459,4 +486,4 @@
     window.addEventListener('beforeunload', function () { cleanup(true); });
 })();
 </script>
-{% endblock %}
+{%endblock%}

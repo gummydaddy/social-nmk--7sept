@@ -67,6 +67,9 @@ urlpatterns = [
     path('subgroup_landing_page/', views.subgroup_landing_page, name='subgroup_landing_page'),
     path('buy_storage/', views.buy_storage, name='buy_storage'),
 
+    #google one click login
+    path('google-one-tap-callback/', views.google_one_tap_callback, name='google_one_tap_callback'),
+
     # path('lock/<int:user_id>/', views.lock_user, name='lock_user'),
     # path('unlock/<int:user_id>/', views.unlock_user, name='unlock_user'),
     # path('locked/', views.locked_page, name='locked_page'),

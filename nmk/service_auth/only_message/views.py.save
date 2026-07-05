@@ -40,7 +40,6 @@ from .websocket_notifications import (
     clear_unread_count
 )
 
-import mimetypes
 from .tasks import process_uploaded_file
 
 from .tasks import process_message_file, optimize_image_for_upload, send_progress_update
@@ -285,7 +284,7 @@ def message_list_view(request):
 #
 #
 #----------------------------------------------------------------------------------------
-
+'''
 # FIXED user_messages_view function for views.py
 # UPDATED user_messages_view function with async file processing
 @login_required
@@ -684,68 +683,38 @@ def user_messages_view(request, username):
 
         if form.is_valid():
 
-            # =====================================================
-            # EVERYTHING BELOW IS NOW INSIDE ONE TRY/EXCEPT
-            # so an image-optimization failure can never surface
-            # as a raw Django 500 page (which broke r.json() on
-            # the frontend and looked like "sending error").
-            # =====================================================
+            content = form.cleaned_data.get('content', '').strip()
+            uploaded_file = request.FILES.get('file', None)
+
+            is_image_upload = False
+            processed_content = None
+            processed_filename = None
+
+            if uploaded_file:
+                guessed_type, _ = mimetypes.guess_type(uploaded_file.name)
+                content_type = getattr(uploaded_file, 'content_type', None) or guessed_type or ''
+                is_image_upload = content_type.startswith('image/')
+
+                if is_image_upload:
+                    # Compress BEFORE the first (and only) storage write —
+                    # this is what avoids the old upload -> download ->
+                    # recompress -> re-upload roundtrip through R2.
+                    processed_content, processed_filename = optimize_image_for_upload(uploaded_file)
+
+            logger.info(
+                f"Form valid - "
+                f"content: {bool(content)}, "
+                f"file: {bool(uploaded_file)}"
+            )
+
+            # Prevent empty messages
+            if not content and not uploaded_file:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Cannot send empty message.'
+                }, status=400)
+
             try:
-
-                content = form.cleaned_data.get('content', '').strip()
-                uploaded_file = request.FILES.get('file', None)
-
-                is_image_upload = False
-                processed_content = None
-                processed_filename = None
-
-                if uploaded_file:
-                    guessed_type, _ = mimetypes.guess_type(uploaded_file.name)
-                    content_type = (
-                        getattr(uploaded_file, 'content_type', None)
-                        or guessed_type
-                        or ''
-                    )
-                    is_image_upload = content_type.startswith('image/')
-
-                    if is_image_upload:
-                        # Compress BEFORE the first (and only) storage write —
-                        # this avoids the old upload -> download -> recompress
-                        # -> re-upload roundtrip through R2.
-                        #
-                        # Defensive: optimize_image_for_upload() already has
-                        # its own internal try/except and should never raise,
-                        # but we guard here too so a truly unexpected failure
-                        # degrades to "store original file" instead of
-                        # failing the entire send.
-                        try:
-                            processed_content, processed_filename = (
-                                optimize_image_for_upload(uploaded_file)
-                            )
-                        except Exception as opt_error:
-                            logger.warning(
-                                f"Image optimization raised unexpectedly, "
-                                f"falling back to original file: {opt_error}",
-                                exc_info=True
-                            )
-                            processed_content, processed_filename = None, None
-                            try:
-                                uploaded_file.seek(0)
-                            except Exception:
-                                pass
-
-                logger.info(
-                    f"Form valid - "
-                    f"content: {bool(content)}, "
-                    f"file: {bool(uploaded_file)}"
-                )
-
-                # Prevent empty messages
-                if not content and not uploaded_file:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Cannot send empty message.'
-                    }, status=400)
 
                 # =====================================================
                 # GET ENCRYPTION KEYS
@@ -848,23 +817,6 @@ def user_messages_view(request, username):
                 logger.info(f"✅ Message created: {new_message.id}")
 
                 # =====================================================
-                # RESOLVE FILE URL SAFELY (needed for both the WS event
-                # and the JSON response below — guarded so a storage/URL
-                # hiccup can't blow up the whole request)
-                # =====================================================
-                resolved_file_url = None
-                resolved_file_name = None
-                if new_message.file:
-                    try:
-                        resolved_file_url = new_message.file.url
-                        resolved_file_name = os.path.basename(new_message.file.name)
-                    except Exception as url_error:
-                        logger.warning(
-                            f"Could not resolve file URL for message "
-                            f"{new_message.id}: {url_error}"
-                        )
-
-                # =====================================================
                 # BACKGROUND / COMPLETION SIGNALLING
                 # =====================================================
                 if uploaded_file:
@@ -872,37 +824,25 @@ def user_messages_view(request, username):
                         # Already fully optimized and stored in the single
                         # write above — no Celery round-trip needed at all.
                         try:
-                            send_progress_update(
-                                new_message.id,
-                                request.user.id,
-                                user.id,
-                                {
-                                    'status': 'completed',
-                                    'progress': 100,
-                                    'message': 'File ready',
-                                    'file_url': resolved_file_url,
-                                    'file_name': resolved_file_name,
-                                }
-                            )
+                            send_progress_update(new_message.id, request.user.id, user.id, {
+                                'status': 'completed',
+                                'progress': 100,
+                                'message': 'File ready',
+                                'file_url': new_message.file.url,
+                                'file_name': os.path.basename(new_message.file.name),
+                            })
                         except Exception as e:
                             logger.warning(f"Failed to send completion event: {e}")
                     else:
                         try:
-                            logger.info(
-                                f"🚀 Queuing Celery task (messages queue) "
-                                f"for {new_message.id}"
-                            )
+                            logger.info(f"🚀 Queuing Celery task (messages queue) for {new_message.id}")
                             process_message_file.delay(
                                 message_id=new_message.id,
                                 sender_id=request.user.id,
                                 recipient_id=user.id
                             )
                         except Exception as celery_error:
-                            logger.error(
-                                f"❌ Failed to queue Celery task: "
-                                f"{celery_error}",
-                                exc_info=True
-                            )
+                            logger.error(f"❌ Failed to queue Celery task: {celery_error}", exc_info=True)
 
                 # =====================================================
                 # CREATE NOTIFICATION
@@ -965,11 +905,14 @@ def user_messages_view(request, username):
                         new_message.timestamp.isoformat()
                     ),
 
-                    'file_url': resolved_file_url,
+                    'file_url': (
+                        new_message.file.url
+                        if new_message.file else None
+                    ),
 
                     'has_file': bool(uploaded_file),
 
-                    'processing': bool(uploaded_file) and not is_image_upload
+                    'processing': bool(uploaded_file)
                 }
 
                 logger.info(
@@ -1092,7 +1035,8 @@ def user_messages_view(request, username):
         'form': form,
         'recipient': user
     })
-'''
+
+
 
 #----------------------------------------------------------------------------------------
 #

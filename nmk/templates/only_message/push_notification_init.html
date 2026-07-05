@@ -1,0 +1,161 @@
+{% if request.user.is_authenticated %}
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  push_notification_init.html  —  REPLACE the previous version             #}
+{#  Include once in landing_page.html before </body>                         #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+<script>
+(function () {
+    'use strict';
+
+    /* VAPID public key from Django context processor */
+    var VAPID_PUBLIC_KEY = '{{ VAPID_PUBLIC_KEY|escapejs }}';
+
+    /* ── Utility: base64url → Uint8Array ─────────────────────────────────── */
+    function urlBase64ToUint8Array(b64) {
+        var padding = '='.repeat((4 - (b64.length % 4)) % 4);
+        var base64  = (b64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+        var raw     = atob(base64);
+        var out     = new Uint8Array(raw.length);
+        for (var i = 0; i < raw.length; i++) { out[i] = raw.charCodeAt(i); }
+        return out;
+    }
+
+    /* ── Utility: CSRF token ─────────────────────────────────────────────── */
+    function csrf() {
+        var el = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (el) { return el.value; }
+        var m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    /* ── POST subscription to Django ─────────────────────────────────────── */
+    function saveSubscription(sub) {
+        return fetch('{% url "only_message:push_subscribe" %}', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+            body   : JSON.stringify(sub.toJSON()),
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.success) {
+                console.log('✅ Push subscription saved');
+            } else {
+                console.warn('Push subscription rejected:', d.error);
+            }
+        })
+        .catch(function(e) { console.warn('saveSubscription fetch failed:', e); });
+    }
+
+    /* ── Subscribe (or renew) ────────────────────────────────────────────── */
+    function subscribeToPush(reg) {
+        reg.pushManager.getSubscription()
+            .then(function(existing) {
+                if (existing) {
+                    /* Renew TTL on server side every page load */
+                    return saveSubscription(existing);
+                }
+
+                /* First time: request permission */
+                return Notification.requestPermission()
+                    .then(function(perm) {
+                        if (perm !== 'granted') {
+                            console.log('🔕 Notification permission denied');
+                            return null;
+                        }
+                        if (!VAPID_PUBLIC_KEY) {
+                            console.warn('VAPID_PUBLIC_KEY is empty. '
+                                + 'Run: python manage.py generate_vapid_keys');
+                            return null;
+                        }
+                        return reg.pushManager.subscribe({
+                            userVisibleOnly     : true,
+                            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                        });
+                    })
+                    .then(function(sub) { if (sub) { return saveSubscription(sub); } });
+            })
+            .catch(function(err) { console.warn('Push subscription error:', err); });
+    }
+
+    /* ── Boot ────────────────────────────────────────────────────────────── */
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        console.log('ℹ️  Push API not supported in this browser');
+        return;
+    }
+
+    function init() {
+        /*
+         * Register from /sw.js  (served by Django view with correct headers).
+         * NOT /static/service-worker.js — that path restricts scope to /static/
+         * and prevents the SW from receiving push events for any other page.
+         */
+        navigator.serviceWorker
+            .register('/sw.js')
+            .then(function(reg) {
+                console.log('✅ SW registered (scope:', reg.scope, ')');
+
+                window._swRegistration = reg;
+
+                /* Listen for SW updates so stale clients pick up new versions */
+                reg.onupdatefound = function() {
+                    var sw = reg.installing;
+                    sw.onstatechange = function() {
+                        if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                            console.log('🔄 New SW installed — will activate on next page load');
+                        }
+                    };
+                };
+
+                /* Delay permission prompt so page is fully interactive first */
+                setTimeout(function() { subscribeToPush(reg); }, 4000);
+            })
+            .catch(function(err) {
+                console.error('❌ SW registration failed:', err);
+                /*
+                 * If this fails, confirm /sw.js is in your ROOT urls.py
+                 * (not under /message/ or any other prefix).
+                 */
+            });
+    }
+
+    if (document.readyState === 'complete') {
+        init();
+    } else {
+        window.addEventListener('load', init);
+    }
+
+    /* ── Public API ──────────────────────────────────────────────────────── */
+    window.SocyfiePush = {
+        /** Call from account/settings page to opt out of push */
+        unsubscribe: function() {
+            navigator.serviceWorker.ready
+                .then(function(reg) { return reg.pushManager.getSubscription(); })
+                .then(function(sub) {
+                    if (!sub) { console.log('No active subscription'); return; }
+                    var endpoint = sub.endpoint;
+                    return sub.unsubscribe()
+                        .then(function() {
+                            return fetch('{% url "only_message:push_unsubscribe" %}', {
+                                method : 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken' : csrf(),
+                                },
+                                body: JSON.stringify({ endpoint: endpoint }),
+                            });
+                        })
+                        .then(function() { console.log('✅ Push unsubscribed'); });
+                })
+                .catch(function(e) { console.error('Unsubscribe error:', e); });
+        },
+
+        /** Open test URL in new tab to verify push is working */
+        test: function() {
+            window.open('{% url "only_message:test_push" %}', '_blank');
+        },
+    };
+
+}());
+</script>
+{% endif %}

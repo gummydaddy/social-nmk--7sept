@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 class MessageForm(forms.Form):
     recipient = forms.CharField(max_length=150, widget=forms.HiddenInput())
     content = forms.CharField(
+        required=False,
         widget=forms.Textarea(
             attrs={
                 'v-model': 'newMessage',  # Vue.js model binding
@@ -20,6 +21,20 @@ class MessageForm(forms.Form):
     )
 
     file = forms.FileField(required=False)  # New file field for optional file upload
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        content = cleaned_data.get('content')
+        uploaded_file = cleaned_data.get('file')
+
+        if not content and not uploaded_file:
+            raise ValidationError(
+                "Either a message or a file is required."
+            )
+
+        return cleaned_data
+
 
     def clean_file(self):
         uploaded_file = self.cleaned_data.get('file')

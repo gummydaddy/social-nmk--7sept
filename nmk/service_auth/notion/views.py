@@ -30,7 +30,7 @@ from django_redis import get_redis_connection
 # from identity.notion.tasks import send_tagged_user_notifications  # Import the Celery task
 
 from django.views.decorators.cache import cache_page, cache_control
-
+from django.views.decorators.http import require_POST
 
 AuthUser = get_user_model()
 
@@ -170,7 +170,8 @@ def post_notion(request):
                 # Create a clickable notification to the notion
                 Notification.objects.create(
                     user=tagged_user,
-                    content=f'You were tagged in a notion by {request.user.username}. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
+                    #content=f'You were tagged in a notion by {request.user.username}. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
+                    content=f'You were tagged in a notion by {request.user.username}. <a href="{reverse("notion:notion_detail", args=[notion.user.username, notion.id])}">View Notion</a>',
                     related_notion=notion  # Store the notion in the notification
                 )
             except AuthUser.DoesNotExist:
@@ -208,13 +209,15 @@ def followers_list(request, user_id):
     return render(request, 'followers_list.html', {'profile_user': profile_user, 'followers': followers})
 
 
-#@login_required
+@login_required
+@require_POST
 @csrf_protect
 def like_notion(request, notion_id):
     notion = get_object_or_404(Notion, id=notion_id)
     user = request.user
 
-    if user in notion.likes.all():
+    #if user in notion.likes.all():
+    if notion.likes.filter(pk=user.pk).exists():
         # User has already liked the notion, so unlike it
         notion.likes.remove(user)
         liked = False
@@ -223,7 +226,8 @@ def like_notion(request, notion_id):
         notion.likes.add(user)
         Notification.objects.create(
             user=notion.user,
-            content=f'{user.username} liked your notion. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
+            #content=f'{user.username} liked your notion. <a href="{reverse("notion:notion_detail", args=[notion.id])}">View Notion</a>',
+            content=f'{user.username} liked your notion. <a href="{reverse("notion:notion_detail", args=[notion.user.username, notion.id])}">View Notion</a>',
             type='like',
             related_user=user,
             related_notion=notion  # Store the notion in the notification

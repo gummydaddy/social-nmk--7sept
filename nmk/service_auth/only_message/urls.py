@@ -40,6 +40,15 @@ urlpatterns = [
     path("api/notifications/clear/", views.clear_notifications_api, name="clear_notifications_api"),
 
     path('stranger-chat/', views.stranger_chat_view, name='stranger_chat_view'),
+    path('crumbing/', views.stranger_chat_view, name='stranger_chat_view'),
+
+    # Web Push
+    path('api/push/subscribe/',   views.push_subscribe,        name='push_subscribe'),
+    path('api/push/unsubscribe/', views.push_unsubscribe,      name='push_unsubscribe'),
+    path('api/push/vapid-key/',   views.vapid_public_key_view, name='vapid_public_key'),
+    path('api/push/test/',        views.test_push_notification,   name='test_push'),
+
+
     #path('<str:username>/', user_profile_views.profile_detail, name='profile_detail'), #new for sitemap purpose to add the username of users to the sitemap
     #path('<str:username>/media/<int:media_id>/', user_profile_views.media_detail, name='media_detail'), #new for sitemap purpose to add the username of users to the sitemap
 

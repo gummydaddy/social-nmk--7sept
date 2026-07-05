@@ -138,6 +138,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+
+    <!--google one click login setup-->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!--google one click login setup-->
+
 </head>
 
 
@@ -157,6 +162,30 @@ document.addEventListener("DOMContentLoaded", () => {
         <h1>Socyfie</h1>
         <p class="subtitle">Welcome back! Please login to continue.</p>
 
+        <!--google one click login setup-->
+        <!-- 2. The structural UI configuration meta anchor tag target elements -->
+        <div id="g_id_onload"
+             data-client_id="820366895033-d3sjtgalbr0corm5ne6a2ur63fl2hn37.apps.googleusercontent.com"
+             data-login_uri="https://socyfie.com/google-one-tap-callback/"
+             data-auto_prompt="true"
+             data-ux_mode="https://socyfie.com/feed/"  
+             data-use_fedcm_for_prompt="true"
+             data-itp_support="true"
+             data-state="{{ csrf_token }}">
+        </div>
+
+        <!-- 3. OPTIONAL: Backup visible Sign-In button element -->
+        <!-- If One-Tap is closed or suppressed by user preferences, this gives them a fallback button -->
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="outline"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left">
+        </div>
+        <!--google one click login setup-->
+
         {% if messages %}
         <div class="alert alert-danger" role="alert">
             {% for message in messages %}
@@ -165,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         {% endif %}
 
-        <form class="needs-validation" action="{% url 'only_card:login' %}" method="post" novalidate>
+        <form id="loginForm" class="needs-validation" action="{% url 'only_card:login' %}" method="post" novalidate>
             {% csrf_token %}
             <div class="mb-3">
                 <input type="text" class="form-control" id="username" name="username" placeholder="Username" required>
@@ -193,16 +222,23 @@ document.addEventListener("DOMContentLoaded", () => {
             <a href="/signup/" class="btn-link">Don't have an account? Sign Up</a>
             <br>
         </div>
+
+            <div class="terms-text">
+                By signing up, you agree to our <a href="{% url 'only_card:TermAndCondition' %}">Terms and Conditions</a>.
+            </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <!--//for stripping of sapces entered after username-->
     <script>
-    document.getElementById("loginForm").addEventListener("submit", function() {
-        let usernameInput = document.getElementById("username");
-        usernameInput.value = usernameInput.value.trim();  // remove leading/trailing spaces
-    });
+    const loginFormElement = document.getElementById("loginForm");
+    if (loginFormElement) {
+        loginFormElement.addEventListener("submit", function(e) {
+            let usernameInput = document.getElementById("username");
+            usernameInput.value = usernameInput.value.trim();  // remove leading/trailing spaces
+        });
+    }
     </script>
 
     <script>
@@ -230,3 +266,13 @@ document.addEventListener("DOMContentLoaded", () => {
             </script>
 </body>
 </html>
+
+{%comment%}
+    <!--//for stripping of sapces entered after username-->
+    <script>
+    document.getElementById("loginForm").addEventListener("submit", function() {
+        let usernameInput = document.getElementById("username");
+        usernameInput.value = usernameInput.value.trim();  // remove leading/trailing spaces
+    });
+    </script>
+{%endcomment%}

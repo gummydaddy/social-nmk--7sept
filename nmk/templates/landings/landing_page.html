@@ -3,36 +3,6 @@
 {% load media_filters %}
 {% load static %}
 
-<!-- 1. CSS first so UI renders correctly immediately -->
-<link rel="stylesheet" href="{% static 'css/sharing.css' %}">
-<link rel="stylesheet" href="{% static 'css/notifications.css' %}">
-
-<!-- 2. Firebase core SDK (dependency) -->
-
-<!-- 3. Firebase messaging SDK (depends on firebase-app) -->
-
-<!-- 4. Firebase initialization (depends on Firebase SDKs above) -->
-
-<script src="{% static 'js/notifications.js' %}"></script>
-
-<!-- 5. Your app sharing functionality -->
-<script src="{% static 'js/sharing.js' %}"></script>
-
-<!-- 6. Service worker registration (after page resources load) -->
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("{% static 'service-worker.js' %}")
-        .then((reg) => {
-          console.log("Service Worker registered:", reg.scope);
-        })
-        .catch((err) => {
-          console.error("Service Worker registration failed:", err);
-        });
-    });
-  }
-</script>
-
 <head>
 
     <meta charset="UTF-8">
@@ -101,10 +71,8 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/apple-touch-icon.png' %}">
     <link rel="apple-touch-icon-precomposed" href="{% static 'images/apple-touch-icon-precomposed.png' %}">
 
-
     <!--<link rel="icon" href="{% static 'images/logo.png' %}" type="image/x-icon">-->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-
 
     <!-- Add this in the <head> of your base template or specific template  for upload search-->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
@@ -279,14 +247,23 @@
             top: 0;
         }
 
+        :root {
+            --header-height: 15px;
+        }
+
         header{
             position: fixed; 
             top: 1px;
-            height: 15px;
+            height: var(--header-height);
             max-width: 710px;
             margin: auto;
             left: 0;
-            right: 0;        
+            right: 0;
+            z-index: 1000; /* keep header above content */
+        }
+
+        .class-main {
+            padding-top: calc(var(--header-height) + 5px);
         }
 
 /* Keep all items on one line */
@@ -357,11 +334,22 @@ header form input {
         }
 
         .footer-icon a {
-            color: #343434;
+            /*color: #343434;*/
+            color: inherit;
             font-size: 1rem;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        footer-icon i {
+            font-size: 22px;
+        }
+
+        .footer-icon span {
+            font-size: 11px;
+            margin-top: 3px;
+            line-height: 1;
         }
 
         .footer-icon:hover {
@@ -665,8 +653,15 @@ body {
     <!-- Include Vue.js from a CDN -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
-<script src="{% static 'js/sharing.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
+<script src="{% static 'js/sharing.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+<script src="{% static 'js/notifications.js' %}"></script>
+
+    <!--google one click login setup-->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!--google one click login setup-->
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -686,7 +681,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 </head>
 
-</br>
 <body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
 
     <!-- Google Tag Manager (noscript) -->
@@ -751,7 +745,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </nav>
             </header>
 
-            <main id="main">
+            <main id="main" class="class-main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
                 <br>
@@ -910,14 +904,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <footer style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;" class="text-center py-3">
                 <div class="bottom-strip d-flex justify-content-around align-items-center">
 
-                    <!--<div class="footer-icon">
-                        <a href="{% url 'only_card:landing_page' %}">
-                            <i class="fas fa-shield-alt"></i>
-                        </a>
-                    </div>-->
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:feed_page' %}">
                             <i class="fas fa-home"></i>
+                            <span>Home</span>
                         </a>
                     </div>
 
@@ -925,14 +915,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="footer-icon">
                         <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
                             <i class="fas fa-lightbulb"></i>
+                            <span>Notions</span>
                         </a>
                     </div>
                 {% else %}
 
                 <div class="footer-icon">
                     <a href="{% url 'notion:notion_home' %}">
-
                         <i class="fas fa-lightbulb"></i>
+                        <span>Notions</span>
                     </a>
                 </div>
                 {% endif %}
@@ -940,12 +931,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:upload_media' %}">
                             <i class="fas fa-upload"></i>
+                            <span>Upload</span>
                         </a>
                     </div>
 
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:explore_me' %}">
                             <i class="fas fa-search"></i>
+                            <span>Explore</span>
                         </a>
                     </div>
 
@@ -953,6 +946,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:profile' user_id=request.user.id%}">
                             <i class="fas fa-user-circle"></i>
+                            <span>Profile</span>
                         </a>
                     </div>
 
@@ -960,6 +954,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="footer-icon">
                         <a href="{% url 'user_profile:profile'%}">
                             <i class="fas fa-user-circle"></i>
+                            <span>Profile</span>
                         </a>
                     </div>
                 {% endif %}
@@ -1026,36 +1021,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 window.history.pushState(null, "", window.location.href);
               };
             </script>
-{% comment %}
-<!--for time zone correction according to the users time -->
-<script>
-document.addEventListener("DOMContentLoaded", function () {
 
-    document.querySelectorAll(".local-time").forEach(function (el) {
-
-        const utcTime = el.dataset.time;
-
-        if (!utcTime) return;
-
-        const localDate = new Date(utcTime);
-
-        el.textContent = localDate.toLocaleString([]) //, {
-            //hour: 'numeric',
-            //minute: '2-digit',
-            //hour12: true
-        //});
-
-    });
-
-});
-</script>
-<!--for time zone correction according to the users time -->
-{% endcomment %}
-
-
-<!-- Add BEFORE </body> using for popup messages in sent from user -->
-
-<!-- Add BEFORE </body> using for popup messages in sent from user -->
 
 <!--for dissabling right click and long press-->
 <script>
@@ -1101,67 +1067,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.addEventListener('selectstart', e => e.preventDefault());
 });
 </script>
-{% comment %}
-<!--for pull-to-refresh gesture-->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
-    const isInStandaloneMode = () => ('standalone' in window.navigator) && window.navigator.standalone;
 
-    if (!(isIos() && isInStandaloneMode())) return;
-
-    let startY = 0;
-    let pulling = false;
-    const threshold = 80;
-
-    const refreshEl = document.createElement('div');
-    refreshEl.id = 'pull-to-refresh';
-    refreshEl.innerHTML = `
-        <div class="spinner"></div>
-        <div class="message">↓ Pull to refresh</div>
-    `;
-    document.body.prepend(refreshEl);
-
-    const messageEl = refreshEl.querySelector('.message');
-    const spinnerEl = refreshEl.querySelector('.spinner');
-
-    document.addEventListener('touchstart', function (e) {
-        if (window.scrollY === 0) {
-            startY = e.touches[0].clientY;
-            pulling = true;
-        }
-    });
-
-    document.addEventListener('touchmove', function (e) {
-        if (!pulling) return;
-
-        const distance = e.touches[0].clientY - startY;
-        if (distance > 0) {
-            e.preventDefault();
-            refreshEl.style.height = Math.min(distance, threshold) + 'px';
-            messageEl.textContent = distance > threshold ? '↻ Release to refresh' : '↓ Pull to refresh';
-        }
-    }, { passive: false });
-
-    document.addEventListener('touchend', function (e) {
-        if (!pulling) return;
-
-        const distance = e.changedTouches[0].clientY - startY;
-        pulling = false;
-
-        if (distance > threshold) {
-            refreshEl.style.height = '60px';
-            refreshEl.classList.add('show-spinner');
-            messageEl.textContent = 'Refreshing...';
-            setTimeout(() => location.reload(), 800);
-        } else {
-            refreshEl.style.height = '0';
-        }
-    });
-});
-</script>
-<!--for pull-to-refresh gesture ends-->
-{% endcomment %}
 <!--script for language selection-->
 <script type="text/javascript">
 function googleTranslateElementInit() {
@@ -1294,13 +1200,43 @@ document.addEventListener('DOMContentLoaded', function () {
 {% block script-user-status %}
 {% endblock %}
 
+<!--SERVICE_WORKER_REGISTRATION_JS = """-->
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker
+            .register('{% static "service-worker.js" %}', { scope: '/' })
+            .then(function (reg) {
+                console.log('✅ SW registered (scope:', reg.scope, ')');
+                window._swRegistration = reg;
+ 
+                reg.onupdatefound = function () {
+                    var installing = reg.installing;
+                    installing.onstatechange = function () {
+                        if (installing.state === 'installed' &&
+                            navigator.serviceWorker.controller) {
+                            console.log('🔄 SW updated — active on next page load');
+                        }
+                    };
+                };
+            })
+            .catch(function (err) {
+                console.error('❌ SW registration failed:', err);
+            });
+    });
+}
+</script>
+<!--"""-->
+
     <!-- Global Call UI -->
     {% include 'only_message/global_call_ui.html' %}
     {% include 'only_message/global_video_call_ui.html' %}
+    {% include 'only_message/push_notification_init.html' %}
+
     <!--script for loading popup messages-->
     <script src="{% static 'js/popup_loading.js' %}"></script>
     <!--script for loading popup messages-->
-
+    <div id="popup-notification-container"></div>
     <!--<div id="popup-container" class="popup-container"></div>-->
     </body>
 </html>

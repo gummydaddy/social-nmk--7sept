@@ -53,7 +53,6 @@ geventhttpclient==2.3.1
 gitdb==4.0.12
 GitPython==3.1.44
 googleapis-common-protos==1.65.0
-google-auth==2.50.0
 greenlet==3.1.1
 gunicorn==23.0.0
 httplib2==0.22.0
@@ -104,14 +103,8 @@ python-jwt==2.0.1
 python-pptx==1.0.2
 python3-openid==3.2.0
 pytz==2025.1
-
-pywebpush==2.1.2
-
 PyYAML==6.0.2
 pyzmq==26.2.0
-
-py-vapid==1.8.1
-
 redis==5.1.1
 requests==2.32.3
 requests-oauthlib==2.0.0
@@ -146,4 +139,3 @@ yarl==1.15.5
 zipp==3.20.2
 zope.event==5.0
 zope.interface==7.1.1
-

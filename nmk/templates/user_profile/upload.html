@@ -1,6 +1,7 @@
 {% extends "landing_page.html" %}
 {% load static %}
 
+
 {% block main_content %}
 <style>
     .select2-container {
@@ -223,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 $(document).ready(function() {
 
-    const MAX_DURATION = 600; // seconds
+    const MAX_DURATION = 1500; // seconds
     let validDuration = true;
 
     // --- Duration check on file input ---
@@ -267,7 +268,7 @@ $(document).ready(function() {
         e.preventDefault(); // Stop normal form submission
 
         if (!validDuration) {
-            alert("Please select a valid video (less than 10 minutes) before uploading.");
+            alert("Please select a valid video (less than 25 minutes and 100 MB) before uploading.");
             return;
         }
 

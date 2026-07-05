@@ -117,7 +117,38 @@
   - Fallback → Article
   {% endcomment %}
 
-  {% if notion %}
+  {% if media %}
+  <!--  MEDIA -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    {% if media.file.url|is_video %}
+    "@type": "VideoObject",
+    "name": "{{ title|escapejs }}",
+    "description": "{{ description|truncatechars:160|escapejs }}",
+    "thumbnailUrl": [
+      "{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ image_url }}{% endif %}"
+    ],
+    "uploadDate": "{{ media.created_at|date:'c' }}",
+    "contentUrl": "{{ media.file.url }}",
+    "embedUrl": "{{ url }}",
+
+    {% else %}
+    "@type": "ImageObject",
+    "contentUrl": "{{ media.file.url }}",
+    "description": "{{ description|truncatechars:160|escapejs }}",
+    {% endif %}
+    "url": "{{ url }}",
+    "author": {
+      "@type": "Person",
+      "name": "{{ media.user.username|escapejs }}",
+      "url": "{% url 'user_profile:profile' user_id=media.user.id %}"
+    }
+  }
+  </script>
+
+
+  {% elif notion %}
   <!--  NOTION -->
   <script type="application/ld+json">
   {
@@ -160,6 +191,7 @@
   }
   </script>
 
+
   {% elif profile_user %}
   <!--  PROFILE -->
   <script type="application/ld+json">
@@ -170,64 +202,6 @@
     "url": "{{ profile_url }}"
   }
   </script>
-
-  {% elif media %}
-  <!--  MEDIA -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    {% if media.file.url|is_video %}
-    "@type": "VideoObject",
-    "name": "{{ title|escapejs }}",
-    "description": "{{ description|truncatechars:160|escapejs }}",
-    "thumbnailUrl": [
-      "{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ image_url }}{% endif %}"
-    ],
-    "uploadDate": "{{ media.created_at|date:'c' }}",
-    "contentUrl": "{{ media.file.url }}",
-    "embedUrl": "{{ url }}",
-
-    {% else %}
-    "@type": "ImageObject",
-    <!--"author": "{{ media.user.username|escapejs }}",-->
-    "contentUrl": "{{ media.file.url }}",
-    "description": "{{ description|truncatechars:160|escapejs }}",
-    {% endif %}
-    "url": "{{ url }}",
-    "author": {
-      "@type": "Person",
-      "name": "{{ media.user.username|escapejs }}",
-      "url": "{% url 'user_profile:profile' user_id=media.user.id %}"
-    }
-  }
-  </script>
-
-  {% elif media %}
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    {% if media.file.url|is_video %}
-    "@type": "VideoObject",
-    "name": "{{ title|escapejs }}",
-    "description": "{{ description|truncatechars:160|escapejs }}",
-    "thumbnailUrl": ["{{ og_image }}"],
-    "uploadDate": "{{ media.created_at|date:'c' }}",
-    "contentUrl": "{{ request.scheme }}://{{ request.get_host }}{{ media.file.url }}",
-    "embedUrl": "{{ url }}",
-    {% else %}
-    "@type": "ImageObject",
-    "contentUrl": "{{ request.scheme }}://{{ request.get_host }}{{ media.file.url }}",
-    "description": "{{ description|truncatechars:160|escapejs }}",
-    {% endif %}
-    "url": "{{ url }}",
-    "author": {
-      "@type": "Person",
-      "name": "{{ media.user.username|escapejs }}",
-      "url": "{% url 'user_profile:profile' user_id=media.user.id %}"
-    }
-  }
-  </script>
-  {% endif %}
 
   {% else %}
   <!--  FALLBACK -->

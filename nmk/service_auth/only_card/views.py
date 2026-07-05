@@ -56,6 +56,15 @@ from django.urls import get_resolver
 from django.conf import settings
 
 
+# Allauth social authentication requirements
+from allauth.socialaccount.models import SocialLogin
+from allauth.socialaccount.providers.google.provider import GoogleProvider
+from allauth.socialaccount.helpers import complete_social_login
+
+# Google security validation library
+from google.oauth2 import id_token
+from google.auth.transport import requests
+
 logger = logging.getLogger(__name__)
 
 
@@ -162,7 +171,10 @@ def signup(request):
                 user_model.save()  # Now commit to the database
 
                 # Log the user in Django
-                login(request, user_model)
+                #login(request, user_model)
+                #  NEW EXPLICIT LINE:
+                login(request, user_model, backend='django.contrib.auth.backends.ModelBackend')
+
                 messages.success(request, "Your account has been created successfully. Please check your email to confirm your account.")
                 return redirect('/')
             except Exception as e:
@@ -324,7 +336,9 @@ def login_view(request):
 
                 if user is not None:
                     # Log the user in Django
-                    login(request, user)
+                    #login(request, user)
+                    #  NEW EXPLICIT LINE:
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
                     # Ensure the session remains intact after password update
                     #update_session_auth_hash(request, user)
@@ -367,7 +381,10 @@ def login_view(request):
             group = CustomGroup.objects.get(name=username_or_email)
             user = group.users.first()
             if user:
-                login(request, user)
+                #login(request, user)
+                #  NEW EXPLICIT LINE:
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
                 # Set session expiry based on "remember me" here as well
                 if not remember_me:
                     request.session.set_expiry(0)
@@ -389,6 +406,119 @@ def login_view(request):
 
     else:
         return render(request, 'login_view.html')
+
+
+
+@csrf_exempt
+def google_one_tap_callback(request):
+    """
+    Handles the backend token verification payload posted securely 
+    by the frontend Google One-Tap prompt component.
+    """
+    if request.method != 'POST':
+        return redirect('/')
+
+    # 1. Robustly extract the token from Google's redirect POST payload fields
+    token = request.POST.get('credential')
+    
+    # Fallback check if the data arrived as a raw JSON payload body
+    if not token and request.body:
+        try:
+            body_data = json.loads(request.body.decode('utf-8'))
+            token = body_data.get('credential')
+        except Exception:
+            pass
+
+    if not token:
+        messages.error(request, "Google verification token missing.")
+        return redirect('/')
+
+    try:
+        # 2. Fetch your Google Client ID dynamically from settings
+        google_client_id = settings.SOCIALACCOUNT_PROVIDERS['google']['APP']['client_id']
+
+        from google.auth import jwt
+        # 3. Cryptographically verify the token with Google public keys and add clock tolerance
+        idinfo = id_token.verify_oauth2_token(
+            token, 
+            requests.Request(), 
+            google_client_id,
+            #clock_skew=60 # Permits a 60-second time drift between your server and Google
+        )
+
+        email = idinfo.get('email')
+        if not email:
+            messages.error(request, "Unable to extract email from your Google Profile.")
+            return redirect('/')
+
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+        
+        # 4. Synchronize user profile context with Firebase and Django
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            # A) Create placeholder account inside Firebase first to maintain architecture sync
+            try:
+                random_password = User.objects.make_random_password(length=16)
+                # Triggers your existing Firebase auth setup (e.g. pyrebase/firebase-admin)
+                auth.create_user_with_email_and_password(email, random_password)
+            except Exception as fb_err:
+                # If account exists natively in Firebase but not Django, bypass error gracefully
+                if "EMAIL_EXISTS" not in str(fb_err):
+                    raise fb_err
+
+            # B) Build a clean username targeting your exact alphanumeric Regex pattern restrictions
+            email_prefix = email.split('@')[0]
+            clean_username = "".join(c for c in email_prefix if c.isalnum() or c in '._-')[:20]
+            
+            # Enforce uniqueness if the generated username is already taken
+            if User.objects.filter(username=clean_username).exists():
+                clean_username = f"{clean_username}_{uuid.uuid4().hex[:4]}"
+
+            # C) Create the User record in your local Django database
+            user = User.objects.create_user(
+                username=clean_username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name
+            )
+
+        # 5. Hand off execution to Django's login system using your explicit backend path
+        # This completely resolves your previous multiple backend configuration conflict
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+        # 6. Replicate your exact "Remember Me" session tracking duration (14 days)
+        request.session.set_expiry(60 * 60 * 24 * 14)  
+        
+        # 7. Setup the landing redirect path route
+        response = redirect('/feed')
+
+        # 8. Set the custom tracking cookie on the browser frontend matching your login view
+        response.set_cookie(
+            'username', 
+            user.username, 
+            max_age=60 * 60 * 24 * 14, # 14 days matching session
+            httponly=False,            # Allow frontend JS tracking logic to read
+            samesite='Lax'
+        )
+        
+        # Optional: Synchronize your custom cache layer if active
+        # cache.set(f'user_{user.id}', user.username)
+            
+        return response
+
+    except KeyError:
+        messages.error(request, "Google APP configurations missing inside settings.py.")
+        return redirect('/')
+
+    except ValueError:
+        messages.error(request, "Security signature validation failed for Google payload.")
+        return redirect('/')
+
+    except Exception as e:
+        messages.error(request, f"One-Tap Login crashed: {str(e)}")
+        return redirect('/')
 
 
 

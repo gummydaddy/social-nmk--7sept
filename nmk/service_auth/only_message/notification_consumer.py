@@ -120,7 +120,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'caller_pic': caller_pic,
             'offer':      data.get('offer'),
             'call_type':  call_type,
-            'chat_url':   f'/message/user_messages_view/{self.user.username}/',
+            'chat_url':   f'/user_messages_view/{self.user.username}/',
         })
 
     async def _call_answer(self, data):

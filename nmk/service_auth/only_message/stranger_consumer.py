@@ -66,15 +66,22 @@ class StrangerChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.user = self.scope["user"]
 
-        if not self.user.is_authenticated:
-            logger.warning("Unauthenticated user tried to connect to /ws/stranger/")
-            await self.close()
-            return
-
         self.partner_channel = None
         self.room_id = None
         self.want_country = "ANY"
         self.in_queue = False
+        self.info = None
+
+        if not self.user.is_authenticated:
+            logger.warning("Unauthenticated user tried to connect to /ws/stranger/")
+            await self.close()
+            return
+        """
+        self.partner_channel = None
+        self.room_id = None
+        self.want_country = "ANY"
+        self.in_queue = False
+        """
         self.info = await _get_user_info(self.user)
 
         await self.accept()

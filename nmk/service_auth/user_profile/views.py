@@ -47,6 +47,9 @@ from .utils import (
     TRENDING_WINDOW_DAYS
 )
 
+from collections import defaultdict
+
+
 #from .utils import normalize_media_url
 import re
 from django.db.models import F, Count, Q, Exists, OuterRef
@@ -54,7 +57,7 @@ from django.http import JsonResponse
 from django.core.cache import cache
 # from async_views import async_views
 
-from .tasks import process_media_upload, process_profile_images, WINDOW_SECONDS
+from .tasks import process_media_upload, process_profile_images, WINDOW_SECONDS, COUNTRY_BOOST
 
 import base64
 from bs4 import BeautifulSoup
@@ -350,7 +353,7 @@ logger = logging.getLogger(__name__)
 #with video upload support
 @login_required
 @csrf_exempt
-#@cache_page(60 * 2)
+@cache_control(private=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def upload_media(request):
     logger.info(f"User {request.user.username} is uploading media")
 
@@ -479,7 +482,7 @@ def upload_media(request):
         #return render(request, 'upload.html', {'form': form,})
 
 
-@cache_page(60 * 2)
+@cache_control(private=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 @login_required
 def upload_audio(request):
     logger.info(f"User {request.user.username} is uploading audio")
@@ -614,7 +617,7 @@ def media_tags(request, user_id):
     })
 
 
-@login_required
+#@login_required
 @cache_control(private=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def profile(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
@@ -706,7 +709,7 @@ def profile(request, user_id):
                 'private_media': [],
             })
 
-        paginator = Paginator(public_media, 9)
+        paginator = Paginator(public_media, 15)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
@@ -728,7 +731,7 @@ def profile(request, user_id):
         if not m.is_private or is_buddy or request.user == profile_user
     ]
 
-    paginator = Paginator(filtered_media, 9)
+    paginator = Paginator(filtered_media, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -1740,6 +1743,9 @@ PERSONALIZED_RELATED_LIMIT = 20  # Limit for personalized related media
 RELATED_MEDIA_FETCH_MULTIPLIER = 2
 PERSONALIZED_RELATED_LIMIT = 20
 SESSION_SEEN_RELATED_LIMIT = 40  # Max related media IDs to track per session
+
+CO_VIEW_WEIGHT = 8
+CO_VIEW_CANDIDATE_LIMIT = 150
 #PAGE_SIZE = 8
 # Constants
 #CATEGORY_ENGAGEMENT_WEIGHT = 13
@@ -1747,43 +1753,93 @@ SESSION_SEEN_RELATED_LIMIT = 40  # Max related media IDs to track per session
 
 # CURSOR-BASED INFINITE SCROLL explore_detail WITH FULL INTEGRATION
 
+def _get_co_viewed_related_media(
+    media, redis_conn, exclude_ids, not_interested_media_ids,
+    all_blocked_users, heavily_penalized_creators, privacy_filter
+):
+    """
+    Collaborative signal scoped to THIS media:
+    "people who viewed this media also viewed X" (same category).
+
+    Reads from the precomputed Redis cache (media:related_coview:{media_id})
+    built by the `precompute_related_coview_media` Celery task, instead of
+    computing it live on every request.
+    """
+    try:
+        coview_key = f"media:related_coview:{media.id}"
+
+        raw = redis_conn.zrevrange(
+            coview_key, 0, CO_VIEW_CANDIDATE_LIMIT - 1, withscores=True
+        )
+
+        if not raw:
+            return [], {}
+
+        overlap_scores_raw = {}
+        for mid_raw, score in raw:
+            mid = mid_raw.decode() if isinstance(mid_raw, bytes) else mid_raw
+            overlap_scores_raw[int(mid)] = score
+
+        candidate_ids = list(overlap_scores_raw.keys())
+
+        candidates = list(
+            Media.objects.filter(id__in=candidate_ids, category=media.category)
+            .filter(privacy_filter)
+            .exclude(id__in=exclude_ids)
+            .exclude(id__in=not_interested_media_ids)
+            .exclude(user__in=all_blocked_users)
+            .exclude(user__in=heavily_penalized_creators)
+            .select_related('user', 'user__profile')
+            .prefetch_related('hashtags', 'likes')
+        )
+
+        overlap_scores_map = {
+            m.id: overlap_scores_raw.get(m.id, 0) for m in candidates
+        }
+        return candidates, overlap_scores_map
+
+    except Exception as e:
+        logger.warning(f"Co-viewed related media lookup failed for media {media.id}: {e}")
+        return [], {}
+
+
+
 def explore_detail(request, media_id):
     """
     Media detail view with cursor-based infinite scroll
-    
-    Features:
-    - Redis-based persistent seen tracking
-    - Collaborative filtering integration
-    - Not interested filtering
-    - Privacy-aware
-    - Cursor pagination
-    -  NEW: Penalty system (creator/category/similar)
-    -  NEW: Profile category boost with time decay
-    -  NEW: Saturation prevention
-    -  NEW: Hard filter for heavily penalized creators
+
+    Related media is blended from three tiers, in priority order:
+      Tier 0 — Personalized recommendations (collaborative filtering engine,
+               user:reco:{user_id}, same category)
+      Tier 1 — Co-viewed, same category ("people who viewed this also viewed X",
+               precomputed in Redis by precompute_related_coview_media)
+      Tier 2 — General same-category pool (fallback / discovery)
+
+    All three tiers share scoring via FeedScorer (profile category boost +
+    penalty system) and a country affinity boost, so the signal is applied
+    consistently regardless of which tier a candidate came from.
     """
-    
+
     media = get_object_or_404(Media, id=media_id)
     user = media.user
     user_id = getattr(request.user, "pk", None)
     now_ts = timezone.now()
-    
+
     # --------------------------------------------------
     # REDIS CONNECTION & ACTIVE USER TRACKING
     # --------------------------------------------------
     redis_conn = get_redis_connection("default")
-    
+
     if user_id:
         try:
             now_timestamp = int(time.time())
             cutoff = now_timestamp - 3600
-            
-            # Mark user as active
+
             redis_conn.zadd("active:users", {user_id: now_timestamp})
             redis_conn.zremrangebyscore("active:users", 0, cutoff)
         except Exception as e:
             logger.warning(f"Active user tracking failed: {e}")
-    
+
     # --------------------------------------------------
     # BLOCK & PRIVACY CHECKS
     # --------------------------------------------------
@@ -1791,23 +1847,22 @@ def explore_detail(request, media_id):
         is_blocked_by_media_owner = BlockedUser.objects.filter(
             blocker=user, blocked_id=user_id
         ).exists()
-        
+
         has_blocked_media_owner = BlockedUser.objects.filter(
             blocker_id=user_id, blocked=user
         ).exists()
-        
+
         if is_blocked_by_media_owner:
             return render(request, 'user_not_found.html')
-        
+
         is_following = Follow.objects.filter(
             follower_id=user_id, following=user
         ).exists()
-        
+
         is_buddy = Buddy.objects.filter(
             user=user, buddy_id=user_id
         ).exists()
-        
-        # Restrict private content
+
         if (media.is_private or user.profile.is_private):
             if not is_buddy and not is_following and request.user != user:
                 return render(request, 'private_upload.html')
@@ -1816,154 +1871,118 @@ def explore_detail(request, media_id):
         has_blocked_media_owner = False
         is_following = False
         is_buddy = False
-    
+
     # --------------------------------------------------
     # GET REDIS CACHED SEEN RELATED MEDIA
     # --------------------------------------------------
     seen_related_ids = set()
-    
+
     if user_id:
         try:
             cache_key = f"user:seen_related:{user_id}:media:{media_id}"
             cached_ids = redis_conn.smembers(cache_key)
             seen_related_ids = {int(sid) for sid in cached_ids}
-            logger.info(f"User {user_id} has seen {len(seen_related_ids)} related for media {media_id}")
         except Exception as e:
             logger.warning(f"Error fetching cached seen related: {e}")
-    
+
     # --------------------------------------------------
     # USER PREFERENCES & NOT INTERESTED
     # --------------------------------------------------
     not_interested_media_ids = set()
     user_hashtag_pref = None
-    
+
     if user_id:
         user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user_id=user_id)
-        
-        # Track viewed media
+
         if media.id not in (user_hashtag_pref.viewed_media or []):
             viewed_media = user_hashtag_pref.viewed_media or []
             viewed_media.append(media.id)
             user_hashtag_pref.viewed_media = viewed_media[-60:]
             user_hashtag_pref.save(update_fields=["viewed_media"])
-        
-        # Track viewed hashtags
+
         description_hashtags = re.findall(r'#(\w+)', media.description or "")
         user_hashtag_pref.add_viewed_hashtag(description_hashtags)
-        
-        # Get not interested
+
         not_interested_media_ids = set(user_hashtag_pref.not_interested_media or [])
-        
-        # --------------------------------------------------
-        # REDIS VIEW TRACKING (For Collaborative Filtering)
-        # --------------------------------------------------
+
         try:
             now_timestamp = int(time.time())
-            
+
             redis_conn.zadd(f"user:viewed:{user_id}", {media.id: now_timestamp})
             redis_conn.zadd(f"media:viewed_by:{media.id}", {user_id: now_timestamp})
-            
+
             redis_conn.expire(f"user:viewed:{user_id}", 60 * 60 * 24 * 30)
             redis_conn.expire(f"media:viewed_by:{media.id}", 60 * 60 * 24 * 30)
         except Exception as e:
             logger.warning(f"Redis view tracking failed: {e}")
-    
+
     # --------------------------------------------------
-    #  NEW: LOAD PENALTIES & PROFILE CATEGORY DATA
+    # LOAD PENALTIES, PROFILE CATEGORY DATA, COUNTRY, FeedScorer
     # --------------------------------------------------
-    creator_penalty_map = {}
-    category_penalty_map = {}
-    similar_ni_media = set()
-    profile_category = None
-    category_exposure_count = {}
     heavily_penalized_creators = set()
-    
+    user_country = None
+    feed_scorer = None
+
     if user_id:
         try:
-            # Load creator penalties
             creator_penalties = redis_conn.zrange(
                 f"user:creator_penalty:{user_id}", 0, -1, withscores=True
             )
-            creator_penalty_map = {
-                int(cid.decode()): count for cid, count in creator_penalties
-            }
-            
-            #  Load heavily penalized creators (3+ penalties = hard filter)
             heavily_penalized_creators = {
-                int(cid.decode()) for cid, count in creator_penalties if count >= 3
+                int(cid.decode() if isinstance(cid, bytes) else cid)
+                for cid, count in creator_penalties if count >= 3
             }
-            
-            # Load category penalties
-            category_penalties = redis_conn.zrange(
-                f"user:category_penalty:{user_id}", 0, -1, withscores=True
-            )
-            category_penalty_map = {
-                cat.decode(): count for cat, count in category_penalties
-            }
-            
-            # Load similar media penalties
-            similar_ni_media = set(
-                int(mid.decode()) for mid in redis_conn.zrange(
-                    f"user:similar_ni:{user_id}", 0, -1
-                )
-            )
-            
-            # Load profile category
-            try:
-                profile_category = request.user.profile.category
-            except:
-                profile_category = None
-            
-            # Load category exposure (track saturation)
-            exposure_key = f"user:category_exposure:{user_id}"
-            category_exposures = redis_conn.zrange(
-                exposure_key, 0, -1, withscores=True
-            )
-            for cat_bytes, timestamp in category_exposures:
-                category = cat_bytes.decode()
-                category_exposure_count[category] = category_exposure_count.get(category, 0) + 1
-            
-            logger.debug(
-                f"Loaded penalties for user {user_id}: "
-                f"{len(creator_penalty_map)} creator penalties, "
-                f"{len(heavily_penalized_creators)} heavily penalized, "
-                f"{len(category_penalty_map)} category penalties, "
-                f"{len(similar_ni_media)} similar penalties, "
-                f"profile_category={profile_category}, "
-                f"exposures={category_exposure_count}"
+        except Exception as e:
+            logger.warning(f"Failed to load heavily penalized creators: {e}")
+
+        try:
+            user_country = request.user.profile.country
+        except Exception:
+            user_country = None
+
+        try:
+            feed_scorer = FeedScorer(
+                pref_obj=user_hashtag_pref,
+                personalized_scores_map={},  # filled in below
+                now=now_ts,
+                redis_conn=redis_conn
             )
         except Exception as e:
-            logger.warning(f"Failed to load penalty/category data: {e}")
-    
+            logger.warning(f"FeedScorer init failed for user {user_id}: {e}")
+            feed_scorer = None
+
     # --------------------------------------------------
-    # FETCH PERSONALIZED RECOMMENDATIONS
+    # FETCH PERSONALIZED RECOMMENDATIONS (TIER 0 SOURCE)
     # --------------------------------------------------
     personalized_related_ids = []
     personalized_scores_map = {}
-    
+
     if user_id:
         try:
             recommendation_key = f"user:reco:{user_id}"
-            
+
             recommended_raw = redis_conn.zrevrange(
                 recommendation_key,
                 0,
                 PERSONALIZED_RELATED_LIMIT * 2 - 1,
                 withscores=True
             )
-            
+
             for mid, score in recommended_raw:
                 mid_int = int(mid)
                 if mid_int not in seen_related_ids and mid_int != media_id:
                     personalized_related_ids.append(mid_int)
                     personalized_scores_map[mid_int] = score
-            
+
             personalized_related_ids = personalized_related_ids[:PERSONALIZED_RELATED_LIMIT]
         except Exception as e:
             logger.warning(f"Error fetching personalized related: {e}")
-    
+
+    if feed_scorer:
+        feed_scorer.personalized_scores_map = personalized_scores_map
+
     # --------------------------------------------------
-    # BUILD PRIVACY FILTER
+    # BUILD PRIVACY / BLOCK FILTERS
     # --------------------------------------------------
     users_who_buddied_me = set()
     if user_id:
@@ -1971,7 +1990,6 @@ def explore_detail(request, media_id):
             Buddy.objects.filter(buddy_id=user_id).values_list('user', flat=True)
         )
 
-    # GET BLOCKED USERS
     users_i_blocked = set()
     users_who_blocked_me = set()
 
@@ -1985,7 +2003,6 @@ def explore_detail(request, media_id):
 
     all_blocked_users = users_i_blocked | users_who_blocked_me
 
-    
     if user_id:
         privacy_filter = (
             Q(is_private=False, user__profile__is_private=False) |
@@ -1994,16 +2011,16 @@ def explore_detail(request, media_id):
         )
     else:
         privacy_filter = Q(is_private=False, user__profile__is_private=False)
-    
+
     # --------------------------------------------------
-    # FETCH PERSONALIZED RELATED FROM DB
+    # TIER 0: PERSONALIZED RELATED FROM DB
     # --------------------------------------------------
     personalized_related_media = []
     if personalized_related_ids:
         personalized_qs = Media.objects.filter(
             id__in=personalized_related_ids
         ).filter(
-            category=media.category  # Same category
+            category=media.category
         ).filter(
             privacy_filter
         ).exclude(
@@ -2013,22 +2030,48 @@ def explore_detail(request, media_id):
         ).exclude(
             user__in=all_blocked_users
         ).exclude(
-            user__in=heavily_penalized_creators  #  NEW: Hard filter 3+ penalties
+            user__in=heavily_penalized_creators
         ).select_related(
             'user', 'user__profile'
         ).prefetch_related('hashtags', 'likes')
-        
+
         personalized_related_media = list(personalized_qs)
-    
+
+    # --------------------------------------------------
+    # TIER 1: CO-VIEWED, SAME CATEGORY (from precomputed cache)
+    # --------------------------------------------------
+    co_viewed_related_media = []
+    co_view_scores_map = {}
+
+    if user_id:
+        exclude_for_coview = (
+            {media_id} | seen_related_ids | not_interested_media_ids
+            | {m.id for m in personalized_related_media}
+        )
+        co_viewed_related_media, co_view_scores_map = _get_co_viewed_related_media(
+            media=media,
+            redis_conn=redis_conn,
+            exclude_ids=exclude_for_coview,
+            not_interested_media_ids=not_interested_media_ids,
+            all_blocked_users=all_blocked_users,
+            heavily_penalized_creators=heavily_penalized_creators,
+            privacy_filter=privacy_filter
+        )
+
     # --------------------------------------------------
     # GET CURSOR FOR PAGINATION
     # --------------------------------------------------
     cursor = request.GET.get("cursor")
     cursor_id = int(cursor) if cursor else 0
-    
+
     # --------------------------------------------------
-    # FETCH CATEGORY-BASED RELATED MEDIA
+    # TIER 2: CATEGORY-BASED RELATED MEDIA (fallback pool)
     # --------------------------------------------------
+    tier01_ids = (
+        {m.id for m in personalized_related_media}
+        | {m.id for m in co_viewed_related_media}
+    )
+
     category_related_qs = Media.objects.filter(
         category=media.category
     ).exclude(
@@ -2038,37 +2081,39 @@ def explore_detail(request, media_id):
     ).exclude(
         id__in=not_interested_media_ids
     ).exclude(
-        id__in=[m.id for m in personalized_related_media]  # Exclude personalized
+        id__in=tier01_ids
     ).exclude(
         user__in=all_blocked_users
     ).exclude(
-        user__in=heavily_penalized_creators  #  NEW: Hard filter 3+ penalties
+        user__in=heavily_penalized_creators
     ).filter(
         privacy_filter
     ).select_related(
         'user', 'user__profile'
     ).prefetch_related('hashtags', 'likes')
-    
-    # Apply cursor pagination
+
     if cursor_id:
         category_related_qs = category_related_qs.filter(id__gt=cursor_id)
-    
+
     category_related_qs = category_related_qs.order_by('id')
-    category_related_media = list(category_related_qs[:300])  # Get candidates
-    
+    category_related_media = list(category_related_qs[:300])
+
     # --------------------------------------------------
     # CHECK IF EXHAUSTED (RESET CACHE)
     # --------------------------------------------------
-    total_available = len(personalized_related_media) + len(category_related_media)
-    
+    total_available = (
+        len(personalized_related_media)
+        + len(co_viewed_related_media)
+        + len(category_related_media)
+    )
+
     if total_available < PAGE_SIZE and len(seen_related_ids) > 0 and user_id:
         logger.info(f"Exhausted related for user {user_id}, media {media_id}. Resetting.")
         try:
             cache_key = f"user:seen_related:{user_id}:media:{media_id}"
             redis_conn.delete(cache_key)
             seen_related_ids = set()
-            
-            # Re-fetch with empty cache
+
             personalized_qs = Media.objects.filter(
                 id__in=personalized_related_ids
             ).filter(category=media.category).filter(privacy_filter).exclude(
@@ -2076,280 +2121,174 @@ def explore_detail(request, media_id):
             ).exclude(
                 user__in=all_blocked_users
             ).exclude(
-                user__in=heavily_penalized_creators  #  NEW
+                user__in=heavily_penalized_creators
             ).select_related('user', 'user__profile').prefetch_related('hashtags', 'likes')
             personalized_related_media = list(personalized_qs)
-            
+
+            exclude_for_coview = (
+                {media_id} | not_interested_media_ids
+                | {m.id for m in personalized_related_media}
+            )
+            co_viewed_related_media, co_view_scores_map = _get_co_viewed_related_media(
+                media=media,
+                redis_conn=redis_conn,
+                exclude_ids=exclude_for_coview,
+                not_interested_media_ids=not_interested_media_ids,
+                all_blocked_users=all_blocked_users,
+                heavily_penalized_creators=heavily_penalized_creators,
+                privacy_filter=privacy_filter
+            )
+
+            tier01_ids = (
+                {m.id for m in personalized_related_media}
+                | {m.id for m in co_viewed_related_media}
+            )
+
             category_related_qs = Media.objects.filter(
                 category=media.category
             ).exclude(id=media_id).exclude(
                 id__in=not_interested_media_ids
             ).exclude(
-                id__in=[m.id for m in personalized_related_media]
+                id__in=tier01_ids
             ).exclude(
                 user__in=all_blocked_users
             ).exclude(
-                user__in=heavily_penalized_creators  #  NEW
+                user__in=heavily_penalized_creators
             ).filter(privacy_filter).select_related(
                 'user', 'user__profile'
             ).prefetch_related('hashtags', 'likes')
-            
+
             if cursor_id:
                 category_related_qs = category_related_qs.filter(id__gt=cursor_id)
-            
+
             category_related_media = list(category_related_qs.order_by('id')[:300])
-            total_available = len(personalized_related_media) + len(category_related_media)
+            total_available = (
+                len(personalized_related_media)
+                + len(co_viewed_related_media)
+                + len(category_related_media)
+            )
         except Exception as e:
             logger.warning(f"Error resetting cache: {e}")
-    
+
     # --------------------------------------------------
-    #  ENHANCED SCORING WITH PENALTIES & PROFILE CATEGORY
+    # SCORING — 3 TIERS, shared boost/penalty logic via FeedScorer
     # --------------------------------------------------
     main_description_words = set(re.findall(r'\w+', (media.description or "").lower()))
     scored_media = []
-    
-    # Score personalized (higher priority)
+
+    def _country_boost(m, score):
+        media_country = getattr(m, 'country', None)
+        if user_country and media_country and str(media_country) == str(user_country):
+            return score * COUNTRY_BOOST
+        return score
+
+    def _base_signal_score(m, extra=0):
+        score = extra
+        if getattr(m, 'created_at', None):
+            days_old = (now_ts - m.created_at).days
+            score += max(0, FRESHNESS_WEIGHT - days_old)
+        desc = (m.description or "").lower()
+        if desc:
+            overlap = main_description_words & set(re.findall(r'\w+', desc))
+            if overlap:
+                score += 6 * len(overlap)
+        return score
+
+    # ---- TIER 0: Personalized ----
     for m in personalized_related_media:
-        score = 0
-        
-        # 1. Collaborative filtering score (high weight)
         redis_score = personalized_scores_map.get(m.id, 0)
-        score += redis_score * 10
-        
-        # 2. Freshness
+        score = _base_signal_score(m, extra=redis_score * 10)
+        # freshness weighting here is doubled vs tiers 1/2 to match original behavior
         if getattr(m, 'created_at', None):
-            days_old = (now_ts - m.created_at).days
-            freshness_score = max(0, FRESHNESS_WEIGHT - days_old)
-            score += freshness_score * 2
-        
-        # 3. Description overlap
-        desc = (m.description or "").lower()
-        if desc:
-            overlap = main_description_words & set(re.findall(r'\w+', desc))
-            if overlap:
-                score += 6 * len(overlap)
-        
-        #  4. NEW: Profile category boost with time decay & saturation
-        media_category_str = str(getattr(m, 'category', ''))
-        if media_category_str and profile_category and media_category_str == profile_category:
-            category_boost = 25  # Gentle boost
-            
-            # Time decay (decay over 3 days)
-            age_hours = (now_ts - m.created_at).total_seconds() / 3600
-            time_decay_factor = max(0.3, 1 - (age_hours / 72))
-            category_boost *= time_decay_factor
-            
-            # Saturation prevention
-            exposure_count = category_exposure_count.get(media_category_str, 0)
-            if exposure_count > 5:
-                saturation_factor = max(0.2, 1 - (exposure_count - 5) * 0.1)
-                category_boost *= saturation_factor
-            
-            score += category_boost
-        
-        #  5. NEW: Liked categories boost (from engagement history)
-        if user_hashtag_pref and media_category_str in (user_hashtag_pref.liked_categories or []):
-            liked_boost = 15
-            
-            # Time decay
-            age_hours = (now_ts - m.created_at).total_seconds() / 3600
-            time_decay_factor = max(0.3, 1 - (age_hours / 72))
-            liked_boost *= time_decay_factor
-            
-            # Saturation prevention
-            exposure_count = category_exposure_count.get(media_category_str, 0)
-            if exposure_count > 8:
-                saturation_factor = max(0.3, 1 - (exposure_count - 8) * 0.08)
-                liked_boost *= saturation_factor
-            
-            score += liked_boost
-        
-        #  6. NEW: Diversity bonus (fresh categories)
-        exposure_count = category_exposure_count.get(media_category_str, 0)
-        if exposure_count == 0:
-            score += 10  # Small bonus for variety
-        
-        #  7. NEW: Apply penalties
-        penalty_multiplier = 2.0
-        
-        # Creator penalty
-        creator_id = m.user_id
-        if creator_id in creator_penalty_map:
-            penalty_count = creator_penalty_map[creator_id]
-            from .tasks import PENALTY_SAME_CREATOR
-            creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
-            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+            score += max(0, FRESHNESS_WEIGHT - (now_ts - m.created_at).days)  # extra freshness weight
 
-            penalty_multiplier *= creator_penalty
-        
-        # Category penalty
-        if media_category_str in category_penalty_map:
-            penalty_count = category_penalty_map[media_category_str]
-            from .tasks import PENALTY_SAME_CATEGORY
-            category_penalty = PENALTY_SAME_CATEGORY ** min(penalty_count / 2, 2)
-            penalty_multiplier *= category_penalty
-        
-        # Similar media penalty
-        if m.id in similar_ni_media:
-            from .tasks import PENALTY_SIMILAR_MEDIA
-            penalty_multiplier *= PENALTY_SIMILAR_MEDIA
-        
-        # Apply combined penalty
-        score *= penalty_multiplier
-        
-        scored_media.append((m, score, True))  # True = personalized
-    
-    # Score category-based
+        if feed_scorer:
+            score = feed_scorer.apply_profile_category_boost(m, score)
+            score = feed_scorer.apply_penalties(m, score)
+
+        score = _country_boost(m, score)
+        scored_media.append((m, score, 0))
+
+    # ---- TIER 1: Co-viewed, same category ----
+    for m in co_viewed_related_media:
+        overlap_strength = co_view_scores_map.get(m.id, 0)
+        score = _base_signal_score(m, extra=CATEGORY_ENGAGEMENT_WEIGHT + overlap_strength * CO_VIEW_WEIGHT)
+
+        if feed_scorer:
+            score = feed_scorer.apply_profile_category_boost(m, score)
+            score = feed_scorer.apply_penalties(m, score)
+
+        score = _country_boost(m, score)
+        scored_media.append((m, score, 1))
+
+    # ---- TIER 2: General same-category pool ----
     for m in category_related_media:
-        score = 0
-        score += CATEGORY_ENGAGEMENT_WEIGHT
-        
-        # 1. Freshness
-        if getattr(m, 'created_at', None):
-            days_old = (now_ts - m.created_at).days
-            freshness_score = max(0, FRESHNESS_WEIGHT - days_old)
-            score += freshness_score
-        
-        # 2. Description overlap
-        desc = (m.description or "").lower()
-        if desc:
-            overlap = main_description_words & set(re.findall(r'\w+', desc))
-            if overlap:
-                score += 6 * len(overlap)
-        
-        #  3. NEW: Profile category boost (slightly lower for category pool)
-        media_category_str = str(getattr(m, 'category', ''))
-        if media_category_str and profile_category and media_category_str == profile_category:
-            category_boost = 20
-            
-            age_hours = (now_ts - m.created_at).total_seconds() / 3600
-            time_decay_factor = max(0.3, 1 - (age_hours / 72))
-            category_boost *= time_decay_factor
-            
-            exposure_count = category_exposure_count.get(media_category_str, 0)
-            if exposure_count > 5:
-                saturation_factor = max(0.2, 1 - (exposure_count - 5) * 0.1)
-                category_boost *= saturation_factor
-            
-            score += category_boost
-        
-        #  4. NEW: Liked categories boost
-        if user_hashtag_pref and media_category_str in (user_hashtag_pref.liked_categories or []):
-            liked_boost = 12
-            
-            age_hours = (now_ts - m.created_at).total_seconds() / 3600
-            time_decay_factor = max(0.3, 1 - (age_hours / 72))
-            liked_boost *= time_decay_factor
-            
-            exposure_count = category_exposure_count.get(media_category_str, 0)
-            if exposure_count > 8:
-                saturation_factor = max(0.3, 1 - (exposure_count - 8) * 0.08)
-                liked_boost *= saturation_factor
-            
-            score += liked_boost
-        
-        #  5. NEW: Diversity bonus
-        exposure_count = category_exposure_count.get(media_category_str, 0)
-        if exposure_count == 0:
-            score += 8
-        
-        #  6. NEW: Apply penalties
-        penalty_multiplier = 2.0
-        
-        creator_id = m.user_id
-        if creator_id in creator_penalty_map:
-            penalty_count = creator_penalty_map[creator_id]
-            from .tasks import PENALTY_SAME_CREATOR
-            creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count, 3)
-            #creator_penalty = PENALTY_SAME_CREATOR ** min(penalty_count / 2, 2)
+        score = _base_signal_score(m, extra=CATEGORY_ENGAGEMENT_WEIGHT)
 
-            penalty_multiplier *= creator_penalty
-        
-        if media_category_str in category_penalty_map:
-            penalty_count = category_penalty_map[media_category_str]
-            from .tasks import PENALTY_SAME_CATEGORY
-            category_penalty = PENALTY_SAME_CATEGORY ** min(penalty_count / 2, 2)
-            penalty_multiplier *= category_penalty
-        
-        if m.id in similar_ni_media:
-            from .tasks import PENALTY_SIMILAR_MEDIA
-            penalty_multiplier *= PENALTY_SIMILAR_MEDIA
-        
-        score *= penalty_multiplier
-        
-        scored_media.append((m, score, False))  # False = category
-    
-    # Sort: personalized first, then by score
-    scored_media.sort(key=lambda x: (not x[2], -x[1]))
-    
-    # Extract sorted media
+        if feed_scorer:
+            score = feed_scorer.apply_profile_category_boost(m, score)
+            score = feed_scorer.apply_penalties(m, score)
+
+        score = _country_boost(m, score)
+        scored_media.append((m, score, 2))
+
+    # Sort: tier ascending (0 = highest priority), then score descending within tier
+    scored_media.sort(key=lambda x: (x[2], -x[1]))
     all_related_media = [m for m, _, _ in scored_media]
 
     # --------------------------------------------------
-    # POSITION-BASED CURSOR PAGINATION (CORRECT FLOW)
+    # POSITION-BASED CURSOR PAGINATION
     # --------------------------------------------------
-
     cursor = request.GET.get("cursor")
     cursor_id = int(cursor) if cursor else None
 
     start_index = 0
-
     if cursor_id:
-        # Find position of cursor in full blended list
         for index, m in enumerate(all_related_media):
             if m.id == cursor_id:
-                start_index = index + 1   # START AFTER selected media
+                start_index = index + 1
                 break
 
-    # Slice from the correct position
     media_batch = all_related_media[start_index:start_index + PAGE_SIZE]
 
-    # Determine next cursor
     next_cursor = None
     if media_batch:
         next_cursor = media_batch[-1].id
 
-    # Check if more items exist after this batch
     has_more = start_index + PAGE_SIZE < len(all_related_media)
-
 
     # --------------------------------------------------
     # TRACK NEWLY SHOWN MEDIA IN REDIS
     # --------------------------------------------------
     page_related_ids = [m.id for m in media_batch]
-    
+
     if page_related_ids and user_id:
         try:
             cache_key = f"user:seen_related:{user_id}:media:{media_id}"
             redis_conn.sadd(cache_key, *page_related_ids)
-            redis_conn.expire(cache_key, 60 * 60 * 24 * 30)  # 30 days
-            logger.info(f"Cached {len(page_related_ids)} related for user {user_id}, media {media_id}")
+            redis_conn.expire(cache_key, 60 * 60 * 24 * 30)
         except Exception as e:
             logger.warning(f"Error caching seen related: {e}")
-    
+
     # --------------------------------------------------
-    #  NEW: TRACK CATEGORY EXPOSURE (Saturation Prevention)
+    # TRACK CATEGORY EXPOSURE (Saturation Prevention)
     # --------------------------------------------------
     if user_id and media_batch:
         try:
             now_timestamp = int(time.time())
             exposure_key = f"user:category_exposure:{user_id}"
-            
-            # Track each category seen in this batch
+
             for m in media_batch:
                 category = getattr(m, 'category', None)
                 if category:
                     redis_conn.zadd(exposure_key, {category: now_timestamp})
-            
-            # Remove old exposures (older than 1 hour)
+
             one_hour_ago = now_timestamp - 3600
             redis_conn.zremrangebyscore(exposure_key, 0, one_hour_ago)
-            
-            # Set expiry (2 hours)
             redis_conn.expire(exposure_key, 60 * 60 * 2)
         except Exception as e:
             logger.warning(f"Category exposure tracking failed: {e}")
-    
+
     # --------------------------------------------------
     # TRACK UNIQUE VIEW (ONCE PER USER)
     # --------------------------------------------------
@@ -2359,7 +2298,7 @@ def explore_detail(request, media_id):
             media=media,
             engagement_type='view'
         ).exists()
-        
+
         if not has_viewed:
             Media.objects.filter(pk=media.pk).update(view_count=F('view_count') + 1)
             Engagement.objects.create(
@@ -2368,9 +2307,8 @@ def explore_detail(request, media_id):
                 engagement_type='view'
             )
     else:
-        # Anonymous: increment every time
         Media.objects.filter(pk=media.pk).update(view_count=F('view_count') + 1)
-    
+
     # --------------------------------------------------
     # AJAX RESPONSE (Infinite Scroll)
     # --------------------------------------------------
@@ -2388,12 +2326,9 @@ def explore_detail(request, media_id):
                         "id": m.user.id,
                     },
                     "user_username": m.user.username,
-
                     "explore_detail_url": reverse("user_profile:explore_detail", kwargs={"media_id": m.id}),
-                    "like_url": reverse( "user_profile:like_media", kwargs={"media_id": m.id}),
-
-                    "profile_url": reverse( "user_profile:profile", kwargs={"user_id": m.user.id}),
-
+                    "like_url": reverse("user_profile:like_media", kwargs={"media_id": m.id}),
+                    "profile_url": reverse("user_profile:profile", kwargs={"user_id": m.user.id}),
                     "csrf_token": request.COOKIES.get("csrftoken"),
                 }
                 for m in media_batch
@@ -2402,12 +2337,12 @@ def explore_detail(request, media_id):
             "has_more": has_more
         }
         return JsonResponse(data)
-    
+
     # --------------------------------------------------
     # NORMAL PAGE LOAD
     # --------------------------------------------------
     description_html = make_usernames_clickable(media.description or "")
-    
+
     context = {
         "media": media,
         "related_media": media_batch,
@@ -2418,16 +2353,14 @@ def explore_detail(request, media_id):
         "is_following": is_following,
         "has_blocked_media_owner": has_blocked_media_owner,
         "is_blocked_by_media_owner": is_blocked_by_media_owner,
-
     }
     return render(request, "explore_detail.html", context)
 
 
-
-#___________________________________________________________
+#_______________________________________________________________________________________________________________________
 #
 #
-#___________________________________________________________
+#_______________________________________________________________________________________________________________________
 
 
 
@@ -3014,40 +2947,6 @@ class FeedScorer:
 
     from collections import deque, defaultdict
 
-    '''
-    def enforce_creator_diversity(self, sorted_media, max_consecutive=1):
-        diversified = []
-        recent_creators = deque(maxlen=max_consecutive)
-
-        remaining = list(sorted_media)
-
-        while remaining:
-            placed = False
-
-            for i, media in enumerate(remaining):
-                creator_id = media.user_id
-
-                if len(recent_creators) < max_consecutive:
-                    diversified.append(media)
-                    recent_creators.append(creator_id)
-                    remaining.pop(i)
-                    placed = True
-                    break
-
-                # Check if last N posts are all from same creator
-                if not all(c == creator_id for c in recent_creators):
-                    diversified.append(media)
-                    recent_creators.append(creator_id)
-                    remaining.pop(i)
-                    placed = True
-                    break
-
-            if not placed:
-                diversified.extend(remaining)
-                break
-
-        return diversified
-    '''
 
     def enforce_creator_diversity(
         self,
@@ -4063,8 +3962,11 @@ def media_engagement(request, media_id):
         # INCREMENT VIEW COUNT (ONLY IF UNIQUE)
         # --------------------------------
         if created:
+            """
             media.view_count = F('view_count') + 1
             media.save(update_fields=["view_count"])
+            """
+            Media.objects.filter(pk=media.pk).update(view_count=F("view_count") + 1)
 
         # --------------------------------
         # REDIS TRACKING (UNCHANGED)
@@ -4319,51 +4221,6 @@ def search_users(request, user_id):
         'is_blocked': is_blocked,
     })
 
-'''
-#to search users 
-@login_required
-@cache_page(60 * 30)
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
-def search_users(request, user_id):
-
-    #query = re.sub(r'\s+', ' ', request.GET.get('q', '')).strip()
-
-    query = request.GET.get('q', '').strip()
-    profile_user = get_object_or_404(AuthUser, id=user_id)
-
-    # Initialize an empty queryset to handle cases where the query is empty
-    users = AuthUser.objects.none()
-
-    if query:
-        # Filter users based on username, profile bio, or media description
-        users = AuthUser.objects.filter(
-            Q(username__icontains=query) |
-            Q(profile__bio__icontains=query) |
-            Q(media__description__icontains=query)
-        ).distinct()
-
-    # Check if the current user has blocked this profile user
-    is_blocked = BlockedUser.objects.filter(blocker=request.user, blocked=profile_user).exists()
-    
-    # Check if the profile user has blocked the current user
-    is_blocked_by_profile_user = BlockedUser.objects.filter(blocker=profile_user, blocked=request.user).exists()
-    
-    if is_blocked_by_profile_user:
-        return render(request, 'user_not_found.html')
-    
-
-    # Set up pagination with 100 users per page
-    paginator = Paginator(users, 15)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    return render(request, 'search_results.html', {
-        'page_obj': page_obj, 
-        'query': query,
-        'profile_user': profile_user,
-        'is_blocked': is_blocked,
-        })
-'''
 # ===============================================================
 # ENHANCED USER SEARCH WITH COLLABORATIVE FILTERING
 # ===============================================================
@@ -4389,7 +4246,8 @@ def like_media(request, media_id):
     user_hashtag_pref, _ = UserHashtagPreference.objects.get_or_create(user=user)
 
     # Check if the user has already liked the media
-    if user in media.likes.all():
+    #if user in media.likes.all():
+    if media.likes.filter(pk=user.pk).exists():
         media.likes.remove(user)
         liked = False
     else:
@@ -4893,7 +4751,7 @@ def media_detail_view(request, media_id):
 
     older_uploads = older_uploads.order_by("-created_at")
 
-    paginator = Paginator(older_uploads, 8)
+    paginator = Paginator(older_uploads, 15)
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 

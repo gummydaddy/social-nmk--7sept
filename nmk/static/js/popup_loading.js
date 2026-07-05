@@ -136,6 +136,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
             popup.appendChild(popupContent);
 
+            // Ensure container exists
+            if (!popupContainer) {
+                console.error('Popup container not found');
+                return;
+            }
+
             popupContainer.appendChild(popup);
 
             // Animate in

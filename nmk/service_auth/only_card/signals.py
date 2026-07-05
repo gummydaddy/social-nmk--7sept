@@ -2,9 +2,13 @@
 
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from .models import UserUpload
+from .models import UserUpload, CustomGroupAdmin
 
 from django.db.models.signals import pre_save
+
+from allauth.account.signals import user_logged_in
+from django.contrib import messages
+from django.core.cache import cache
 
 @receiver(pre_save, sender=UserUpload)
 def delete_old_file_on_update(sender, instance, **kwargs):
@@ -46,3 +50,24 @@ def delete_user_upload_file_on_delete(sender, instance, **kwargs):
         except Exception as e:
             print(f"Error deleting thumbnail: {e}")
 '''
+
+#google one click login setup
+@receiver(user_logged_in)
+def handle_social_login_cookies(request, user, **kwargs):
+    """
+    Listens for successful Allauth sign-ins to seamlessly set 
+    the 14-day session expiry, cache profiles, and set frontend cookies.
+    """
+    # 1. Only process if the login originated from a social account (Google)
+    if hasattr(user, 'socialaccount_set') and user.socialaccount_set.exists():
+        
+        # 2. Replicate your exact "Remember Me" session duration logic (14 days)
+        request.session.set_expiry(60 * 60 * 24 * 14)  
+        
+        # 3. Synchronize your custom server-side caching profile layer
+        # cache.set(f'user_{user.id}', user.username)
+
+        # 4. Inject a custom attribute onto the request so our view middleware 
+        # knows to attach the 'username' cookie to the final HTTP redirect object
+        request._attach_custom_google_cookies = True
+

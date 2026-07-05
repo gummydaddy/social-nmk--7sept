@@ -47,6 +47,8 @@ from django_redis import get_redis_connection
 
 from collections import defaultdict
 
+IMAGE_QUALITY = 65
+MAX_IMAGE_DIMENSION = 1920
 #import pillow_heif
 #pillow_heif.register_heif_opener()
 
@@ -81,6 +83,237 @@ def delete_expired_stories():
 
 
 
+#worked for both video and image upload using mp4 format and also creationg thumbnails for video 
+@shared_task(bind=True, max_retries=3, soft_time_limit=600, time_limit=600, acks_late=True)
+def process_media_upload(self, media_id, temp_file_path, file_name, media_type, filter_name=None):
+    try:
+        try:
+            media = Media.objects.get(id=media_id)
+        except ObjectDoesNotExist:
+            logger.error(f"Media {media_id} not found. Will not retry.")
+            return
+
+        if media.is_processed:
+            logger.info(f"Media {media_id} already processed. Skipping.")
+            return
+
+        storage = CompressedMediaStorage()
+
+        if media_type == 'image':
+            logger.info(f"Processing image from: {temp_file_path}")
+            image = Image.open(temp_file_path)
+
+            # Handle EXIF Orientation
+            try:
+                exif = image._getexif()
+                if exif:
+                    orientation_key = next((k for k, v in ExifTags.TAGS.items() if v == 'Orientation'), None)
+                    if orientation_key and orientation_key in exif:
+                        orientation = exif[orientation_key]
+                        rotate_values = {3: 180, 6: 270, 8: 90}
+                        if orientation in rotate_values:
+                            image = image.rotate(rotate_values[orientation], expand=True)
+                            logger.info(f"Rotated image by {rotate_values[orientation]}°")
+            except Exception as e:
+                logger.warning(f"EXIF rotation failed for media {media.id}: {e}")
+
+            # Optional filters
+            if filter_name:
+                logger.info(f"Applying filter: {filter_name}")
+                if filter_name == 'sepia':
+                    image = ImageOps.colorize(image.convert("L"), "#704214", "#C0C090")
+                elif filter_name == 'grayscale':
+                    image = ImageOps.grayscale(image)
+                elif filter_name == 'invert':
+                    image = ImageOps.invert(image)
+                else:
+                    image = image.filter(ImageFilter.EMBOSS)
+
+            # Resize and convert to .webp
+            #image = storage.resize_image(image)
+
+            # Resize image (if needed)
+            if max(image.size) > MAX_IMAGE_DIMENSION:
+                image.thumbnail(
+                    (MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION),
+                    Image.Resampling.LANCZOS
+                )
+
+            #if image.mode == "RGBA":
+            if image.mode in ("RGBA", "P"):
+                image = image.convert("RGB")
+
+            buffer = BytesIO()
+            #image.save(buffer, format='WEBP', quality=storage.image_quality)
+            image.save(buffer, format="WEBP", optimize=True, quality=IMAGE_QUALITY)
+            buffer.seek(0)
+
+            webp_filename = os.path.splitext(file_name)[0] + ".webp"
+
+            if media.file and media.file.name and storage.exists(media.file.name):
+                try:
+                    storage.delete(media.file.name)
+                    logger.info(f"Deleted original image from R2: {media.file.name}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete original image from R2: {e}")
+
+            media.file.save(webp_filename, ContentFile(buffer.read()), save=False)
+
+        elif media_type == 'video':
+            mp4_filename = os.path.splitext(file_name)[0] + "_compressed.mp4"
+            mp4_output_path = os.path.join(tempfile.gettempdir(), mp4_filename)
+
+            try:
+                logger.info(f"Compressing video {file_name} to .mp4 using FFmpeg")
+
+                # Detect if audio stream exists
+                has_audio = False
+                try:
+                    probe_cmd = [
+                        "ffprobe", "-v", "error", "-select_streams", "a",
+                        "-show_entries", "stream=codec_type",
+                        "-of", "default=noprint_wrappers=1:nokey=1",
+                        temp_file_path
+                    ]
+                    result = subprocess.run(probe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    has_audio = 'audio' in result.stdout.strip().lower()
+                except Exception as e:
+                    logger.warning(f"FFprobe failed to check audio stream: {e}")
+
+                ffmpeg_cmd = [
+                    "ffmpeg",
+
+                    "-ss", "0",
+
+                    "-i", temp_file_path,
+                    "-vf", "scale='min(1280,iw)':-2",  #new
+                    "-c:v", "libx264",
+                    "-preset", "veryfast",
+                    "-crf", "28",
+                    #"-crf", "32",    #new
+
+                    "-tune", "fastdecode",        #  faster playback
+
+                    #"-profile:v", "baseline",   #new
+                    "-profile:v", "main",
+
+                    #"-level", "3.1",    #new
+                    "-pix_fmt", "yuv420p",    #new
+
+                    # THREAD OPTIMIZATION
+                    "-threads", "0",              # auto CPU usage
+                ]
+
+                if has_audio:
+                    #ffmpeg_cmd += ["-c:a", "aac", "-b:a", "128k"]
+                    ffmpeg_cmd += ["-c:a", "aac", "-b:a", "96k", "-ac", "2"]
+                else:
+                    ffmpeg_cmd += ["-an"]
+
+                ffmpeg_cmd += [
+                    "-movflags", "+faststart",
+                    "-y", mp4_output_path
+                ]
+
+                subprocess.run(ffmpeg_cmd, check=True)
+
+                if media.file and media.file.name and storage.exists(media.file.name):
+                    try:
+                        storage.delete(media.file.name)
+                        logger.info(f"Deleted original video from R2: {media.file.name}")
+                    except Exception as e:
+                        logger.warning(f"Failed to delete original video from R2: {e}")
+
+                with open(mp4_output_path, 'rb') as f:
+                    media.file.save(mp4_filename, File(f, name=mp4_filename), save=False)
+
+                if os.path.exists(mp4_output_path):
+                    os.remove(mp4_output_path)
+                    logger.debug(f"Deleted temp mp4 file: {mp4_output_path}")
+
+                # === Generate Video Thumbnail ===
+                thumb_filename = f"thumb_{os.path.splitext(file_name)[0]}.jpg"
+                thumb_output_path = os.path.join(tempfile.gettempdir(), thumb_filename)
+
+                thumb_cmd = [
+                    "ffmpeg",
+                    #"-ss", "00:00:01.000",
+                    "-ss", "1",
+
+                    "-i", temp_file_path,   #before -ss Huge speedup on long videos
+                    #"-vframes", "1",
+                    "-frames:v", "1",
+                    #"-an",    #Small CPU savings
+                    "-q:v", "4",   #previously 2
+                    "-update", "1",
+
+                    "-y",
+                    thumb_output_path
+                ]
+                subprocess.run(thumb_cmd, check=True)
+                logger.info(f"Generated video thumbnail: {thumb_output_path}")
+
+                with open(thumb_output_path, 'rb') as thumb_file:
+                    thumb_content = ContentFile(thumb_file.read())
+                    storage_thumb_path = f"thumbnails/{thumb_filename}"
+                    media.thumbnail.save(storage_thumb_path, thumb_content, save=False)
+
+                if os.path.exists(thumb_output_path):
+                    os.remove(thumb_output_path)
+                    logger.debug(f"Deleted temp video thumbnail file: {thumb_output_path}")
+
+            except subprocess.CalledProcessError as e:
+                logger.error(f"FFmpeg failed to compress {file_name} or generate thumbnail: {e}")
+                raise self.retry(exc=e)
+            except Exception as e:
+                logger.error(f"Unexpected error during video compression or thumbnail generation: {e}")
+                raise self.retry(exc=e)
+
+        media.is_processed = True
+        media.save(update_fields=['file', 'thumbnail', 'is_processed'])
+
+        # ---------------------------
+        # STORE MEDIA → CREATOR IN REDIS
+        # ---------------------------
+        try:
+            from django_redis import get_redis_connection
+            redis = get_redis_connection("default")
+
+            redis.set(f"media:creator:{media.id}", media.user_id)
+
+            logger.info(
+                f"Stored media:creator:{media.id} → {media.user_id} in Redis"
+            )
+        except Exception as e:
+            logger.warning(
+                f"Failed to store media:creator mapping for media {media.id}: {e}"
+            )
+
+
+        logger.info(f"{media_type.capitalize()} {file_name} processed and uploaded successfully.")
+
+    except SoftTimeLimitExceeded:
+        logger.error(f"Task exceeded soft time limit and was terminated for media: {file_name}")
+        return
+
+    except ObjectDoesNotExist:
+        logger.error(f"Media {media_id} not found. Will not retry.")
+        return
+
+    except Exception as e:
+        logger.error(f"Failed to process {media_type} {file_name}: {e}")
+        self.retry(exc=e)
+
+    finally:
+        try:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+                logger.debug(f"Deleted temp file: {temp_file_path}")
+        except Exception as e:
+            logger.warning(f"Failed to delete temporary file {temp_file_path}: {e}")
+
+
+'''
 #worked for both video and image upload using mp4 format and also creationg thumbnails for video 
 @shared_task(bind=True, max_retries=3, soft_time_limit=600, time_limit=600, acks_late=True)
 def process_media_upload(self, media_id, temp_file_path, file_name, media_type, filter_name=None):
@@ -300,6 +533,7 @@ def process_media_upload(self, media_id, temp_file_path, file_name, media_type, 
         except Exception as e:
             logger.warning(f"Failed to delete temporary file {temp_file_path}: {e}")
 
+'''
 
 
 
@@ -488,6 +722,137 @@ def update_trending_scores():
     except Exception as e:
         logger.exception(f"Error updating trending scores: {e}")
         return f"Error: {str(e)}"
+
+
+
+# Country affinity — boosts media whose `country` matches the user's profile country
+COUNTRY_BOOST = 1.35
+
+# ---------------------------
+# CO-VIEW RELATED MEDIA PRECOMPUTE
+# ---------------------------
+CO_VIEW_RELATED_WINDOW_DAYS = 5        # only precompute for media created within this window
+CO_VIEW_PRECOMPUTE_MAX_VIEWERS = 100   # how many recent viewers of a media to scan
+CO_VIEW_PRECOMPUTE_MAX_HISTORY = 60    # how many recently-viewed items to pull per viewer
+CO_VIEW_PRECOMPUTE_MAX_CANDIDATES = 150  # how many top candidates to cache per media
+CO_VIEW_PRECOMPUTE_TTL = 60 * 60 * 6   # 6 hours
+CO_VIEW_PRECOMPUTE_BATCH_CAP = 2000    # safety cap on how many media items per run
+
+@shared_task
+def precompute_related_coview_media():
+    """
+    Periodic task (same pattern as update_trending_scores) that precomputes
+    "people who viewed this media also viewed X" relationships and caches
+    them in Redis as media:related_coview:{media_id}.
+
+    This moves the co-view computation OUT of the explore_detail request path
+    (which previously ran up to 100 live Redis ZREVRANGE calls per request)
+    and into a background task. explore_detail just reads the cached zset.
+
+    Schedule this via Celery Beat at a reasonable interval (e.g. every
+    15-30 minutes, similar to update_trending_scores) so the cache stays
+    fresh without adding load to every page view.
+    """
+    from .models import Media
+
+    redis_conn = get_redis_connection("default")
+    now = timezone.now()
+    cutoff = now - timedelta(days=CO_VIEW_RELATED_WINDOW_DAYS)
+
+    processed = 0
+    skipped = 0
+
+    try:
+        # Same recency/visibility scope as trending — no point precomputing
+        # relations for old or private media that won't surface anyway.
+        media_ids = list(
+            Media.objects.filter(
+                created_at__gte=cutoff,
+                is_private=False
+            ).values_list('id', flat=True)[:CO_VIEW_PRECOMPUTE_BATCH_CAP]
+        )
+
+        for media_id in media_ids:
+            try:
+                viewer_ids_raw = redis_conn.zrevrange(
+                    f"media:viewed_by:{media_id}",
+                    0,
+                    CO_VIEW_PRECOMPUTE_MAX_VIEWERS - 1
+                )
+
+                if not viewer_ids_raw:
+                    skipped += 1
+                    continue
+
+                overlap_counter = defaultdict(int)
+
+                for viewer_id_raw in viewer_ids_raw:
+                    viewer_id = (
+                        viewer_id_raw.decode()
+                        if isinstance(viewer_id_raw, bytes)
+                        else viewer_id_raw
+                    )
+
+                    viewed_raw = redis_conn.zrevrange(
+                        f"user:viewed:{viewer_id}",
+                        0,
+                        CO_VIEW_PRECOMPUTE_MAX_HISTORY - 1
+                    )
+
+                    for mid_raw in viewed_raw:
+                        mid = (
+                            mid_raw.decode()
+                            if isinstance(mid_raw, bytes)
+                            else mid_raw
+                        )
+                        mid_int = int(mid)
+                        if mid_int != media_id:
+                            overlap_counter[mid_int] += 1
+
+                coview_key = f"media:related_coview:{media_id}"
+
+                if not overlap_counter:
+                    # Clear any stale entry from a previous run
+                    redis_conn.delete(coview_key)
+                    skipped += 1
+                    continue
+
+                # Keep only the top N candidates by overlap strength
+                top_candidates = dict(
+                    sorted(
+                        overlap_counter.items(),
+                        key=lambda x: x[1],
+                        reverse=True
+                    )[:CO_VIEW_PRECOMPUTE_MAX_CANDIDATES]
+                )
+
+                redis_conn.delete(coview_key)
+
+                if top_candidates:
+                    score_dict = {
+                        str(mid): float(count)
+                        for mid, count in top_candidates.items()
+                    }
+                    redis_conn.zadd(coview_key, score_dict)
+                    redis_conn.expire(coview_key, CO_VIEW_PRECOMPUTE_TTL)
+
+                processed += 1
+
+            except Exception as e:
+                logger.warning(
+                    f"Failed to precompute co-view for media {media_id}: {e}"
+                )
+                continue
+
+        logger.info(
+            f"Precomputed co-view relations: "
+            f"{processed} processed, {skipped} skipped"
+        )
+        return f"success:{processed}_processed,{skipped}_skipped"
+
+    except Exception as e:
+        logger.exception(f"Error precomputing co-view relations: {e}")
+        return f"error:{str(e)}"
 
 
 
@@ -1086,6 +1451,44 @@ def build_user_recommendations_WITH_BLOCK_FILTER(self, user_id):
             if creator_id in not_interested_creators:
                 media_scores[media_id] *= 0.1
     """
+
+
+    # ---------------------------
+    #  NEW: COUNTRY AFFINITY BOOST
+    # ---------------------------
+    try:
+        from .models import Media, Profile
+
+        user_country = None
+        try:
+            user_country = Profile.objects.only('country').get(user_id=user_id).country
+        except Profile.DoesNotExist:
+            user_country = None
+
+        if user_country and media_scores:
+            scored_media_ids = [int(mid) for mid in media_scores.keys()]
+
+            # One bulk lookup instead of per-item queries
+            country_map = dict(
+                Media.objects.filter(id__in=scored_media_ids)
+                .values_list('id', 'country')
+            )
+
+            boosted_count = 0
+            for mid_str in list(media_scores.keys()):
+                media_country = country_map.get(int(mid_str))
+                if media_country and str(media_country) == str(user_country):
+                    media_scores[mid_str] *= COUNTRY_BOOST
+                    boosted_count += 1
+
+            if boosted_count:
+                logger.debug(
+                    f"Country boost applied to {boosted_count} items "
+                    f"for user {user_id} (country={user_country})"
+                )
+    except Exception as e:
+        logger.warning(f"Country boost failed for user {user_id}: {e}")
+
 
     # ---------------------------
     # BLEND TRENDING

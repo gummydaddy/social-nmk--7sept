@@ -26,6 +26,7 @@ from django.contrib.sitemaps.views import sitemap
 from service_auth.user_profile.sitemaps import StaticViewSitemap, ProfileSitemap, MediaSitemap, VideoSitemap
 from service_auth.notion.sitemaps import NotionSitemap
 #from service_auth.only_card.views import pwa_cache_manifest
+from service_auth.only_message.views import serve_service_worker
 
 
 #new sitemap
@@ -39,6 +40,8 @@ sitemaps = {
 }
 
 urlpatterns = [
+
+    path('sw.js', serve_service_worker, name='service_worker'),
    
     path("admin/", admin.site.urls),
    # path('accounts/', include('allauth.urls')),
