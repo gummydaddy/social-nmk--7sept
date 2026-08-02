@@ -67,6 +67,7 @@
     }
 
     .description {
+        content-visibility:auto;
         color: #123;
         max-width: 90%;
         word-wrap: break-word;        /* Ensures long words wrap */
@@ -251,10 +252,14 @@
 <div class="uploads-section">
     <div class="action-buttons">
         {% if request.user.is_authenticated %}
-            <button type="button" class="btn btn-primary"
+            <!--<button type="button" class="btn btn-primary"
                 onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">
                 Tags 🔖
-            </button>
+            </button>-->
+
+            <a href="{% url 'only_message:live_list_view' %}" class="video-chat-btn">
+                <span>Live</span>
+            </a>
 
             <a href="{% url 'only_message:stranger_chat_view' %}" class="video-chat-btn">
                 🎥 </br>
@@ -265,10 +270,14 @@
                 Saved
             </button>
         {% else %}
-            <button type="button" class="btn btn-primary"
+            <!--<button type="button" class="btn btn-primary"
                 onclick="location.href='{% url 'user_profile:media_tags' %}'">
                 Tags 🔖
-            </button>
+            </button>-->
+
+            <a href="{% url 'only_message:live_list_view' %}" class="video-chat-btn">
+                <span>Live</span>
+            </a>
 
             <a href="{% url 'only_message:stranger_chat_view' %}" class="video-chat-btn">
                 🎥 <br>

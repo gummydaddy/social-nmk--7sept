@@ -6,7 +6,6 @@
 <head>
 
 {% comment %} Absolute URL helpers for crawlers {% endcomment %}
-  {% comment %}
   <meta charset="utf-8">
   <title>{{ title }}</title>
 
@@ -43,13 +42,14 @@
     <meta name="twitter:image:alt" content="{{ description|truncatechars:160 }}">
   {% endif %}
 
-
+  {%comment%}
   {% if profile_url %}
     <!-- Optional: Add author/profile URL metadata -->
     <meta property="article:author" content="{{ profile_url }}">
   {% endif %}
-  {% endcomment %}
+  {%endcomment%}
 
+  {%comment%}
   <meta property="og:type" content="article">
 
   <meta property="og:title"
@@ -106,7 +106,7 @@
   <meta name="twitter:image"
         content="{{ image_url }}">
   {% endif %}
-
+  {%endcomment%}
 
   <!--  Structured Data (JSON-LD for Google SEO) -->
   {% comment %}

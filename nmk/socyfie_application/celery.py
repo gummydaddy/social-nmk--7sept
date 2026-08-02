@@ -85,6 +85,13 @@ app.conf.beat_schedule =  {
 
     },
 
+    # Live
+    "cleanup-stale-live-rooms": {
+        #"task": "django.core.management.call_command",  # or wrap in a shared_task
+        "task": "service_auth.only_message.tasks.cleanup_stale_live_rooms",
+        "schedule": 120.0,
+    },
+
 }
 
 '''

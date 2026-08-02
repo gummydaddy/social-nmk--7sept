@@ -1,0 +1,1017 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters_message %}
+
+{% block main_content %}
+<style>
+    body.live-open { overflow: hidden !important; }
+
+    #live-root {
+        position: fixed; inset: 0; z-index: 9500;
+        background: #000; color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        display: flex; flex-direction: column;
+        overflow: hidden;
+    }
+
+    /* ── Video stage ─────────────────────────────────────────── */
+    #lv-stage {
+        position: absolute; inset: 0; display: grid;
+        grid-template-columns: 1fr; grid-template-rows: 1fr;
+        gap: 2px; background: #000;
+        /* Column/row counts and per-tile spans are computed in JS
+           (relayoutStage) so any number of streamers arranges cleanly. */
+    }
+
+    .lv-tile {
+        position: relative; background: #111; overflow: hidden;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .lv-tile video {
+        width: 100%; height: 100%; object-fit: cover;
+    }
+    .lv-tile.mirrored video { transform: scaleX(-1); }
+    .lv-tile-label {
+        position: absolute; bottom: 8px; left: 8px;
+        background: rgba(0,0,0,.5); padding: 3px 10px; border-radius: 12px;
+        font-size: 11px; font-weight: 600;
+    }
+    .lv-tile-empty {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #555; font-size: 13px; gap: 8px; height: 100%; width: 100%;
+    }
+
+    /* ── Top overlay ──────────────────────────────────────────── */
+    #lv-top-bar {
+        position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 14px 40px;
+        background: linear-gradient(to bottom, rgba(0,0,0,.65), transparent);
+        pointer-events: none;
+    }
+    #lv-top-bar > * { pointer-events: auto; }
+    .lv-host-chip { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,.35); border-radius: 22px; padding: 4px 12px 4px 4px; }
+    .lv-host-chip img { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; }
+    .lv-host-chip .lv-name { font-size: 12px; font-weight: 700; }
+    .lv-live-pill {
+        background: #ff3b5c; font-size: 10px; font-weight: 800; padding: 2px 7px;
+        border-radius: 8px; letter-spacing: .4px; margin-right: 6px;
+    }
+    #lv-viewer-count { font-size: 11px; opacity: .85; margin-left: 4px; }
+    .lv-close-btn {
+        background: rgba(0,0,0,.4); border: none; color: #fff; width: 34px; height: 34px;
+        border-radius: 50%; font-size: 18px; cursor: pointer; line-height: 1;
+    }
+    #lv-title-line {
+        position: absolute; top: 52px; left: 14px; right: 60px; z-index: 20;
+        font-size: 12px; opacity: .9; pointer-events: none;
+        text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    }
+
+    /* ── Reactions floating up ───────────────────────────────── */
+    #lv-reactions-layer {
+        position: absolute; inset: 0; pointer-events: none; z-index: 25; overflow: hidden;
+    }
+    .lv-floating-heart {
+        position: absolute; bottom: 90px; font-size: 26px;
+        animation: lvFloatUp 3s ease-in forwards;
+    }
+    @keyframes lvFloatUp {
+        0%   { transform: translateY(0) translateX(0) scale(.6); opacity: 1; }
+        15%  { transform: translateY(-60px) translateX(6px) scale(1.1); opacity: 1; }
+        100% { transform: translateY(-420px) translateX(-10px) scale(.9); opacity: 0; }
+    }
+
+    /* ── Chat feed (bottom-left, IG style) ───────────────────── */
+    #lv-chat-feed {
+        position: absolute; left: 10px; bottom: 92px; z-index: 20;
+        width: min(72%, 340px); max-height: 34vh; overflow: hidden;
+        display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+        pointer-events: none;
+        mask-image: linear-gradient(to top, black 70%, transparent 100%);
+    }
+    .lv-chat-msg {
+        display: flex; align-items: center; gap: 6px;
+        background: rgba(0,0,0,.38); border-radius: 14px; padding: 5px 10px;
+        font-size: 12.5px; max-width: 100%; word-break: break-word;
+        animation: lvChatIn .25s ease;
+    }
+    @keyframes lvChatIn { from { opacity: 0; transform: translateY(8px);} to { opacity: 1; transform: translateY(0);} }
+    .lv-chat-msg img { width: 18px; height: 18px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
+    .lv-chat-msg b { font-weight: 700; margin-right: 4px; }
+    .lv-chat-system { text-align: center; font-size: 11px; opacity: .7; font-style: italic; background: transparent; }
+
+    /* ── Bottom controls ─────────────────────────────────────── */
+    #lv-bottom-bar {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+        padding: 5px 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
+        background: linear-gradient(to top, rgba(0,0,0,.75), transparent);
+        display: flex; align-items: center; gap: 3px;
+        justify-content: center;
+    }
+    /* Input occupies the first row */
+    #lv-chat-input {
+        flex: 0 0 100%;       /* Take the full width */
+        width: 100%;
+        box-sizing: border-box;
+    }
+    #lv-chat-input {
+        flex: 1; background: rgba(255,255,255,.15); border: none; border-radius: 20px;
+        padding: 10px 14px; color: #fff; font-size: 13px; outline: none;
+    }
+    #lv-chat-input::placeholder { color: rgba(255,255,255,.7); }
+    .lv-round-btn {
+        width: 40px; height: 40px; border-radius: 50%; border: none;
+        background: rgba(255,255,255,.15); color: #fff; font-size: 17px;
+        display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    }
+    .lv-round-btn.active { background: #ff3b5c; }
+    .lv-round-btn.danger { background: #dc2626; }
+    #lv-start-camera-btn {
+        background: linear-gradient(135deg, #ff3b5c, #ff2d95); border: none; color: #fff;
+        border-radius: 22px; padding: 10px 20px; font-weight: 700; font-size: 13px; cursor: pointer;
+    }
+    #lv-request-join-btn {
+        background: rgba(255,255,255,.15); border: none; color: #fff;
+        border-radius: 20px; padding: 9px 16px; font-weight: 600; font-size: 12px; cursor: pointer;
+    }
+    #lv-request-join-btn.pending { background: rgba(255,193,7,.35); }
+
+    /* ── Side panels (join requests / viewer list / private requests) ── */
+    .lv-panel {
+        position: absolute; top: 0; right: 0; bottom: 0; z-index: 40;
+        width: min(320px, 88vw); background: #14151a; box-shadow: -4px 0 20px rgba(0,0,0,.4);
+        transform: translateX(100%); transition: transform .25s ease;
+        display: flex; flex-direction: column;
+    }
+    .lv-panel.open { transform: translateX(0); }
+    .lv-panel-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,.08); font-weight: 700;
+    }
+    .lv-panel-close { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; }
+    .lv-panel-body { flex: 1; overflow-y: auto; padding: 8px 12px; }
+    .lv-panel-row {
+        display: flex; align-items: center; gap: 10px; padding: 10px 4px;
+        border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .lv-panel-row img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+    .lv-panel-row .lv-row-name { flex: 1; font-size: 13px; }
+    .lv-panel-row button {
+        border: none; border-radius: 14px; padding: 5px 12px; font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .lv-btn-approve { background: #16a34a; color: #fff; }
+    .lv-btn-reject { background: #dc2626; color: #fff; }
+    .lv-panel-empty { text-align: center; padding: 30px 10px; color: #666; font-size: 12px; }
+
+    /* ── Toggle privacy switch ─────────────────────────────────── */
+    .lv-privacy-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .lv-switch { position: relative; width: 42px; height: 24px; }
+    .lv-switch input { opacity: 0; width: 0; height: 0; }
+    .lv-slider { position: absolute; inset: 0; background: rgba(255,255,255,.25); border-radius: 24px; cursor: pointer; transition: .2s; }
+    .lv-slider:before { content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+    .lv-switch input:checked + .lv-slider { background: #ff3b5c; }
+    .lv-switch input:checked + .lv-slider:before { transform: translateX(18px); }
+
+    /* ── Toast ──────────────────────────────────────────────────── */
+    #lv-toast {
+        position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,.8); color: #fff; padding: 8px 18px; border-radius: 20px;
+        font-size: 12.5px; z-index: 60; opacity: 0; transition: opacity .3s; pointer-events: none;
+    }
+    #lv-toast.show { opacity: 1; }
+
+    /* ── Ended / pending overlays ──────────────────────────────── */
+    #lv-ended-overlay, #lv-pending-overlay {
+        position: absolute; inset: 0; z-index: 70; background: rgba(0,0,0,.9);
+        display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 20px;
+    }
+    #lv-ended-overlay.show, #lv-pending-overlay.show { display: flex; }
+    .lv-ended-btn { background: #fff; color: #000; border: none; border-radius: 22px; padding: 10px 24px; font-weight: 700; cursor: pointer; }
+</style>
+
+<div id="live-root">
+
+    <div id="lv-stage"></div>
+
+    <div id="lv-reactions-layer"></div>
+
+    <div id="lv-top-bar">
+        <div class="lv-host-chip">
+            {% if room.host_pic %}<img src="{{ room.host_pic }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+            <span class="lv-live-pill">LIVE</span>
+            <span class="lv-name">{{ room.host_username }}</span>
+            <span id="lv-viewer-count">👁 {{ room.viewer_count }}</span>
+        </div>
+        <button class="lv-close-btn" onclick="LiveRoom.leave()">✕</button>
+    </div>
+    <div id="lv-title-line">{{ room.title }}</div>
+
+    <div id="lv-chat-feed"></div>
+
+    <div id="lv-bottom-bar">
+        <input type="text" id="lv-chat-input" placeholder="Say something…" maxlength="300"></br>
+        <button class="lv-round-btn" id="lv-heart-btn" title="Send a heart">❤️</button>
+
+        {% if is_host %}
+            <button class="lv-round-btn" id="lv-mic-btn" title="Mute/unmute" style="display:none;">🎤</button>
+            <button class="lv-round-btn" id="lv-cam-btn" title="Camera on/off" style="display:none;">📷</button>
+            <button class="lv-round-btn" id="lv-flip-btn" title="Switch camera" style="display:none;">🔄</button>
+            <button class="lv-round-btn" id="lv-requests-btn" title="Join requests">🙋</button>
+            <button class="lv-round-btn" id="lv-viewers-btn" title="Viewers">👥</button>
+            <button class="lv-round-btn" id="lv-privacy-btn" title="Privacy">{% if room.is_private %}🔒{% else %}🌍{% endif %}</button>
+            <button id="lv-start-camera-btn">Start Streaming</button>
+            <button class="lv-round-btn danger" id="lv-end-btn" title="End stream">⏹</button>
+        {% else %}
+            <button class="lv-round-btn" id="lv-mic-btn" title="Mute/unmute" style="display:none;">🎤</button>
+            <button class="lv-round-btn" id="lv-cam-btn" title="Camera on/off" style="display:none;">📷</button>
+            <button class="lv-round-btn" id="lv-flip-btn" title="Switch camera" style="display:none;">🔄</button>
+            <button id="lv-request-join-btn">🙋 Join</button>
+        {% endif %}
+    </div>
+
+    {% if is_host %}
+    <!-- Join requests panel -->
+    <div class="lv-panel" id="lv-requests-panel">
+        <div class="lv-panel-header"><span>Join Requests</span><button class="lv-panel-close" onclick="LiveRoom.closePanels()">✕</button></div>
+        <div class="lv-panel-body" id="lv-requests-list">
+            <div class="lv-panel-empty">No pending requests</div>
+        </div>
+    </div>
+
+    <!-- Viewers / co-streamers panel -->
+    <div class="lv-panel" id="lv-viewers-panel">
+        <div class="lv-panel-header"><span>Viewers</span><button class="lv-panel-close" onclick="LiveRoom.closePanels()">✕</button></div>
+        <div class="lv-panel-body" id="lv-viewers-list">
+            <div class="lv-panel-empty">No viewers yet</div>
+        </div>
+    </div>
+
+    <!-- Privacy panel -->
+    <div class="lv-panel" id="lv-privacy-panel">
+        <div class="lv-panel-header"><span>Privacy</span><button class="lv-panel-close" onclick="LiveRoom.closePanels()">✕</button></div>
+        <div class="lv-privacy-row">
+            <span>Private stream</span>
+            <label class="lv-switch">
+                <input type="checkbox" id="lv-privacy-toggle" {% if room.is_private %}checked{% endif %}>
+                <span class="lv-slider"></span>
+            </label>
+        </div>
+        <div class="lv-panel-body" id="lv-private-requests-list">
+            <div class="lv-panel-empty">No access requests</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div id="lv-toast"></div>
+
+    <div id="lv-pending-overlay">
+        <div style="font-size:40px;">🔒</div>
+        <div>This is a private live stream.</div>
+        <button class="lv-ended-btn" id="lv-request-access-btn">Request to join</button>
+    </div>
+
+    <div id="lv-ended-overlay">
+        <div style="font-size:40px;">👋</div>
+        <div id="lv-ended-message">This live stream has ended.</div>
+        <a class="lv-ended-btn" href="{% url 'only_message:live_list_view' %}">Back to Live</a>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block Message_script %}
+<script>
+document.body.classList.add('live-open');
+
+window.LiveRoom = (function () {
+    'use strict';
+
+    var ROOM_ID     = '{{ room_id|escapejs }}';
+    var IS_HOST      = {% if is_host %}true{% else %}false{% endif %};
+    var CURRENT_USER_ID = {{ request.user.id }};
+    var CURRENT_USERNAME = '{{ request.user.username|escapejs }}';
+
+    var ICE_SERVERS = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+        ]
+    };
+
+    var ws = null;
+    var myRole = IS_HOST ? 'host' : 'viewer';
+    var localStream = null;
+    var facingMode = 'user';
+    var isMuted = false;
+    var isCamOff = false;
+
+    // broadcaster_id -> RTCPeerConnection (streams I'm RECEIVING)
+    var viewPCs = {};
+    // viewer_id -> RTCPeerConnection (streams I'm SENDING, only if I broadcast)
+    var broadcastPCs = {};
+    // known broadcaster ids currently rendered
+    var activeBroadcasters = {};
+    // ordered list of broadcaster ids (as strings) — drives the grid layout
+    var broadcasterOrder = [];
+
+    var reconnectAttempts = 0;
+    var pingInterval = null;
+
+    /* ══════════════════════ DOM refs ══════════════════════ */
+    var stage         = document.getElementById('lv-stage');
+    var chatFeed       = document.getElementById('lv-chat-feed');
+    var chatInput       = document.getElementById('lv-chat-input');
+    var viewerCountEl  = document.getElementById('lv-viewer-count');
+    var toastEl        = document.getElementById('lv-toast');
+    var endedOverlay    = document.getElementById('lv-ended-overlay');
+    var endedMessage    = document.getElementById('lv-ended-message');
+    var pendingOverlay  = document.getElementById('lv-pending-overlay');
+    var reactionsLayer  = document.getElementById('lv-reactions-layer');
+
+    /* ══════════════════════ helpers ══════════════════════ */
+    function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    function toast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastEl._t);
+        toastEl._t = setTimeout(function () { toastEl.classList.remove('show'); }, 2600);
+    }
+
+    /**
+     * Arrange N streamer tiles into a clean grid, however many there are.
+     *
+     * Rule: cap at 2 columns (works well for the portrait full-screen
+     * layout this page uses) and grow rows as needed — 1x1, then 1col/2row
+     * for 2, 2x2 for 3-4, 2x3 for 5-6, etc. If the last row would have a
+     * single leftover tile, that tile spans the full row width instead of
+     * leaving an empty gap, so 3, 5, 7... streamers still look intentional.
+     */
+    function relayoutStage() {
+        var ids = broadcasterOrder.slice();
+        var count = ids.length;
+
+        if (count === 0) {
+            stage.style.gridTemplateColumns = '1fr';
+            stage.style.gridTemplateRows = '1fr';
+            return;
+        }
+
+        var cols = count === 1 ? 1 : 2;
+        var rows = Math.ceil(count / cols);
+
+        stage.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';
+        stage.style.gridTemplateRows = 'repeat(' + rows + ', 1fr)';
+
+        var isOddLeftover = (count > 1) && (count % 2 === 1);
+
+        ids.forEach(function (id, idx) {
+            var tile = document.getElementById('lv-tile-' + id);
+            if (!tile) return;
+            var isLastTile = (idx === count - 1);
+            tile.style.gridColumn = (isOddLeftover && isLastTile) ? ('span ' + cols) : 'span 1';
+        });
+    }
+
+    function ensureTile(broadcasterId, label, mirrored) {
+        var idStr = String(broadcasterId);
+        var existing = document.getElementById('lv-tile-' + idStr);
+        if (existing) return existing.querySelector('video');
+
+        var tile = document.createElement('div');
+        tile.className = 'lv-tile' + (mirrored ? ' mirrored' : '');
+        tile.id = 'lv-tile-' + idStr;
+
+        var video = document.createElement('video');
+        video.autoplay = true; video.playsInline = true;
+        video.muted = (idStr === String(CURRENT_USER_ID));
+
+        var labelEl = document.createElement('div');
+        labelEl.className = 'lv-tile-label';
+        labelEl.textContent = label;
+
+        tile.appendChild(video);
+        tile.appendChild(labelEl);
+        stage.appendChild(tile);
+
+        if (broadcasterOrder.indexOf(idStr) === -1) {
+            broadcasterOrder.push(idStr);
+        }
+        activeBroadcasters[idStr] = true;
+        relayoutStage();
+        return video;
+    }
+
+    function removeTile(broadcasterId) {
+        var idStr = String(broadcasterId);
+        var tile = document.getElementById('lv-tile-' + idStr);
+        if (tile) tile.remove();
+        delete activeBroadcasters[idStr];
+
+        var idx = broadcasterOrder.indexOf(idStr);
+        if (idx !== -1) { broadcasterOrder.splice(idx, 1); }
+
+        relayoutStage();
+    }
+
+    /* ══════════════════════ WebSocket ══════════════════════ */
+    function connect() {
+        var proto = location.protocol === 'https:' ? 'wss' : 'ws';
+        ws = new WebSocket(proto + '://' + location.host + '/ws/live/' + ROOM_ID + '/');
+
+        ws.onopen = function () {
+            reconnectAttempts = 0;
+            if (!pingInterval) {
+                pingInterval = setInterval(function () {
+                    if (ws && ws.readyState === WebSocket.OPEN) { send({ type: 'ping' }); }
+                }, 25000);
+            }
+        };
+
+        ws.onmessage = function (e) {
+            var data;
+            try { data = JSON.parse(e.data); } catch (_) { return; }
+            handleMessage(data);
+        };
+
+        ws.onclose = function () {
+            if (reconnectAttempts < 5 && myRole !== 'ended') {
+                reconnectAttempts++;
+                setTimeout(connect, 1500 * reconnectAttempts);
+            }
+        };
+
+        ws.onerror = function () { console.warn('Live WS error'); };
+    }
+
+    function send(obj) {
+        if (ws && ws.readyState === WebSocket.OPEN) { ws.send(JSON.stringify(obj)); return true; }
+        return false;
+    }
+
+    /* ══════════════════════ message handling ══════════════════════ */
+    function handleMessage(data) {
+        switch (data.type) {
+            case 'room_not_found':
+                showEnded('This live stream could not be found.');
+                break;
+
+            case 'room_state':
+                onRoomState(data);
+                break;
+
+            case 'new_broadcaster':
+                if (String(data.broadcaster_id) !== String(CURRENT_USER_ID)) {
+                    send({ type: 'want_stream', broadcaster_id: data.broadcaster_id });
+                }
+                break;
+
+            case 'broadcaster_stopped':
+                closeViewPC(data.broadcaster_id);
+                removeTile(data.broadcaster_id);
+                break;
+
+            case 'viewer_wants_stream':
+                onViewerWantsStream(data.viewer_id);
+                break;
+
+            case 'offer':
+                onOffer(data);
+                break;
+
+            case 'answer':
+                onAnswer(data);
+                break;
+
+            case 'ice_candidate':
+                onRemoteIce(data);
+                break;
+
+            case 'join_request':
+                addJoinRequestRow(data);
+                break;
+
+            case 'join_approved':
+                myRole = 'costreamer';
+                toast('You are now live! Starting your camera…');
+                document.getElementById('lv-request-join-btn') && (document.getElementById('lv-request-join-btn').style.display = 'none');
+                startCamera();
+                break;
+
+            case 'join_rejected':
+                toast('Your request to join was declined.');
+                resetJoinButton();
+                break;
+
+            case 'costreamer_added':
+                toast(data.username + ' joined the stream 🎉');
+                break;
+
+            case 'costreamer_removed':
+                if (String(data.user_id) === String(CURRENT_USER_ID)) {
+                    toast('You are no longer co-streaming.');
+                    stopLocalBroadcast();
+                    myRole = 'viewer';
+                } else {
+                    closeViewPC(data.user_id);
+                    removeTile(data.user_id);
+                }
+                break;
+
+            case 'removed':
+                showEnded('You were removed from this stream.');
+                break;
+
+            case 'force_mute':
+                if (data.muted && localStream) {
+                    localStream.getAudioTracks().forEach(function (t) { t.enabled = false; });
+                    isMuted = true;
+                    updateMicButton();
+                    toast('The host muted your mic.');
+                }
+                break;
+
+            case 'stream_ended':
+                showEnded(data.reason === 'host_left' ? 'The host ended the stream.' : 'This live stream has ended.');
+                break;
+
+            case 'privacy_changed':
+                toast(data.is_private ? 'Stream is now private 🔒' : 'Stream is now public 🌍');
+                var pbtn = document.getElementById('lv-privacy-btn');
+                if (pbtn) pbtn.textContent = data.is_private ? '🔒' : '🌍';
+                break;
+
+            case 'private_access_request':
+                addPrivateRequestRow(data);
+                break;
+
+            case 'private_access_granted':
+                pendingOverlay.classList.remove('show');
+                (data.broadcasters || []).forEach(function (b) {
+                    if (String(b.user_id) !== String(CURRENT_USER_ID)) {
+                        send({ type: 'want_stream', broadcaster_id: b.user_id });
+                    }
+                });
+                (data.chat_history || []).forEach(renderChatMessage);
+                updateViewerCount(data.viewer_count);
+                break;
+
+            case 'private_access_denied':
+                showEnded('Your request to join this private stream was declined.');
+                break;
+
+            case 'chat_message':
+                renderChatMessage(data);
+                break;
+
+            case 'reaction':
+                spawnFloatingHeart(data.emoji);
+                break;
+
+            case 'viewer_count_update':
+                updateViewerCount(data.viewer_count);
+                break;
+
+            case 'viewer_list':
+                renderViewerList(data);
+                break;
+
+            case 'pong':
+                break;
+        }
+    }
+
+    function onRoomState(data) {
+        updateViewerCount(data.viewer_count || 0);
+
+        if (data.your_role === 'pending_private') {
+            pendingOverlay.classList.add('show');
+            return;
+        }
+
+        (data.chat_history || []).forEach(renderChatMessage);
+
+        (data.broadcasters || []).forEach(function (b) {
+            if (String(b.user_id) !== String(CURRENT_USER_ID)) {
+                send({ type: 'want_stream', broadcaster_id: b.user_id });
+            }
+        });
+
+        if (IS_HOST) {
+            // Host is expected to start their own camera via the button.
+        }
+    }
+
+    /* ══════════════════════ WebRTC: broadcaster side ══════════════════════ */
+    function onViewerWantsStream(viewerId) {
+        if (!localStream) return; // not broadcasting yet
+        if (broadcastPCs[viewerId]) return; // already connected
+
+        var pc = new RTCPeerConnection(ICE_SERVERS);
+        broadcastPCs[viewerId] = pc;
+
+        localStream.getTracks().forEach(function (t) { pc.addTrack(t, localStream); });
+
+        pc.onicecandidate = function (evt) {
+            if (evt.candidate) {
+                send({ type: 'ice_candidate', target_id: viewerId, candidate: evt.candidate });
+            }
+        };
+
+        pc.createOffer().then(function (offer) {
+            return pc.setLocalDescription(offer).then(function () { return offer; });
+        }).then(function (offer) {
+            send({ type: 'offer', target_id: viewerId, sdp: offer });
+        }).catch(function (err) { console.error('broadcast offer error', err); });
+    }
+
+    /* ══════════════════════ WebRTC: viewer side ══════════════════════ */
+    function onOffer(data) {
+        var fromId = data.from_id;
+        var pc = new RTCPeerConnection(ICE_SERVERS);
+        viewPCs[fromId] = pc;
+
+        pc.ontrack = function (evt) {
+            var video = ensureTile(fromId, data.from_username || 'Guest', false);
+            if (evt.streams && evt.streams[0]) { video.srcObject = evt.streams[0]; }
+        };
+
+        pc.onicecandidate = function (evt) {
+            if (evt.candidate) {
+                send({ type: 'ice_candidate', target_id: fromId, candidate: evt.candidate });
+            }
+        };
+
+        pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+            .then(function () { return pc.createAnswer(); })
+            .then(function (answer) { return pc.setLocalDescription(answer).then(function () { return answer; }); })
+            .then(function (answer) { send({ type: 'answer', target_id: fromId, sdp: answer }); })
+            .catch(function (err) { console.error('view answer error', err); });
+    }
+
+    function onAnswer(data) {
+        var pc = broadcastPCs[data.from_id];
+        if (pc) {
+            pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+                .catch(function (err) { console.error('setRemoteDescription (answer) error', err); });
+        }
+    }
+
+    function onRemoteIce(data) {
+        var pc = viewPCs[data.from_id] || broadcastPCs[data.from_id];
+        if (pc && data.candidate) {
+            pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function (e) {
+                console.warn('ICE add error', e);
+            });
+        }
+    }
+
+    function closeViewPC(broadcasterId) {
+        var pc = viewPCs[broadcasterId];
+        if (pc) { pc.close(); delete viewPCs[broadcasterId]; }
+    }
+
+    function closeAllBroadcastPCs() {
+        Object.keys(broadcastPCs).forEach(function (id) {
+            broadcastPCs[id].close();
+        });
+        broadcastPCs = {};
+    }
+
+    /* ══════════════════════ local camera / mic ══════════════════════ */
+    function startCamera() {
+        var constraints = { video: { facingMode: facingMode }, audio: true };
+        navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+            localStream = stream;
+            var video = ensureTile(CURRENT_USER_ID, 'You', facingMode === 'user');
+            video.srcObject = stream;
+
+            document.getElementById('lv-mic-btn').style.display = 'flex';
+            document.getElementById('lv-cam-btn').style.display = 'flex';
+            document.getElementById('lv-flip-btn').style.display = 'flex';
+            var startBtn = document.getElementById('lv-start-camera-btn');
+            if (startBtn) startBtn.style.display = 'none';
+
+            send({ type: 'ready_to_broadcast' });
+        }).catch(function (err) {
+            console.error('getUserMedia error', err);
+            toast('Could not access camera/microphone.');
+        });
+    }
+
+    function stopLocalBroadcast() {
+        if (localStream) {
+            localStream.getTracks().forEach(function (t) { t.stop(); });
+            localStream = null;
+        }
+        closeAllBroadcastPCs();
+        removeTile(CURRENT_USER_ID);
+        send({ type: 'stop_broadcasting' });
+
+        var mic = document.getElementById('lv-mic-btn');
+        var cam = document.getElementById('lv-cam-btn');
+        var flip = document.getElementById('lv-flip-btn');
+        if (mic) mic.style.display = 'none';
+        if (cam) cam.style.display = 'none';
+        if (flip) flip.style.display = 'none';
+    }
+
+    function toggleMic() {
+        if (!localStream) return;
+        isMuted = !isMuted;
+        localStream.getAudioTracks().forEach(function (t) { t.enabled = !isMuted; });
+        updateMicButton();
+    }
+    function updateMicButton() {
+        var btn = document.getElementById('lv-mic-btn');
+        if (btn) { btn.classList.toggle('active', isMuted); btn.textContent = isMuted ? '🔇' : '🎤'; }
+    }
+
+    function toggleCam() {
+        if (!localStream) return;
+        isCamOff = !isCamOff;
+        localStream.getVideoTracks().forEach(function (t) { t.enabled = !isCamOff; });
+        var btn = document.getElementById('lv-cam-btn');
+        if (btn) { btn.classList.toggle('active', isCamOff); btn.textContent = isCamOff ? '🚫' : '📷'; }
+    }
+
+    function switchCamera() {
+        if (!localStream) return;
+        facingMode = (facingMode === 'user') ? 'environment' : 'user';
+
+        var oldVideoTrack = localStream.getVideoTracks()[0];
+
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: facingMode }, audio: false })
+            .then(function (newStream) {
+                var newTrack = newStream.getVideoTracks()[0];
+
+                // Replace in local preview
+                localStream.removeTrack(oldVideoTrack);
+                oldVideoTrack.stop();
+                localStream.addTrack(newTrack);
+
+                var tile = document.getElementById('lv-tile-' + CURRENT_USER_ID);
+                if (tile) { tile.classList.toggle('mirrored', facingMode === 'user'); }
+
+                // Replace on every outgoing peer connection
+                Object.keys(broadcastPCs).forEach(function (id) {
+                    var pc = broadcastPCs[id];
+                    var sender = pc.getSenders().find(function (s) { return s.track && s.track.kind === 'video'; });
+                    if (sender) { sender.replaceTrack(newTrack); }
+                });
+            })
+            .catch(function (err) {
+                console.error('switchCamera error', err);
+                toast('Could not switch camera.');
+            });
+    }
+
+    /* ══════════════════════ chat + reactions ══════════════════════ */
+    function renderChatMessage(msg) {
+        var row = document.createElement('div');
+        row.className = 'lv-chat-msg';
+        var avatar = msg.sender_pic || "{% static 'images/logo.png' %}";
+        row.innerHTML = '<img src="' + avatar + '" alt="">' +
+            '<span><b>' + esc(msg.sender) + '</b>' + esc(msg.content) + '</span>';
+        chatFeed.appendChild(row);
+        while (chatFeed.children.length > 40) { chatFeed.removeChild(chatFeed.firstChild); }
+        chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    function sendChat() {
+        var text = chatInput.value.trim();
+        if (!text) return;
+        send({ type: 'chat_message', content: text });
+        chatInput.value = '';
+    }
+
+    function spawnFloatingHeart(emoji) {
+        var el = document.createElement('div');
+        el.className = 'lv-floating-heart';
+        el.style.left = (20 + Math.random() * 60) + '%';
+        el.textContent = emoji || '❤️';
+        reactionsLayer.appendChild(el);
+        setTimeout(function () { el.remove(); }, 3200);
+    }
+
+    function sendReaction() {
+        var emoji = ['❤️','🔥','😂','👏','😍'][Math.floor(Math.random() * 5)];
+        send({ type: 'reaction', emoji: emoji });
+        spawnFloatingHeart(emoji);
+    }
+
+    /* ══════════════════════ viewer count ══════════════════════ */
+    function updateViewerCount(n) {
+        viewerCountEl.textContent = '👁 ' + n;
+    }
+
+    /* ══════════════════════ join-as-costreamer (viewer side) ══════════════════════ */
+    function requestJoin() {
+        var btn = document.getElementById('lv-request-join-btn');
+        send({ type: 'request_join' });
+        if (btn) { btn.textContent = '⏳ Requested'; btn.classList.add('pending'); btn.disabled = true; }
+    }
+    function resetJoinButton() {
+        var btn = document.getElementById('lv-request-join-btn');
+        if (btn) { btn.textContent = '🙋 Join'; btn.classList.remove('pending'); btn.disabled = false; }
+    }
+
+    /* ══════════════════════ host moderation panels ══════════════════════ */
+    function closePanels() {
+        document.querySelectorAll('.lv-panel').forEach(function (p) { p.classList.remove('open'); });
+    }
+    function openPanel(id) {
+        closePanels();
+        var p = document.getElementById(id);
+        if (p) p.classList.add('open');
+    }
+
+    function addJoinRequestRow(data) {
+        var list = document.getElementById('lv-requests-list');
+        if (!list) return;
+        var empty = list.querySelector('.lv-panel-empty');
+        if (empty) empty.remove();
+
+        var row = document.createElement('div');
+        row.className = 'lv-panel-row';
+        row.id = 'lv-jr-' + data.viewer_id;
+        var avatar = data.pic || "{% static 'images/logo.png' %}";
+        row.innerHTML = '<img src="' + avatar + '" alt="">' +
+            '<span class="lv-row-name">' + esc(data.username) + '</span>' +
+            '<button class="lv-btn-approve">Approve</button>' +
+            '<button class="lv-btn-reject">Reject</button>';
+
+        row.querySelector('.lv-btn-approve').onclick = function () {
+            send({ type: 'approve_join', viewer_id: data.viewer_id });
+            row.remove();
+        };
+        row.querySelector('.lv-btn-reject').onclick = function () {
+            send({ type: 'reject_join', viewer_id: data.viewer_id });
+            row.remove();
+        };
+        list.appendChild(row);
+    }
+
+    function renderViewerList(data) {
+        var list = document.getElementById('lv-viewers-list');
+        if (!list) return;
+
+        var costreamers = data.costreamers || [];
+        var viewers = data.viewers || [];
+        var html = '';
+
+        if (costreamers.length) {
+            html += '<div style="font-size:11px;text-transform:uppercase;opacity:.6;margin:6px 4px;">Co-streamers</div>';
+            costreamers.forEach(function (c) {
+                var avatar = c.pic || "{% static 'images/logo.png' %}";
+                html += '<div class="lv-panel-row">' +
+                    '<img src="' + avatar + '" alt="">' +
+                    '<span class="lv-row-name">' + esc(c.username) + '</span>' +
+                    '<button class="lv-btn-reject" data-remove-costreamer="' + esc(c.user_id) + '">Remove</button>' +
+                '</div>';
+            });
+        }
+
+        html += '<div style="font-size:11px;text-transform:uppercase;opacity:.6;margin:12px 4px 6px;">Viewers (' + viewers.length + ')</div>';
+
+        if (viewers.length) {
+            viewers.forEach(function (v) {
+                var avatar = v.pic || "{% static 'images/logo.png' %}";
+                html += '<div class="lv-panel-row">' +
+                    '<img src="' + avatar + '" alt="">' +
+                    '<span class="lv-row-name">' + esc(v.username) + '</span>' +
+                    '<button class="lv-btn-reject" data-remove-viewer="' + esc(v.user_id) + '">Remove</button>' +
+                '</div>';
+            });
+        } else {
+            html += '<div class="lv-panel-empty">No viewers yet</div>';
+        }
+
+        list.innerHTML = html;
+
+        list.querySelectorAll('[data-remove-costreamer]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                send({ type: 'remove_costreamer', user_id: btn.getAttribute('data-remove-costreamer') });
+                var row = btn.closest('.lv-panel-row');
+                if (row) row.remove();
+            });
+        });
+        list.querySelectorAll('[data-remove-viewer]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                send({ type: 'remove_viewer', user_id: btn.getAttribute('data-remove-viewer') });
+                var row = btn.closest('.lv-panel-row');
+                if (row) row.remove();
+            });
+        });
+    }
+
+    function addPrivateRequestRow(data) {
+        var list = document.getElementById('lv-private-requests-list');
+        if (!list) return;
+        var empty = list.querySelector('.lv-panel-empty');
+        if (empty) empty.remove();
+
+        var row = document.createElement('div');
+        row.className = 'lv-panel-row';
+        var avatar = data.pic || "{% static 'images/logo.png' %}";
+        row.innerHTML = '<img src="' + avatar + '" alt="">' +
+            '<span class="lv-row-name">' + esc(data.username) + '</span>' +
+            '<button class="lv-btn-approve">Allow</button>' +
+            '<button class="lv-btn-reject">Deny</button>';
+
+        row.querySelector('.lv-btn-approve').onclick = function () {
+            send({ type: 'approve_private_access', viewer_id: data.viewer_id });
+            row.remove();
+        };
+        row.querySelector('.lv-btn-reject').onclick = function () {
+            send({ type: 'deny_private_access', viewer_id: data.viewer_id });
+            row.remove();
+        };
+        list.appendChild(row);
+    }
+
+    /* ══════════════════════ end / leave ══════════════════════ */
+    function showEnded(message) {
+        myRole = 'ended';
+        endedMessage.textContent = message;
+        endedOverlay.classList.add('show');
+        if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); }
+        Object.values(viewPCs).forEach(function (pc) { pc.close(); });
+        Object.values(broadcastPCs).forEach(function (pc) { pc.close(); });
+        if (ws) { try { ws.close(); } catch (_) {} }
+        if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+    }
+
+    function endStream() {
+        if (!confirm('End this live stream for everyone?')) return;
+        send({ type: 'end_stream' });
+    }
+
+    function leave() {
+        if (IS_HOST) { endStream(); return; }
+        window.location.href = "{% url 'only_message:live_list_view' %}";
+    }
+
+    /* ══════════════════════ reliability: sendBeacon on unload ══════════════════════ */
+    window.addEventListener('beforeunload', function () {
+        if (IS_HOST) {
+            try {
+                var url = '/message/api/live/' + ROOM_ID + '/end/';
+                var csrf = document.querySelector('[name=csrfmiddlewaretoken]');
+                var data = new FormData();
+                if (csrf) { data.append('csrfmiddlewaretoken', csrf.value); }
+                navigator.sendBeacon(url, data);
+            } catch (_) {}
+        }
+    });
+
+    /* ══════════════════════ wire up UI ══════════════════════ */
+    function init() {
+        connect();
+
+        document.getElementById('lv-heart-btn').addEventListener('click', sendReaction);
+        chatInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') { sendChat(); } });
+
+        var micBtn = document.getElementById('lv-mic-btn');
+        var camBtn = document.getElementById('lv-cam-btn');
+        var flipBtn = document.getElementById('lv-flip-btn');
+        if (micBtn) micBtn.addEventListener('click', toggleMic);
+        if (camBtn) camBtn.addEventListener('click', toggleCam);
+        if (flipBtn) flipBtn.addEventListener('click', switchCamera);
+
+        if (IS_HOST) {
+            document.getElementById('lv-start-camera-btn').addEventListener('click', startCamera);
+            document.getElementById('lv-end-btn').addEventListener('click', endStream);
+            document.getElementById('lv-requests-btn').addEventListener('click', function () { openPanel('lv-requests-panel'); });
+            document.getElementById('lv-viewers-btn').addEventListener('click', function () {
+                openPanel('lv-viewers-panel');
+                send({ type: 'request_viewer_list' });
+            });
+            document.getElementById('lv-privacy-btn').addEventListener('click', function () { openPanel('lv-privacy-panel'); });
+            document.getElementById('lv-privacy-toggle').addEventListener('change', function (e) {
+                send({ type: 'toggle_privacy', is_private: e.target.checked });
+            });
+        } else {
+            document.getElementById('lv-request-join-btn').addEventListener('click', requestJoin);
+            var reqAccessBtn = document.getElementById('lv-request-access-btn');
+            if (reqAccessBtn) {
+                reqAccessBtn.addEventListener('click', function () {
+                    send({ type: 'request_private_access' });
+                    reqAccessBtn.textContent = '⏳ Waiting for approval…';
+                    reqAccessBtn.disabled = true;
+                });
+            }
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+    return { leave: leave, closePanels: closePanels };
+}());
+</script>
+{% endblock %}

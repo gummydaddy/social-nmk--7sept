@@ -120,23 +120,25 @@ class BotMetaMiddleware:
                     image_url = ""
                     if media.file:
                         try:
+                            '''
+                            file_url = media.file.url
+                            image_url = re.sub(
+                                r"^https?://[^/]+/",
+                                "https://media.socyfie.com/",
+                                file_url
+                            )
+                            '''
+                            #image_url = media.file.url
                             #image_url = request.build_absolute_uri(media.file.url)
-                            if media.file and media.file.url.endswith((".mp4", ".mov", ".webm")):
-                                if media.thumbnail:
-                                    image_url = request.build_absolute_uri(media.thumbnail.url)
-                            else:
-                                image_url = request.build_absolute_uri(media.file.url)
-                                '''
-                                image_url = request.build_absolute_uri(media.file.url).replace(
-                                    request.get_host(),
-                                    "media.socyfie.com"
-                                )
-                                '''
 
+                            image_url = request.build_absolute_uri(media.file.url).replace(
+                                request.get_host(),
+                                "media.socyfie.com"
+                            )
                         except Exception as e:
                             logger.warning(f"Media {media_id} has no file URL: {e}")
 
-                    '''# --- Safe profile URL handling ---
+                    # --- Safe profile URL handling ---
                     try:
                         if getattr(media.user, "id", None):
                             profile_url = reverse("profile", kwargs={"user_id": media.user.id})
@@ -144,15 +146,21 @@ class BotMetaMiddleware:
                             profile_url = reverse("profile")
                     except Exception:
                         profile_url = ""  # Fallback if route not found
-                    '''
 
                     return bot_meta_response("meta_preview.html", {
                         "media": media,
+
                         "title": title,
+                        #"title": media.description,
+
                         "description": description,
+                        #"description": media.description or "View this on Socyfie",
+
                         "image_url": image_url,
+                        #"image_url": media.file.url,
+
                         "url": request.build_absolute_uri(),
-                        #"profile_url": profile_url,
+                        "profile_url": profile_url,
                         "is_bot": True,
 
                     })
@@ -175,15 +183,11 @@ class BotMetaMiddleware:
                         profile_url = ""
 
                     return bot_meta_response("meta_preview.html", {
-                        "notion": notion,
-
                         "title": title,
                         "description": description,
                         "image_url": image_url,
                         "url": request.build_absolute_uri(),
                         "profile_url": profile_url,
-                        "is_bot": True,
-
                     })
 
             except Exception as e:

@@ -1519,4 +1519,40 @@ def stranger_chat_view(request):
     })
 
 
+#____________________________________________________________________________
+#____________________________________________________________________________
+#____________________________________________________________________________
+#user audio and video calling setup
 
+from django.http import JsonResponse, HttpResponseForbidden
+from .call_store import get_pending_call, drain_ice_candidates
+
+@login_required
+def call_page_view(request, call_id):
+    return render(request, 'only_message/call_page.html', {'call_id': call_id})
+
+
+@login_required
+def get_pending_call_api(request, call_id):
+    call = get_pending_call(call_id)
+    if not call:
+        return JsonResponse({'success': False, 'error': 'expired'}, status=410)
+    if call.get('callee_id') != request.user.id:
+        return HttpResponseForbidden("Not your call.")
+
+    ice = drain_ice_candidates(call_id, exclude_user_id=request.user.id)
+    return JsonResponse({
+        'success': True,
+        'call_id': call_id,
+        'caller_id': call['caller_id'],
+        'caller': call['caller'],
+        'caller_pic': call.get('caller_pic', ''),
+        'call_type': call.get('call_type', 'audio'),
+        'offer': call['offer'],
+        'ice_candidates': ice,
+    })
+
+#user audio and video calling setup
+#____________________________________________________________________________
+#____________________________________________________________________________
+#____________________________________________________________________________

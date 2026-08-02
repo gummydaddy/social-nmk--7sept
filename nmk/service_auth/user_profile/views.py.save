@@ -1380,7 +1380,7 @@ def explore_me(request):
 # ===============================================================
 # ENHANCED UPLOAD SEARCH WITH COLLABORATIVE FILTERING & PENALTIES
 # ===============================================================
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+ 
 @login_required
 def search_uploads(request):
     """
@@ -1804,7 +1804,6 @@ def _get_co_viewed_related_media(
 
 
 
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
 def explore_detail(request, media_id):
     """
     Media detail view with cursor-based infinite scroll
@@ -6243,7 +6242,7 @@ def share_media(request, media_id):
     
     # Build absolute URL for sharing
     #share_url = request.build_absolute_uri(f'/media/{media.id}/')
-    share_url = request.build_absolute_uri(f'/media/{media.id}/')
+    share_url = request.build_absolute_uri(f'/explore_detail/{media.id}/')
 
     # Media details for sharing
     title = f"{media.user.username}'s post on Socyfie"

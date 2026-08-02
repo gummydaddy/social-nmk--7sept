@@ -38,6 +38,7 @@
   }
 
   .notion-item {
+    content-visibility:auto;
     background-color: #f9f9f9;
     border: 1px solid #d1d5db;
     border-radius: 12px;
@@ -51,6 +52,7 @@
   }
 
   .notion-content {
+    content-visibility:auto;
     margin: 10px 0;
     color: #374151;
     font-size: 1rem;
@@ -158,19 +160,6 @@
     background-color: #4338CA;
   }
 </style>
-{%comment%}
-<header>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-white">
-    <div class="container">
-      <a href="{% url 'only_message:message_list_view' %}">
-        <button class="messagebtn">💬</button>
-      </a>
-
-      <button class="openbtn" onclick="openNav()">☰</button>
-    </div>
-  </nav>
-</header>
-{%endcomment%}
 </br>
 </br>
 <h2>{{ user.username }}</h2>
@@ -188,8 +177,6 @@
 <div class="notions-container">
   {% for notion in notions %}
     <div class="notion-item">
-      <!--<a href="{% url 'user_profile:profile' user_id=notion.user.id %}">{{ notion.user.username }}</a><br>-->
-
       <a href="{% url 'user_profile:profile' user_id=notion.user.id %}" class="mention-with-avatar">
           <img src="{{ notion.user.profile|profile_picture_url }}"
                class="mention-avatar"

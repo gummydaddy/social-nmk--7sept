@@ -1,4 +1,7 @@
 {% extends 'landing_page.html' %}
+{% load static %}
+{% load custom_filters_message %}
+{% load media_filters %}
 
 {% block main_content %}
 <h2>Notifications</h2>
@@ -17,4 +20,9 @@
     </li>
   {% endfor %}
 </ul>
+    <!--script for loading popup messages-->
+    <div id="popup-notification-container"></div>
+    <script src="{% static 'js/popup_loading.js' %}"></script>
+    <!--script for loading popup messages-->
+    <!--<div id="popup-container" class="popup-container"></div>-->
 {% endblock %}
