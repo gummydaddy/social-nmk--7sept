@@ -1,0 +1,374 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+{#  call_page.html                                                             #}
+{#                                                                             #}
+{#  Landing target for push-notification "incoming call" taps when the app    #}
+{#  was fully closed. Fetches the Redis-backed pending call (offer + any      #}
+{#  buffered ICE candidates) and completes signaling through the SAME         #}
+{#  notification WebSocket that SocyfieCall / SocyfieVideoCall already open   #}
+{#  on every page (landing_page.html includes both engines unconditionally),  #}
+{#  rather than opening a second, duplicate connection.                       #}
+{# ═══════════════════════════════════════════════════════════════════════════ #}
+
+{% block main_content %}
+<div id="cp-wrap" style="max-width:420px;margin:40px auto;text-align:center;">
+  <div id="cp-loading">Loading call…</div>
+
+  <div id="cp-incoming" style="display:none;">
+      <img id="cp-avatar" src="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;">
+      <h3 id="cp-caller-name">…</h3>
+      <p id="cp-call-type-label">Incoming call</p>
+      <div>
+        <button id="cp-accept-btn" style="background:#16a34a;color:#fff;border:none;border-radius:20px;padding:12px 24px;margin:8px;">Accept</button>
+        <button id="cp-decline-btn" style="background:#dc2626;color:#fff;border:none;border-radius:20px;padding:12px 24px;margin:8px;">Decline</button>
+      </div>
+  </div>
+
+  <div id="cp-active" style="display:none;">
+      <h3 id="cp-active-name">…</h3>
+      <p id="cp-active-status">Connecting…</p>
+      <div id="cp-timer" style="font-size:24px;">00:00</div>
+
+      <div id="cp-video-stage" style="display:none;position:relative;width:100%;aspect-ratio:4/3;background:#000;border-radius:12px;overflow:hidden;">
+          <video id="cp-remote-video" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+          <video id="cp-local-video" autoplay playsinline muted style="position:absolute;bottom:8px;right:8px;width:90px;height:68px;object-fit:cover;border-radius:8px;transform:scaleX(-1);"></video>
+      </div>
+
+      <audio id="cp-remote-audio" autoplay playsinline></audio>
+
+      <div>
+        <button id="cp-mute-btn" style="padding:10px 16px;border-radius:16px;border:1px solid #ccc;margin:6px;">Mute</button>
+        <button id="cp-cam-btn" style="display:none;padding:10px 16px;border-radius:16px;border:1px solid #ccc;margin:6px;">Camera Off</button>
+        <button id="cp-end-btn" style="background:#dc2626;color:#fff;border:none;border-radius:50%;width:56px;height:56px;">✕</button>
+      </div>
+  </div>
+
+  <div id="cp-ended" style="display:none;">
+      <p id="cp-ended-msg">Call ended.</p>
+      <div id="cp-ended-links" style="margin-top:14px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block Message_script %}
+<script>
+(function () {
+    'use strict';
+
+    var CALL_ID = "{{ call_id|escapejs }}";
+    var CURRENT_USER_ID = {{ request.user.id }};
+    var PENDING_URL = "{% url 'only_message:get_pending_call_api' call_id=call_id %}";
+    var MESSAGE_LIST_URL = "{% url 'only_message:message_list_view' %}";
+
+    var ICE_SERVERS = { iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+    ]};
+
+    var els = {
+        loading: document.getElementById('cp-loading'),
+        incoming: document.getElementById('cp-incoming'),
+        active: document.getElementById('cp-active'),
+        ended: document.getElementById('cp-ended'),
+        avatar: document.getElementById('cp-avatar'),
+        callerName: document.getElementById('cp-caller-name'),
+        typeLabel: document.getElementById('cp-call-type-label'),
+        acceptBtn: document.getElementById('cp-accept-btn'),
+        declineBtn: document.getElementById('cp-decline-btn'),
+        activeName: document.getElementById('cp-active-name'),
+        activeStatus: document.getElementById('cp-active-status'),
+        timer: document.getElementById('cp-timer'),
+        videoStage: document.getElementById('cp-video-stage'),
+        remoteVideo: document.getElementById('cp-remote-video'),
+        localVideo: document.getElementById('cp-local-video'),
+        remoteAudio: document.getElementById('cp-remote-audio'),
+        muteBtn: document.getElementById('cp-mute-btn'),
+        camBtn: document.getElementById('cp-cam-btn'),
+        endBtn: document.getElementById('cp-end-btn'),
+        endedMsg: document.getElementById('cp-ended-msg'),
+        endedLinks: document.getElementById('cp-ended-links'),
+    };
+
+    function show(el) {
+        [els.loading, els.incoming, els.active, els.ended].forEach(function (e) { e.style.display = 'none'; });
+        el.style.display = 'block';
+    }
+
+    var pendingCall = null, pc = null, localStream = null;
+    var isMuted = false, isCamOff = false, timerHandle = null, timerSecs = 0;
+    var _wsMessageHandler = null;   // so we can remove our listener on cleanup
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GAP FIX #1 (partial) — SHARED SOCKET REUSE
+    // landing_page.html already includes global_call_ui.html, whose
+    // SocyfieCall engine opens window.notificationSocket automatically on
+    // every page, including this one. Opening a second /ws/notifications/
+    // connection here would mean every signal for this call (ice candidates,
+    // call_ended, etc.) gets delivered TWICE — once per socket — and
+    // processed twice. Instead we wait for the engine's socket to be ready
+    // and attach an additional 'message' listener via addEventListener
+    // (never overwrite .onmessage — that would break SocyfieCall's own
+    // handling on this page).
+    // ════════════════════════════════════════════════════════════════════════
+    function withNotificationSocket(callback) {
+        if (window.notificationSocket && window.notificationSocket.readyState === WebSocket.OPEN) {
+            callback(window.notificationSocket);
+            return;
+        }
+        var attempts = 0;
+        var poll = setInterval(function () {
+            attempts++;
+            if (window.notificationSocket && window.notificationSocket.readyState === WebSocket.OPEN) {
+                clearInterval(poll);
+                callback(window.notificationSocket);
+            } else if (attempts > 40) {   // ~10s
+                clearInterval(poll);
+                cleanupAndShowEnded('Could not connect to the server. Please check your connection and try again.');
+            }
+        }, 250);
+    }
+
+    function send(obj) {
+        var ws = window.notificationSocket;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            obj.call_id = CALL_ID;
+            ws.send(JSON.stringify(obj));
+            return true;
+        }
+        console.warn('call_page: notification WS not open, could not send', obj.type);
+        return false;
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GAP FIX #3 — CALL_ID FILTERING
+    // Only react to signals that belong to THIS call. Without this, a signal
+    // meant for a different call (e.g. the user has another tab mid-call)
+    // could be misapplied here since both listeners share one socket.
+    // ════════════════════════════════════════════════════════════════════════
+    function handleSignal(notif) {
+        if (!notif || notif.call_id !== CALL_ID) { return; }
+
+        if (notif.type === 'call_ended' || notif.type === 'call_rejected') {
+            cleanupAndShowEnded(notif.type === 'call_rejected' ? 'Call declined.' : 'Call ended.');
+        } else if (notif.type === 'ice_candidate') {
+            if (pc && notif.candidate && notif.sender_id !== CURRENT_USER_ID) {
+                pc.addIceCandidate(new RTCIceCandidate(notif.candidate)).catch(function (err) {
+                    console.warn('ICE add error:', err);
+                });
+            }
+        }
+    }
+
+    function attachSocketListener() {
+        withNotificationSocket(function (ws) {
+            _wsMessageHandler = function (e) {
+                var msg;
+                try { msg = JSON.parse(e.data); } catch (_) { return; }
+                if (msg.type === 'notification' && msg.notification) {
+                    handleSignal(msg.notification);
+                }
+            };
+            ws.addEventListener('message', _wsMessageHandler);
+        });
+    }
+
+    function detachSocketListener() {
+        if (_wsMessageHandler && window.notificationSocket) {
+            window.notificationSocket.removeEventListener('message', _wsMessageHandler);
+        }
+        _wsMessageHandler = null;
+    }
+
+    function startTimer() {
+        timerSecs = 0;
+        timerHandle = setInterval(function () {
+            timerSecs++;
+            var m = String(Math.floor(timerSecs / 60)).padStart(2, '0');
+            var s = String(timerSecs % 60).padStart(2, '0');
+            els.timer.textContent = m + ':' + s;
+        }, 1000);
+    }
+    function stopTimer() { if (timerHandle) { clearInterval(timerHandle); timerHandle = null; } }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GAP FIX #4 — RETURN-TO-CHAT LINK
+    // After the call ends there was previously no way back into the app.
+    // ════════════════════════════════════════════════════════════════════════
+    function renderEndedLinks() {
+        els.endedLinks.innerHTML = '';
+
+        if (pendingCall && pendingCall.caller) {
+            var chatLink = document.createElement('a');
+            chatLink.href = '/user_messages_view/' + encodeURIComponent(pendingCall.caller) + '/';
+            chatLink.textContent = 'Back to chat with ' + pendingCall.caller;
+            chatLink.style.cssText = 'display:inline-block;background:#4F46E5;color:#fff;text-decoration:none;' +
+                'padding:10px 18px;border-radius:18px;font-size:13px;font-weight:600;margin:6px;';
+            els.endedLinks.appendChild(chatLink);
+        }
+
+        var homeLink = document.createElement('a');
+        homeLink.href = MESSAGE_LIST_URL;
+        homeLink.textContent = 'Messages';
+        homeLink.style.cssText = 'display:inline-block;background:#e5e7eb;color:#111;text-decoration:none;' +
+            'padding:10px 18px;border-radius:18px;font-size:13px;font-weight:600;margin:6px;';
+        els.endedLinks.appendChild(homeLink);
+    }
+
+    function cleanupAndShowEnded(msg) {
+        stopTimer();
+        if (pc) { pc.close(); pc = null; }
+        if (localStream) { localStream.getTracks().forEach(function (t) { t.stop(); }); localStream = null; }
+        detachSocketListener();
+        els.endedMsg.textContent = msg;
+        renderEndedLinks();
+        show(els.ended);
+    }
+
+    function createPC() {
+        var conn = new RTCPeerConnection(ICE_SERVERS);
+        conn.onicecandidate = function (evt) {
+            if (evt.candidate) {
+                send({ type: 'ice_candidate', peer_id: pendingCall.caller_id, candidate: evt.candidate });
+            }
+        };
+        conn.ontrack = function (evt) {
+            if (pendingCall.call_type === 'video') { els.remoteVideo.srcObject = evt.streams[0]; }
+            else { els.remoteAudio.srcObject = evt.streams[0]; }
+            els.activeStatus.textContent = 'Connected';
+        };
+        conn.oniceconnectionstatechange = function () {
+            if (conn.iceConnectionState === 'failed' || conn.iceConnectionState === 'closed') {
+                cleanupAndShowEnded('Call ended.');
+            }
+        };
+        return conn;
+    }
+
+    function getMedia() {
+        var constraints = pendingCall.call_type === 'video' ? { audio: true, video: true } : { audio: true, video: false };
+        return navigator.mediaDevices.getUserMedia(constraints);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GAP FIX #1 — BUSY GUARD
+    // Since SocyfieCall / SocyfieVideoCall run on THIS page too (via
+    // landing_page.html), we can ask them directly whether the user is
+    // already on a call elsewhere in this same browser session, instead of
+    // blindly grabbing the mic/camera and colliding with an active call.
+    // ════════════════════════════════════════════════════════════════════════
+    function isAlreadyOnAnotherCall() {
+        var audioBusy = window.SocyfieCall && window.SocyfieCall.isActive && window.SocyfieCall.isActive();
+        var videoBusy = window.SocyfieVideoCall && window.SocyfieVideoCall.isActive && window.SocyfieVideoCall.isActive();
+        return !!(audioBusy || videoBusy);
+    }
+
+    function accept() {
+        if (isAlreadyOnAnotherCall()) {
+            send({ type: 'call_busy', caller_id: pendingCall.caller_id });
+            cleanupAndShowEnded('You are already on another call.');
+            return;
+        }
+
+        els.acceptBtn.disabled = true;
+        els.declineBtn.disabled = true;
+
+        withNotificationSocket(function () {
+            attachSocketListener();
+
+            getMedia().then(function (stream) {
+                localStream = stream;
+                if (pendingCall.call_type === 'video') {
+                    els.videoStage.style.display = 'block';
+                    els.camBtn.style.display = 'inline-block';
+                    els.localVideo.srcObject = stream;
+                }
+                pc = createPC();
+                stream.getTracks().forEach(function (t) { pc.addTrack(t, stream); });
+                return pc.setRemoteDescription(new RTCSessionDescription(pendingCall.offer));
+            }).then(function () {
+                (pendingCall.ice_candidates || []).forEach(function (cand) {
+                    pc.addIceCandidate(new RTCIceCandidate(cand)).catch(function () {});
+                });
+                return pc.createAnswer();
+            }).then(function (answer) {
+                return pc.setLocalDescription(answer).then(function () { return answer; });
+            }).then(function (answer) {
+                send({ type: 'call_answer', caller_id: pendingCall.caller_id, answer: answer,
+                       call_type: pendingCall.call_type });
+                els.activeName.textContent = pendingCall.caller;
+                els.activeStatus.textContent = 'Connecting…';
+                show(els.active);
+                startTimer();
+            }).catch(function (err) {
+                console.error('Accept failed:', err);
+                cleanupAndShowEnded('Could not connect the call.');
+            });
+        });
+    }
+
+    function decline() {
+        withNotificationSocket(function () {
+            send({ type: 'call_reject', caller_id: pendingCall.caller_id });
+            cleanupAndShowEnded('Call declined.');
+        });
+    }
+
+    function endCall() {
+        send({ type: 'call_end', peer_id: pendingCall.caller_id });
+        cleanupAndShowEnded('Call ended.');
+    }
+
+    function toggleMute() {
+        if (!localStream) return;
+        isMuted = !isMuted;
+        localStream.getAudioTracks().forEach(function (t) { t.enabled = !isMuted; });
+        els.muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    // GAP FIX #2 — CAMERA TOGGLE FOR VIDEO CALLS
+    // ════════════════════════════════════════════════════════════════════════
+    function toggleCamera() {
+        if (!localStream) return;
+        isCamOff = !isCamOff;
+        localStream.getVideoTracks().forEach(function (t) { t.enabled = !isCamOff; });
+        els.camBtn.textContent = isCamOff ? 'Camera On' : 'Camera Off';
+    }
+
+    els.acceptBtn.addEventListener('click', accept);
+    els.declineBtn.addEventListener('click', decline);
+    els.endBtn.addEventListener('click', endCall);
+    els.muteBtn.addEventListener('click', toggleMute);
+    els.camBtn.addEventListener('click', toggleCamera);
+
+    window.addEventListener('beforeunload', function () {
+        if (pendingCall && (pc || els.active.style.display !== 'none')) {
+            send({ type: 'call_end', peer_id: pendingCall.caller_id });
+        }
+    });
+
+    fetch(PENDING_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function (r) { if (!r.ok) { throw new Error('not found'); } return r.json(); })
+        .then(function (data) {
+            if (!data.success) { throw new Error(data.error || 'expired'); }
+            pendingCall = data;
+
+            if (isAlreadyOnAnotherCall()) {
+                send({ type: 'call_busy', caller_id: data.caller_id });
+                cleanupAndShowEnded('You are already on another call.');
+                return;
+            }
+
+            els.avatar.src = data.caller_pic || '/static/images/logo.png';
+            els.callerName.textContent = data.caller;
+            els.typeLabel.textContent = data.call_type === 'video' ? 'Incoming video call' : 'Incoming audio call';
+            show(els.incoming);
+        })
+        .catch(function () {
+            cleanupAndShowEnded('This call has ended or is no longer available.');
+        });
+})();
+</script>
+{% endblock %}

@@ -7,6 +7,30 @@
 <link rel="canonical" href="{{ request.build_absolute_uri }}" />
 {% endblock %}
 
+            {% block header %}
+            <header>
+              <nav class="navbar navbar-expand-lg navbar-dark ">
+                <div class="container  d-flex align-items-center">
+                  <a href="{% url 'only_message:message_list_view' %}">
+                    <button class="messagebtn">💬</button>
+                  </a>
+                  <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-4">
+                      <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
+                      <button type="submit" class="fas fa-search"></button>
+                  </form>
+
+                  <button class="openbtn" onclick="openNav()">☰</button>
+                </div>
+              </nav>
+
+              <div class="other-actions">
+                  <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
+                  <br>
+              </div>
+            </header>
+            {% endblock %}
+
+
 {% block main_content %}
 
 <style>
@@ -96,32 +120,9 @@
 
 
 </style>
-{% comment %}
-<header>
-    <!-- <h4 style="background-color: black; color: white; text-align: center;">Welcome, {{ user.username }}! What's on your mind</h4> -->
-        
-        <nav class="navbar navbar-expand-lg navbar-dark bg-white">
-            <div class="container">
-                <a href="{% url 'only_message:message_list_view' %}" class="button-link">
-                    <button class="messagebtn"> 💬 </button>
-                </a>
 
-                <form method="GET" action="{% url 'user_profile:search_users' %}">
-                    <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
-                    <button type="submit">Search</button>
-                </form> 
-                <button id="globe-button" onclick="location.href='{% url 'user_profile:explore' %}'">
-                    <i class="fas fa-globe"></i>
-                </button>
-                
-                <button class="openbtn" onclick="openNav()">☰ </button>
-            </div>
-        </nav>
-        
-        
+
     <!-- Profile Picture Section -->
-</header>
-{% endcomment %}
 <div class="profile-container">
     {% block profile_header_content %}
     <div class="profile-section">
@@ -245,13 +246,7 @@
                         Follow
                         {% endif %}
                     </button>
-                </form><!--
-                <button
-                    type="button"
-                    class="btn btn-sm follow-btn {% if is_following %}btn-secondary{% else %}btn-primary{% endif %}"
-                    data-follow-url="{% url 'user_profile:follow_user' profile_user.id %}">
-                    {% if is_following %}Unfollow{% else %}Follow{% endif %}
-                </button>-->
+                </form>
 
             </div>
         </div>
@@ -265,9 +260,10 @@
         {% else %}  
         <p>
             <div class="uploads-section">
-                <div class="row row-cols-3 g-4">
-                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>
-                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>
+                <div class="row row-cols-2 g-4">
+                    <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>-->
+                    <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>-->
+                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
                     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:voices' user_id=request.user.id %}'">Voices</button>
                 </div>
             </div>

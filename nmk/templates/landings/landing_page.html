@@ -77,6 +77,11 @@
     <!-- Add this in the <head> of your base template or specific template  for upload search-->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
+    <!--app install related-->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="{% static 'js/install-pwa.js' %}" defer></script>
+    <!--app install related-->
+
     <style>
         
         @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css");
@@ -162,8 +167,6 @@
 
         .content-container {
             max-width: 100%;
-            margin: 20px auto;
-            padding: 5px;
             background-color: #fff;
             box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
             border-radius: 20px;
@@ -253,7 +256,7 @@
 
         header{
             position: fixed; 
-            top: 1px;
+            top: -13px;
             height: var(--header-height);
             max-width: 710px;
             margin: auto;
@@ -265,6 +268,11 @@
         .class-main {
             padding-top: calc(var(--header-height) + 5px);
         }
+
+.class-main.night-mode {
+    background: #121212 !important;
+    color: #fff !important;
+}
 
 /* Keep all items on one line */
 header .container {
@@ -322,7 +330,7 @@ header form input {
             right: 0;
             max-width: 710px;
             margin: 0 auto;
-            background-color: #007bff;
+            background-color: #ffffff;
         }
 
         .footer-icon {
@@ -356,6 +364,28 @@ header form input {
             background: #e0e7ff;
             transform: translateY(-4px);
         }
+
+        .content-container.night-mode footer {
+            background: #000;
+            border-top: 1px solid #262626;
+        }
+
+        .content-container.night-mode .footer-icon {
+            background: #111111;
+            border: 1px solid #262626;
+            box-shadow: none;
+        }
+
+        .content-container.night-mode .footer-icon:hover {
+            background: #1c1c1c;
+        }
+
+        .content-container.night-mode .footer-icon a,
+        .content-container.night-mode .footer-icon i,
+        .content-container.night-mode .footer-icon span {
+            color: #ffffff;
+        }
+
         .bottom-strip {
             display: flex;
             justify-content: space-around;
@@ -481,9 +511,15 @@ header form input {
             max-width: 100%;
             margin: 0 auto;
         }
+
+        .media-wrapper.night-mode {
+            background: #121212 !important;
+            border-color: #333 !important;
+            color: #fff !important;
+        }
     
         .media-item {
-           {% comment %} background-color: white;{% endcomment %}
+            content-visibility:auto;
             border: 0px solid #ddd;
             padding: 1px;
             border-radius: 2px;
@@ -498,12 +534,26 @@ header form input {
     
         .media-content img,
         .media-content video {
+            content-visibility:auto;
             Display":flex;
             width: 85%;
             height: 580px;
             justify-content: center;
             align-items: center;
             border-radius: 8px;
+        }
+
+        .media-content.night-mode {
+            background: #121212 !important;
+            color: #fff !important;
+        }
+
+        .media-wrapper.night-mode .description,
+        .media-wrapper.night-mode p,
+        .media-wrapper.night-mode span,
+        .media-wrapper.night-mode h5,
+        .media-wrapper.night-mode a {
+            color: #fff !important;
         }
     
         .text-center {
@@ -678,10 +728,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
-
+{%comment%}
+<!--Onesignal push deferred-->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "495037c9-c117-43c9-b57b-f8fe671c827f",
+      safari_web_id: "web.onesignal.auto.271ef36b-44de-4fef-87dc-9a2f81b1418e",
+      notifyButton: {
+        enable: true,
+      },
+    });
+  });
+</script>
+<!--Onesignal push deferred-->
+{%endcomment%}
 </head>
 
-<body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}">
+<body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-id="{% if user.is_authenticated %}{{ request.user.id }}{% endif %}">
 
     <!-- Google Tag Manager (noscript) -->
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N3MB6KL6"
@@ -714,6 +780,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 <a href="{% url 'user_profile:blocked_user_list' %}">
                     <button type="button">View Blocked Users</button>
                 </a>
+
+                <a>
+                {% if request.user.is_authenticated %}
+                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>
+                {% endif %}
+                </a>
+
                 <a>
                     <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
                 </a>
@@ -729,7 +802,28 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 
                 <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
+                <script>
+                document.getElementById("logout-link").addEventListener("click", async function (e) {
+                    e.preventDefault();
+
+                    try {
+                        if (
+                            window.median &&
+                            median.onesignal &&
+                            typeof median.onesignal.logout === "function"
+                        ) {
+                            await median.onesignal.logout();
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+
+                    window.location.href = "{% url 'only_card:logout' %}";
+                });
+                </script>
+
             </div>
+            {% block header %}
             <header>
               <nav class="navbar navbar-expand-lg navbar-dark ">
                 <div class="container  d-flex align-items-center">
@@ -740,11 +834,25 @@ document.addEventListener("DOMContentLoaded", () => {
                       <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
                       <button type="submit" class="fas fa-search"></button> 
                   </form>
-                  <button class="openbtn" onclick="openNav()">☰</button>
+
+                  <a>
+                      <div>
+                          <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'" class="fas fa-bell">
+                          <!--<i class="fas fa-bell"></i>-->
+                          </button>
+                      </div>
+                  </a>
+
+                  <!--<button class="openbtn" onclick="openNav()">☰</button>>-->
                 </div>
               </nav>
-            </header>
 
+              <div class="other-actions">
+                  <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
+                  <br>
+              </div>
+            </header>
+            {% endblock %}
             <main id="main" class="class-main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
@@ -899,61 +1007,61 @@ document.addEventListener("DOMContentLoaded", () => {
                 
             </main>
 
-            {% block footer %}
-
+         {% block footer %}
+         <div class="container  d-flex align-items-center">
             <footer style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;" class="text-center py-3">
                 <div class="bottom-strip d-flex justify-content-around align-items-center">
 
                     <div class="footer-icon">
-                        <a href="{% url 'user_profile:feed_page' %}">
-                            <i class="fas fa-home"></i>
+                        <a href="{% url 'user_profile:feed_page' %}" class="fas fa-home">
+                            <!--<i class="fas fa-home"></i>-->
                             <span>Home</span>
                         </a>
                     </div>
 
                 {% if request.user.is_authenticated %}
                     <div class="footer-icon">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
-                            <i class="fas fa-lightbulb"></i>
+                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}" class="fas fa-lightbulb">
+                            <!--<i class="fas fa-lightbulb"></i>-->
                             <span>Notions</span>
                         </a>
                     </div>
                 {% else %}
 
                 <div class="footer-icon">
-                    <a href="{% url 'notion:notion_home' %}">
-                        <i class="fas fa-lightbulb"></i>
+                    <a href="{% url 'notion:notion_home' %}" class="fas fa-lightbulb">
+                        <!--<i class="fas fa-lightbulb"></i>-->
                         <span>Notions</span>
                     </a>
                 </div>
                 {% endif %}
 
                     <div class="footer-icon">
-                        <a href="{% url 'user_profile:upload_media' %}">
-                            <i class="fas fa-upload"></i>
+                        <a href="{% url 'user_profile:upload_media' %}" class="fas fa-upload">
+                            <!--<i class="fas fa-upload"></i>-->
                             <span>Upload</span>
                         </a>
                     </div>
 
                     <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore_me' %}">
-                            <i class="fas fa-search"></i>
+                        <a href="{% url 'user_profile:explore_me' %}" class="fas fa-search">
+                            <!--<i class="fas fa-search"></i>-->
                             <span>Explore</span>
                         </a>
                     </div>
 
                 {% if request.user.is_authenticated %}
                     <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id%}">
-                            <i class="fas fa-user-circle"></i>
+                        <a href="{% url 'user_profile:profile' user_id=request.user.id%}" class="fas fa-user-circle">
+                            <!--<i class="fas fa-user-circle"></i>-->
                             <span>Profile</span>
                         </a>
                     </div>
 
                 {% else %}
                     <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile'%}">
-                            <i class="fas fa-user-circle"></i>
+                        <a href="{% url 'user_profile:profile'%}" class="fas fa-user-circle">
+                            <!--<i class="fas fa-user-circle"></i>-->
                             <span>Profile</span>
                         </a>
                     </div>
@@ -961,8 +1069,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 </div>
             </footer>
-
-            {% endblock %}
+         </div> 
+         {% endblock %}
     
         </div>
 
@@ -981,36 +1089,63 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             </script>
 
-            {% comment %} container-color {% endcomment %}
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    // Check the saved mode in localStorage
-                    var currentMode = localStorage.getItem('mode');
-                    var container = document.querySelector('.content-container');
-                    var button = document.getElementById('toggleButton');
-            
-                    if (currentMode === 'night') {
-                        container.classList.add('night-mode');
-                        button.textContent = 'Switch to Day Mode🌒';
-                    } else {
-                        container.classList.remove('night-mode');
-                        button.textContent = 'Switch to Night Mode🌒';
-                    }
-            
-                    // Toggle background mode and save to localStorage
-                    window.toggleBackground = function () {
-                        if (container.classList.contains('night-mode')) {
-                            container.classList.remove('night-mode');
-                            button.textContent = 'Switch to Night Mode🌒';
-                            localStorage.setItem('mode', 'day');
-                        } else {
-                            container.classList.add('night-mode');
-                            button.textContent = 'Switch to Day Mode🌒';
-                            localStorage.setItem('mode', 'night');
-                        }
-                    };
-                });
-            </script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Check the saved mode in localStorage
+    var currentMode = localStorage.getItem('mode');
+
+    var container = document.querySelector('.content-container');
+    var classMain = document.querySelector('.class-main');
+
+    var mediaWrappers = document.querySelectorAll('.media-wrapper');
+    var mediaContents = document.querySelectorAll('.media-content');
+
+    var button = document.getElementById('toggleButton');
+
+    function enableNightMode() {
+        if (container) container.classList.add('night-mode');
+        if (classMain) classMain.classList.add('night-mode');
+
+        mediaWrappers.forEach(el => el.classList.add('night-mode'));
+        mediaContents.forEach(el => el.classList.add('night-mode'));
+
+        if (button) {
+            button.textContent = 'Switch to Day Mode🌒';
+        }
+    }
+
+    function enableDayMode() {
+        if (container) container.classList.remove('night-mode');
+        if (classMain) classMain.classList.remove('night-mode');
+
+        mediaWrappers.forEach(el => el.classList.remove('night-mode'));
+        mediaContents.forEach(el => el.classList.remove('night-mode'));
+
+        if (button) {
+            button.textContent = 'Switch to Night Mode🌒';
+        }
+    }
+
+    // Apply saved mode
+    if (currentMode === 'night') {
+        enableNightMode();
+    } else {
+        enableDayMode();
+    }
+
+    // Toggle background mode and save to localStorage
+    window.toggleBackground = function () {
+        if (container && container.classList.contains('night-mode')) {
+            enableDayMode();
+            localStorage.setItem('mode', 'day');
+        } else {
+            enableNightMode();
+            localStorage.setItem('mode', 'night');
+        }
+    };
+});
+</script>
+
             <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 
@@ -1226,17 +1361,185 @@ if ('serviceWorker' in navigator) {
     });
 }
 </script>
-<!--"""-->
 
-    <!-- Global Call UI -->
-    {% include 'only_message/global_call_ui.html' %}
-    {% include 'only_message/global_video_call_ui.html' %}
-    {% include 'only_message/push_notification_init.html' %}
+<!--onesignal push notification setup-->
+<script>
+(function () {
+    'use strict';
 
-    <!--script for loading popup messages-->
-    <script src="{% static 'js/popup_loading.js' %}"></script>
+    console.log("========== OneSignal Login Debug ==========");
+    console.log("Landing page OneSignal script loaded");
+    console.log("User Agent:", navigator.userAgent);
+
+    var isAuthenticated = document.body.dataset.authenticated === 'true';
+    var currentUserId = document.body.dataset.userId;
+
+    console.log("Authenticated:", isAuthenticated);
+    console.log("Current User ID:", currentUserId);
+
+    if (!isAuthenticated || !currentUserId) {
+        console.log("User is anonymous. Skipping OneSignal login.");
+        return;
+    }
+
+    var loggedIn = false;
+
+    function attemptOneSignalLogin() {
+
+        console.log("attemptOneSignalLogin() called");
+
+        console.log({
+            medianExists: !!window.median,
+            onesignalExists: !!(window.median && window.median.onesignal),
+            loginExists: !!(
+                window.median &&
+                window.median.onesignal &&
+                typeof window.median.onesignal.login === "function"
+            )
+        });
+
+        if (loggedIn) {
+            console.log("Already logged into OneSignal.");
+            return true;
+        }
+
+        if (
+            window.median &&
+            window.median.onesignal &&
+            typeof window.median.onesignal.login === "function"
+        ) {
+
+            console.log("Calling median.onesignal.login() for user:", currentUserId);
+
+            window.median.onesignal.login(String(currentUserId))
+                .then(function (result) {
+
+                    console.log("login() promise resolved:", result);
+
+                    if (result && result.success) {
+
+                        loggedIn = true;
+
+                        console.log("✅ OneSignal external ID set for user:", currentUserId);
+
+                        if (typeof window.median.onesignal.onesignalInfo === "function") {
+
+                            window.median.onesignal.onesignalInfo()
+                                .then(function (info) {
+
+                                    console.log("========== OneSignal Info ==========");
+                                    console.log(info);
+                                    console.log("Subscribed:", info.oneSignalSubscribed);
+                                    console.log("Player ID:", info.playerId);
+                                    console.log("External ID:", info.externalId);
+
+                                })
+                                .catch(function (err) {
+                                    console.warn("onesignalInfo() failed:", err);
+                                });
+
+                        } else {
+                            console.warn("onesignalInfo() is not available.");
+                        }
+
+                    } else {
+
+                        console.warn(
+                            "median.onesignal.login() returned unsuccessful:",
+                            result
+                        );
+
+                    }
+
+                })
+                .catch(function (err) {
+
+                    console.error("OneSignal login promise rejected:", err);
+
+                });
+
+            return true;
+        }
+
+        console.log("Median bridge not available yet.");
+
+        return false;
+    }
+
+    // Try immediately.
+    if (!attemptOneSignalLogin()) {
+
+        console.log("Starting bridge polling...");
+
+        var attempts = 0;
+        var maxAttempts = 30;
+
+        var pollId = setInterval(function () {
+
+            attempts++;
+
+            console.log(
+                "Poll #" + attempts,
+                {
+                    medianExists: !!window.median,
+                    onesignalExists: !!(
+                        window.median &&
+                        window.median.onesignal
+                    ),
+                    loginExists: !!(
+                        window.median &&
+                        window.median.onesignal &&
+                        typeof window.median.onesignal.login === "function"
+                    )
+                }
+            );
+
+            if (attemptOneSignalLogin() || attempts >= maxAttempts) {
+
+                clearInterval(pollId);
+
+                if (attempts >= maxAttempts && !loggedIn) {
+
+                    console.warn(
+                        "Median bridge never became available after " +
+                        maxAttempts +
+                        " attempts."
+                    );
+
+                } else {
+
+                    console.log("Stopped polling.");
+
+                }
+            }
+
+        }, 500);
+    }
+
+    // Listen for the Median ready event.
+    window.addEventListener("median.library.ready", function () {
+
+        console.log("====================================");
+        console.log("✅ median.library.ready event fired");
+        console.log("window.median =", window.median);
+        console.log("====================================");
+
+        attemptOneSignalLogin();
+
+    });
+
+})();
+</script>
+
+<!-- Global Call UI -->
+{% include 'only_message/global_call_ui.html' %}
+{% include 'only_message/global_video_call_ui.html' %}
+{% include 'only_message/push_notification_init.html' %}
+
     <!--script for loading popup messages-->
     <div id="popup-notification-container"></div>
+    <script src="{% static 'js/popup_loading.js' %}"></script>
+    <!--script for loading popup messages-->
     <!--<div id="popup-container" class="popup-container"></div>-->
     </body>
 </html>

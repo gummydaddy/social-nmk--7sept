@@ -3,7 +3,15 @@
 {#  GLOBAL AUDIO CALL UI {%comment%}                                           #}
 {#  Include once in your base template (landing_page.html):                   #}
 {#                                                                             #}
-{#  Works on EVERY page — the notification WebSocket is the signalling bus.{%endcomment%}#}
+{#  Works on EVERY page — the notification WebSocket is the signalling bus.   #}
+{#                                                                             #}
+{#  UPGRADE: every call now carries a server-assigned `call_id` (Redis-backed #}
+{#  pending call). This lets a recipient whose app was closed open            #}
+{#  /call/<call_id>/ from a push notification and still complete signaling,   #}
+{#  instead of the offer being silently dropped.                              #}
+{#  call_id flows: assigned on call_initiate ack → echoed in incoming_call →  #}
+{#  included on every subsequent signal (answer/reject/end/ice) so the server #}
+{#  can clean up / buffer Redis state correctly.{%endcomment%}                #}
 {# ═══════════════════════════════════════════════════════════════════════════ #}
 
 
@@ -295,6 +303,28 @@
    SocyfieCall  — global audio call engine
    Signalling channel: /ws/notifications/  (personal, always-on)
    Works on EVERY page of the platform, not just the chat page.
+
+   call_id persistence
+   ────────────────────
+   Every call now flows through a server-side Redis "pending call" record
+   keyed by call_id (see call_store.py / notification_consumer.py). This is
+   what lets a recipient whose app was fully closed still complete the call
+   by opening /call/<call_id>/ from the push notification — the offer and
+   any early ICE candidates are buffered server-side instead of being lost
+   the instant the WebSocket group has no active listener.
+
+   Flow:
+     1. initiate() sends call_initiate → server creates the Redis record
+        and immediately echoes back { type:'call_id_assigned', call_id }
+        on THIS socket (before the callee even sees anything).
+     2. That call_id is stored in _callId and included on every subsequent
+        signal this engine sends (ice_candidate / call_end).
+     3. The callee's incoming_call notification carries the same call_id;
+        it's captured into _callId there too and echoed back on
+        accept/reject so the server can clear/keep the Redis record
+        correctly.
+     4. _cleanup() always resets _callId so a stale id can never leak into
+        the next call.
    ───────────────────────────────────────────────────────────────────────── */
 window.SocyfieCall = (function () {
     'use strict';
@@ -326,6 +356,7 @@ window.SocyfieCall = (function () {
     var _peerName     = '';
     var _pendingOffer = null;
     var _pendingCallerId = null;
+    var _callId       = null;   // Redis-backed pending-call id for THIS call
 
     var _timerHandle = null;
     var _timerSecs   = 0;
@@ -365,6 +396,22 @@ window.SocyfieCall = (function () {
         _ws.onmessage = function (e) {
             var msg;
             try { msg = JSON.parse(e.data); } catch (_) { return; }
+
+            // ── Server ack for a call we just initiated ────────────────────
+            // Shared socket: SocyfieVideoCall piggybacks on this same
+            // connection, so route the id to whichever engine actually
+            // placed the call (see initiate()/window._socyfieLastInitiateType
+            // in both this file and global_video_call_ui.html).
+            if (msg.type === 'call_id_assigned') {
+                if (window._socyfieLastInitiateType === 'video' &&
+                    window.SocyfieVideoCall && window.SocyfieVideoCall._setCallId) {
+                    window.SocyfieVideoCall._setCallId(msg.call_id);
+                } else {
+                    _callId = msg.call_id;
+                    console.log('📇 call_id assigned (audio):', _callId);
+                }
+                return;
+            }
 
             // All call signals arrive as { type:'notification', notification:{...} }
             if (msg.type === 'notification' && msg.notification) {
@@ -431,7 +478,8 @@ window.SocyfieCall = (function () {
                 _send({
                     type:      'ice_candidate',
                     peer_id:   _peerId,
-                    candidate: evt.candidate
+                    candidate: evt.candidate,
+                    call_id:   _callId
                 });
             }
         };
@@ -532,6 +580,7 @@ window.SocyfieCall = (function () {
         _pendingOffer = null;
         _pendingCallerId = null;
         _isMuted      = false;
+        _callId       = null;   // always reset — never leak into the next call
 
         _stopTimer();
         _stopRing();
@@ -565,13 +614,14 @@ window.SocyfieCall = (function () {
         if (t === 'incoming_call') {
             if (notif.caller_id === CURRENT_USER_ID) { return; } // own echo
             if (_callActive) {
-                _send({ type: 'call_busy', caller_id: notif.caller_id });
+                _send({ type: 'call_busy', caller_id: notif.caller_id, call_id: notif.call_id });
                 return;
             }
             _pendingOffer    = notif.offer;
             _pendingCallerId = notif.caller_id;
             _peerName        = notif.caller;
             _peerId          = notif.caller_id;
+            _callId          = notif.call_id || null;
 
             var nameEl = document.getElementById('sc-incoming-caller-name');
             if (nameEl) { nameEl.textContent = notif.caller; }
@@ -667,6 +717,11 @@ window.SocyfieCall = (function () {
             return;
         }
 
+        // Tells the shared socket's onmessage handler which engine placed
+        // this call, so the upcoming call_id_assigned ack is routed here
+        // (and not into SocyfieVideoCall's _callId, or vice versa).
+        window._socyfieLastInitiateType = 'audio';
+
         _peerName    = recipientName;
         _peerId      = recipientId;
         _isInitiator = true;
@@ -693,6 +748,7 @@ window.SocyfieCall = (function () {
                     type:         'call_initiate',
                     recipient_id: recipientId,
                     caller_pic:   (typeof CURRENT_USER_PIC !== 'undefined' ? CURRENT_USER_PIC : ''),
+                    call_type:    'audio',
                     offer:        offer
                 });
             })
@@ -703,7 +759,7 @@ window.SocyfieCall = (function () {
     }
 
     function cancel() {
-        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId }); }
+        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId, call_id: _callId }); }
         _hideAll(); _cleanup();
     }
 
@@ -715,6 +771,7 @@ window.SocyfieCall = (function () {
 
         var callerId = _pendingCallerId;
         var offer    = _pendingOffer;
+        var callId   = _callId;
         _pendingOffer    = null;
         _pendingCallerId = null;
         _callActive      = true;
@@ -734,13 +791,14 @@ window.SocyfieCall = (function () {
                 _send({
                     type:      'call_answer',
                     caller_id: callerId,
-                    answer:    answer
+                    answer:    answer,
+                    call_id:   callId
                 });
                 _showActiveScreen();
             })
             .catch(function (err) {
                 console.error('Call accept error:', err);
-                _send({ type: 'call_end', peer_id: callerId });
+                _send({ type: 'call_end', peer_id: callerId, call_id: callId });
                 _hideAll(); _cleanup();
             });
     }
@@ -749,14 +807,15 @@ window.SocyfieCall = (function () {
         _stopRing();
         _hide('sc-incoming-overlay');
         if (_pendingCallerId) {
-            _send({ type: 'call_reject', caller_id: _pendingCallerId });
+            _send({ type: 'call_reject', caller_id: _pendingCallerId, call_id: _callId });
         }
         _pendingOffer    = null;
         _pendingCallerId = null;
+        _callId          = null;
     }
 
     function end() {
-        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId }); }
+        if (_peerId) { _send({ type: 'call_end', peer_id: _peerId, call_id: _callId }); }
         _hideAll(); _cleanup();
     }
 
@@ -786,8 +845,8 @@ window.SocyfieCall = (function () {
 
     return { initiate: initiate, cancel: cancel, accept: accept,
              reject: reject, end: end, toggleMute: toggleMute,
+             _setCallId: function (id) { _callId = id; },
              isActive: function () { return _callActive; } };
 }());
 </script>
 {% endif %}
-

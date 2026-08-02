@@ -2,6 +2,7 @@ from django.urls import path
 from . import views 
 from service_auth.only_card import views as only_card_views  # Import views from only_card
 from service_auth.user_profile import views as user_profile_views
+from . import live_views
 
 app_name = 'only_message'
 
@@ -41,6 +42,17 @@ urlpatterns = [
 
     path('stranger-chat/', views.stranger_chat_view, name='stranger_chat_view'),
     path('crumbing/', views.stranger_chat_view, name='stranger_chat_view'),
+
+    #user audio and video calling setup
+    path('call/<str:call_id>/', views.call_page_view, name='call_page'),
+    path('api/call/<str:call_id>/pending/', views.get_pending_call_api, name='get_pending_call_api'),
+
+    #Live
+    path('live/', live_views.live_list_view, name='live_list_view'),
+    path('live/start/', live_views.start_live_view, name='start_live_view'),
+    path('live/<str:room_id>/', live_views.live_room_view, name='live_room_view'),
+    path('api/live/rooms/', live_views.live_rooms_api, name='live_rooms_api'),
+    path('api/live/<str:room_id>/end/', live_views.end_live_room_api, name='end_live_room_api'),
 
     # Web Push
     path('api/push/subscribe/',   views.push_subscribe,        name='push_subscribe'),

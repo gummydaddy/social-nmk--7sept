@@ -29,6 +29,7 @@ from . import consumers
 from .consumers import ChatConsumer
 from .notification_consumer import NotificationConsumer
 from .stranger_consumer import StrangerChatConsumer
+from .live_consumer import LiveConsumer
 
 # Just export the websocket_urlpatterns
 websocket_urlpatterns = [
@@ -42,6 +43,9 @@ websocket_urlpatterns = [
 
     # ── NEW: random stranger video chat ──
     path('ws/stranger/', StrangerChatConsumer.as_asgi()),
+
+    # ── NEW: live streaming ──
+    re_path(r'ws/live/(?P<room_id>[\w-]+)/$', LiveConsumer.as_asgi()),
 
 ]
 
