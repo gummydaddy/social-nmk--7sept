@@ -279,6 +279,22 @@ document.addEventListener('DOMContentLoaded', function () {
    MESSAGE SCRIPT — chat + file preview/progress + call signals
    ═══════════════════════════════════════════════════════════ #}
 {% block Message_script %}
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Popper -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+<!-- Include Vue.js from a CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
 (function () {
     'use strict';
@@ -635,7 +651,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     data.type === 'ice_candidate'
                 ) {
                     if (window.SocyfieCall) {
-                        window.SocyfieCall.handleSignal(data);
+                        <!--window.SocyfieCall.handleSignal(data);-->
+
+                        if (window.SocyfieCall.handleSignal) {
+                            window.SocyfieCall.handleSignal(data);
+                        } else if (window.SocyfieCall._handleSignal) {
+                            window.SocyfieCall._handleSignal(data);
+                        }
+
                     } else {
                         console.warn('SocyfieCall not loaded yet — signal dropped:', data.type);
                     }

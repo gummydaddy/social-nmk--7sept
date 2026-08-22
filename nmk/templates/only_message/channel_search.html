@@ -1,0 +1,47 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+
+{% block main_content %}
+<style>
+    .cs-form { display: flex; gap: 6px; margin: 16px 0 20px; }
+    .cs-form input {
+        flex: 1; padding: 10px 14px; border: 1px solid #ddd; border-radius: 20px; font-size: 13px;
+    }
+    .cs-form button {
+        border: none; background: #333; color: #fff; border-radius: 20px; padding: 10px 18px;
+        font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .cs-item {
+        display: flex; align-items: center; gap: 10px; padding: 10px;
+        border-radius: 12px; text-decoration: none; color: inherit;
+        border: 1px solid #eee; margin-bottom: 8px;
+    }
+    .cs-item:hover { background: #f7f7f9; color: inherit; }
+    .cs-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #eee; }
+    .cs-item-info { flex: 1; min-width: 0; }
+    .cs-item-name { font-weight: 700; font-size: 14px; }
+    .cs-item-meta { font-size: 12px; opacity: .6; }
+    .cs-empty { text-align: center; padding: 30px 10px; color: #888; font-size: 13px; }
+</style>
+</br></br>
+<h2>Find a Channel</h2>
+
+<form class="cs-form" method="get" action="{% url 'only_message:search_channels_view' %}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search channels by name or @username" autofocus>
+    <button type="submit">Search</button>
+</form>
+
+{% for g in results %}
+    <a class="cs-item" href="{% url 'only_message:group_chat_view' group_id=g.id %}">
+        {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+        <div class="cs-item-info">
+            <div class="cs-item-name">{{ g.name }}{% if g.channel_username %} <span style="color:#888;font-weight:400;">@{{ g.channel_username }}</span>{% endif %}</div>
+            <div class="cs-item-meta">{{ g.member_count }} subscribers</div>
+        </div>
+    </a>
+{% empty %}
+    <div class="cs-empty">
+        {% if query %}No public channels found for "{{ query }}".{% else %}Type a name above to find public channels.{% endif %}
+    </div>
+{% endfor %}
+{% endblock %}

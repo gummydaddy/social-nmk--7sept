@@ -1,7 +1,7 @@
 {% extends 'landing_page.html' %}
 {% load static %}
 {% load custom_filters %}
-<script src="{% static 'js/sharing.js' %}"></script>
+<script defer src="{% static 'js/sharing.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
 
 {% block profile_header_content %}
@@ -59,20 +59,7 @@
         max-width: 800px;
         margin: 0 auto;
     }
-{%comment%}
-    .upload-item {
-        background-color: white;
-        border: 1px solid #ddd;
-        padding: 2px;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        cursor: pointer;
-    }
 
-    .upload-item + .upload-item {
-        margin-top: 20px;
-    }
-{%endcomment%}
     .dropdown {
         position: relative;
         display: inline-block;
@@ -132,6 +119,11 @@
     width: 100%;
     text-decoration: none;
     color: inherit;
+}
+
+.pagination {
+    margin-bottom:35px;
+
 }
 </style>
 </br>
@@ -389,7 +381,7 @@
 {% endblock %}
 
 {% block media_detail_script %}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Setup Intersection Observer for videos

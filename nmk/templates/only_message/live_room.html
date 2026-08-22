@@ -89,6 +89,7 @@
         display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
         pointer-events: none;
         mask-image: linear-gradient(to top, black 70%, transparent 100%);
+        margin-bottom: 65px;
     }
     .lv-chat-msg {
         display: flex; align-items: center; gap: 6px;
@@ -107,7 +108,7 @@
         padding: 5px 12px calc(env(safe-area-inset-bottom, 0px) + 12px);
         background: linear-gradient(to top, rgba(0,0,0,.75), transparent);
         display: flex; align-items: center; gap: 3px;
-        justify-content: center;
+        justify-content: center; margin-bottom: 84px;
     }
     /* Input occupies the first row */
     #lv-chat-input {
@@ -281,6 +282,25 @@
 {% endblock %}
 
 {% block Message_script %}
+
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Popper -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+<!-- Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Include Vue.js from a CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
 document.body.classList.add('live-open');
 
@@ -358,7 +378,7 @@ window.LiveRoom = (function () {
             return;
         }
 
-        var cols = count === 1 ? 1 : 2;
+        var cols = count <= 2 ? 1 : 2;
         var rows = Math.ceil(count / cols);
 
         stage.style.gridTemplateColumns = 'repeat(' + cols + ', 1fr)';

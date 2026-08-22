@@ -15,13 +15,14 @@ import logging
 
 from django.conf import settings
 from django_redis import get_redis_connection
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
 _PREFIX    = "push:subs:"
 _TTL       = 60 * 60 * 24 * 90   # 90 days
 
-PUSH_WORTHY = {"new_message", "incoming_call", "notion_notification"}
+PUSH_WORTHY = {"new_message", "incoming_call", "notion_notification", "group_message"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -273,23 +274,66 @@ def send_web_push_to_user(user_id: int, notification_data: dict) -> bool:
 
 def _build_push_payload(notification_data: dict) -> dict:
     notif_type = notification_data.get("type", "")
-    icon  = "/static/images/android-icon-192x192.png"
-    badge = "/static/images/android-icon-192x192.png"
+
+    # Base URL of your deployed application
+    base_url = "https://socyfie.com" 
+
+    icon  = f"{base_url}/staticfiles/images/launchericon-192x192.png"
+    badge = f"{base_url}/staticfiles/images/launchericon-192x192.png" 
 
     if notif_type == "new_message":
         sender  = notification_data.get("sender", "Someone")
         preview = (notification_data.get("message") or "Sent you a message")[:120]
-        url     = (notification_data.get("url")
+
+        relative_url     = (notification_data.get("url")
                    or f"/user_messages_view/{sender}/")
+        absolute_url = f"{base_url}{relative_url}" if relative_url.startswith("/") else relative_url
+
+        
         return {
             "type"  : "new_message",
             "title" : f"💬 {sender}",
             "body"  : preview,
-            "url"   : url,
+            "url"   : absolute_url,
             "tag"   : f"msg-{notification_data.get('message_id', '')}",
             "sender": sender,
             "icon"  : icon,
             "badge" : badge,
+            "requireInteraction": False,
+        }
+        """
+
+        # 🟢 FIX 2: Restructure payload to standard Web Push format
+        return {
+            "data": {
+                "type"  : "new_message",
+                "url"   : absolute_url,
+                "sender": sender,
+            },
+            "notification": {
+                "title" : f"💬 {sender}",
+                "body"  : preview,
+                "icon"  : icon,
+                "badge" : badge,
+                "tag"   : f"msg-{notification_data.get('message_id', '')}",
+                "requireInteraction": False,
+            }
+        }
+        """
+
+    if notif_type == "group_message":
+        sender = notification_data.get("sender", "Someone")
+        group_name = notification_data.get("group_name", "Group")
+        emoji = "📢" if notification_data.get("group_kind") == "broadcast" else "👥"
+        fallback_url = reverse('only_message:group_list_view')
+
+        return {
+            "type": "group_message",
+            "title": f"{emoji} {group_name}",
+            "body": f"{sender}: {notification_data.get('message', '')}",
+            "url": notification_data.get("url", fallback_url),
+            "tag": notification_data.get("id", "group-msg"),
+            "icon": icon, "badge": badge,
             "requireInteraction": False,
         }
 
@@ -305,13 +349,35 @@ def _build_push_payload(notification_data: dict) -> dict:
             "body"              : f"{caller} is calling – tap to answer",
             "url"               : chat_url,
             "tag"               : "incoming-call",
+            "renotify"          : True,                 # force sound/vibrate again on each repeat push
             "caller"            : caller,
             "caller_id"         : notification_data.get("caller_id"),
             "caller_pic"        : caller_pic,
             "call_type"         : call_type,
+            "call_id"           : notification_data.get("call_id"),
             "icon"              : caller_pic,
             "badge"             : badge,
             "requireInteraction": True,
+            "vibrate"           : [400, 200, 400, 200, 400, 800],   # phone-ring-ish cadence
+            "actions"           : [
+                {"action": "accept-call",  "title": "✅ Accept"},
+                {"action": "decline-call", "title": "❌ Decline"},
+            ],
+        }
+
+    if notif_type == "notion_notification":
+        title = notification_data.get("title", "🔔 Socyfie")
+        body  = notification_data.get("message") or "You have new activity"
+        return {
+            "type"              : "notion_notification",
+            "title"             : title,
+            "body"              : body,
+            "url"               : notification_data.get("url", "/"),
+            "tag"               : notification_data.get("id", "notion-notif"),
+            "sender"            : notification_data.get("sender", "Socyfie"),
+            "icon"              : icon,
+            "badge"             : badge,
+            "requireInteraction": False,
         }
 
     if notif_type == "notion_notification":
@@ -408,10 +474,21 @@ def _build_onesignal_payload(notification_data: dict) -> dict:
         body["priority"]      = 10
         body["ios_sound"]     = "default"
         body["android_sound"] = "default"
+        body["android_group"] = "incoming_call"      # collapses repeats into one slot
+        body["collapse_id"]   = f"call-{notification_data.get('call_id', '')}"  # re-alerts w/ same key on iOS
+        body["android_visibility"] = 1                # show full content on lock screen
+
         pic = base.get("caller_pic") or notification_data.get("caller_pic")
         if pic:
             body["big_picture"]    = pic
             body["ios_attachments"] = {"call_avatar": pic}
+        # Accept / Decline action buttons
+        body["buttons"] = [
+            {"id": "accept-call",  "text": "✅ Accept"},
+            {"id": "decline-call", "text": "❌ Decline"},
+        ]
+        body["ios_category"] = "incoming_call"
+
     else:
         body["priority"] = 7
  
@@ -439,6 +516,14 @@ def send_onesignal_push_to_user(user_id: int, notification_data: dict) -> bool:
     app_id, api_key = _get_onesignal_config()
     if not app_id:
         return False
+ 
+    try:
+        import requests
+    except ImportError:
+        logger.warning(
+            "requests is not installed. Run: pip install requests  "
+            "then restart Celery workers."
+        )
  
     try:
         import requests
@@ -490,7 +575,51 @@ def send_onesignal_push_to_user(user_id: int, notification_data: dict) -> bool:
             )
             return False
  
+ 
+    payload = _build_onesignal_payload(notification_data)
+    payload.update({
+        "app_id": app_id,
+        "target_channel": "push",
+        "include_aliases": {"external_id": [str(user_id)]},
+    })
+ 
+    try:
+        resp = requests.post(
+            ONESIGNAL_API_URL,
+            json=payload,
+            headers={
+                "Authorization": f"Key {api_key}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+            timeout=10,
+        )
+ 
+        resp_data = {}
+        try:
+            resp_data = resp.json()
+        except ValueError:
+            pass
+ 
+        if resp.status_code in (200, 201):
+            recipients = resp_data.get("recipients", 0)
+            if recipients > 0:
+                logger.info(
+                    "📲 OneSignal push sent → user %s (%s recipient(s))",
+                    user_id, recipients,
+                )
+                return True
+ 
+            logger.info(
+                "OneSignal accepted the request for user %s but found 0 "
+                "recipients — confirm the client called "
+                "median.onesignal.login('%s') this session.",
+                user_id, user_id,
+            )
+            return False
+ 
         logger.warning(
+            "OneSignal push failed for user %s (HTTP %s): %s",
+            user_id, resp.status_code, resp_data or resp.text[:300],
             "OneSignal push failed for user %s (HTTP %s): %s",
             user_id, resp.status_code, resp_data or resp.text[:300],
         )
@@ -501,12 +630,36 @@ def send_onesignal_push_to_user(user_id: int, notification_data: dict) -> bool:
         return False
  
  
+        return False
+ 
+    except requests.exceptions.RequestException as exc:
+        logger.error("OneSignal request error for user %s: %s", user_id, exc)
+        return False
+ 
+ 
 # ─────────────────────────────────────────────────────────────────────────────
+# Send Web Push — dispatches BOTH delivery paths, independently
 # Send Web Push — dispatches BOTH delivery paths, independently
 # ─────────────────────────────────────────────────────────────────────────────
 import copy
+import copy
 def send_web_push_to_user(user_id: int, notification_data: dict) -> bool:
     """
+    Send a notification to every device registered for user_id, across BOTH
+    delivery paths:
+ 
+      1. Browser Web Push (VAPID via pywebpush) — reaches real browsers and
+         installed PWAs where notification permission was granted.
+      2. OneSignal (native bridge) — reaches the Median-wrapped app even when
+         it's backgrounded or fully closed.
+ 
+    Called exclusively from the Celery task send_web_push_task — never from
+    the main request/response cycle or a WebSocket consumer directly.
+ 
+    IMPORTANT: this no longer returns early when there are no browser
+    subscriptions, because wrapped-app users typically have none at all
+    (their WebView never runs the browser's subscribe flow) — OneSignal must
+    still get a chance to fire for them.
     Send a notification to every device registered for user_id, across BOTH
     delivery paths:
  
@@ -531,7 +684,80 @@ def send_web_push_to_user(user_id: int, notification_data: dict) -> bool:
     browser_push_ok = False
     subscriptions   = get_push_subscriptions(user_id)
  
+ 
+    # ── 1. Browser Web Push (VAPID) ──────────────────────────────────────────
+    browser_push_ok = False
+    subscriptions   = get_push_subscriptions(user_id)
+ 
     if not subscriptions:
+        logger.debug("No browser push subscriptions for user %s", user_id)
+    else:
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            webpush = None
+            logger.warning(
+                "pywebpush not installed. Run: pip install pywebpush  "
+                "then restart Celery workers."
+            )
+ 
+        if webpush:
+            private_key, claims = _get_vapid_config()
+            if private_key:
+                payload = _build_push_payload(notification_data)
+                stale   = []
+                success = 0
+ 
+                for sub in subscriptions:
+                    endpoint = sub.get("endpoint", "unknown")
+                    try:
+                        webpush(
+                            subscription_info=sub,
+                            data=json.dumps(payload),
+                            vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                            #vapid_claims=settings.VAPID_CLAIMS,
+                            vapid_claims=copy.copy(settings.VAPID_CLAIMS),   # ← fresh dict per subscription
+                        )
+                        success += 1
+                        logger.info("📲 Browser push sent → user %s (%s…)", user_id, endpoint[:55])
+ 
+                    except WebPushException as exc:
+                        status = exc.response.status_code if exc.response else None
+                        if status in (404, 410):
+                            stale.append(endpoint)
+                            logger.info("Removed stale push sub for user %s (HTTP %s)", user_id, status)
+                        elif status == 401:
+                            logger.error(
+                                "Push auth 401 for user %s — VAPID keys mismatch. "
+                                "Regen: python manage.py generate_vapid_keys",
+                                user_id,
+                            )
+                        else:
+                            logger.warning("WebPushException for user %s (HTTP %s): %s",
+                                           user_id, status, exc)
+ 
+                    except Exception as exc:
+                        logger.error("Push send error for user %s: %s", user_id, exc)
+ 
+                for ep in stale:
+                    delete_push_subscription(user_id, ep)
+ 
+                browser_push_ok = success > 0
+ 
+    # ── 2. OneSignal (native bridge) — independent of the path above ────────
+    try:
+        onesignal_ok = send_onesignal_push_to_user(user_id, notification_data)
+    except Exception as exc:
+        logger.warning("OneSignal dispatch failed (non-fatal) for user %s: %s", user_id, exc)
+        onesignal_ok = False
+ 
+    return browser_push_ok or onesignal_ok
+
+
+
+
+
+
         logger.debug("No browser push subscriptions for user %s", user_id)
     else:
         try:

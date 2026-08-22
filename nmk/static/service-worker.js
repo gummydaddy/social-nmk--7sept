@@ -1,10 +1,25 @@
-const CACHE_NAME = 'socyfie-v3.1';
+const CACHE_NAME = 'socyfie-v3.1.4';
 
 // Minimal pre-cache list — only truly static assets that never redirect
 const PRE_CACHE_URLS = [
   '/static/images/android-icon-192x192.png',
   '/static/images/android-icon-512x512.png',
   '/static/images/logo.png',
+  "/static/images/apple-touch-icon-precomposed.png",
+  "/static/images/apple-touch-icon.png",
+  "/static/images/favicon.ico",
+  "/static/images/favicon.svg",
+  "/templates/user_profile/following_media.html",
+  "/templates/user_profile/media_detail.html",
+  "/templates/user_profile/profile.html",
+  "/templates/landings/landing_page.html",
+  "/static/js/install-pwa.js",
+  "/static/js/pull_to_refresh.js",
+  "/feed/",
+  "/explore_me/",
+  "/upload_media/",
+  "/notion_home/",
+  "/landing_page/",
 ];
 
 
@@ -139,7 +154,9 @@ self.addEventListener('push', function (event) {
 
   if (payload.type === 'incoming_call') {
     options.requireInteraction = true;
+    options.renotify = true;
     if (payload.caller_pic) { options.image = payload.caller_pic; }
+    if (payload.actions) { options.actions = payload.actions; }
   }
 
   event.waitUntil(
@@ -152,15 +169,27 @@ self.addEventListener('push', function (event) {
 // Notification click – open or focus the target page
 // ─────────────────────────────────────────────────────────────────────────────
 self.addEventListener('notificationclick', function (event) {
+  var data = event.notification.data || {};
   event.notification.close();
 
-  var data = event.notification.data || {};
-  var targetUrl = '/';
+  // ── Decline: reject the call from the background, no page needed ──────
+  if (event.action === 'decline-call' && data.call_id) {
+    event.waitUntil(
+      fetch('/message/api/call/' + data.call_id + '/decline/', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      }).catch(function () {})
+    );
+    return;
+  }
 
-  if (data.url) {
-    targetUrl = data.url;
-  } else if (data.type === 'new_message' && data.sender) {
-    targetUrl = '/user_messages_view/' + data.sender + '/';
+  // ── Accept (or a plain tap): open the call page ────────────────────────
+  var targetUrl = data.url || '/';
+
+  if (event.action === 'accept-call' && data.call_id) {
+    targetUrl = '/call/' + data.call_id + '/?action=accept';
+  } else if (data.type === 'incoming_call' && data.call_id) {
+    targetUrl = '/call/' + data.call_id + '/';
   }
 
   // Make absolute

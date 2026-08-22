@@ -8,18 +8,29 @@
 {% endblock %}
 
             {% block header %}
-            <header>
+            <header style="background-color: #ffffff;">
               <nav class="navbar navbar-expand-lg navbar-dark ">
                 <div class="container  d-flex align-items-center">
-                  <a href="{% url 'only_message:message_list_view' %}">
-                    <button class="messagebtn">💬</button>
-                  </a>
-                  <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-4">
-                      <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
-                      <button type="submit" class="fas fa-search"></button>
-                  </form>
+                  <div>
+                      <div>
+                          <h1 style="font-weight:650;">SOCYFIE<h1>
+                      </div>
+                      <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
+                          <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
+                          <button type="submit" class="fas fa-search"></button>
+                      </form>
+                  </div>
+                  <a>
+                      <div>
+                          <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'" class="fas fa-bell">
+                          </button>
+                      </div>
+                      <br>
+                      <div>
+                          <button class="openbtn" onclick="openNav()">☰</button>
+                      </div>
 
-                  <button class="openbtn" onclick="openNav()">☰</button>
+                  </a>
                 </div>
               </nav>
 
@@ -118,6 +129,11 @@
     border: 3px solid #ccc;
 }
 
+.pagination { 
+    margin-bottom:35px;
+
+}
+
 
 </style>
 
@@ -153,31 +169,7 @@
             </p>
             <!-- Add any additional profile information here -->
         </div>
-        <!--
-        <div class="cover-photo-container">
-            {% if profile_user.profile.cover_photo %}
-                <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
-            {% else %}
-                <div class="cover-photo" style="background-color: #f0f0f0;"></div>
-            {% endif %}
-        </div>-->
-        <!--
-        <div class="profile-picture-container">
-            {% if active_story %}
-                <a href="{% url 'user_profile:view_story' story_id=active_story.id %}">
-            {% else %}
-                {% if profile_user == request.user %}
-                    <a href="{% url 'user_profile:add_story' %}">
-                {% endif %}
-            {% endif %}
-                {% if profile_user.profile.profile_picture %}
-                    <img src="{{ profile_user.profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
-                {% else %}
-                    <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
-                {% endif %}
-            </a>
-        </div>
-        -->
+
 
         <div class="profile-picture-container">
             {% if active_story %}
@@ -201,7 +193,6 @@
             {% if active_story or profile_user.id == request.user.id %}
                 </button>
 
-                <!--</a>-->
             {% else %}
                 </div>
             {% endif %}
@@ -304,6 +295,35 @@
 </div>
 
 
+
+<!-- Loading Spinner -->
+<div id="loading-spinner" style="display: none;">
+    {% comment %} <img src="{% static 'img/loading_spinner.gif' %}" alt="Loading..."> {% endcomment %}
+</div>
+
+
+<!-- Media Detail Modal -->
+<div id="media-detail-modal" class="modal fade" tabindex="-1" aria-labelledby="mediaDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mediaDetailModalLabel">Media Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Media detail content will be loaded here -->
+                <div id="media-detail-content"></div>
+                <div id="related-media-container" class="row row-cols-3 g-4 mt-4">
+                    <!-- Related media will be appended here -->
+                </div>
+                <div id="related-loading-spinner" style="display: none;">
+                   {% comment %}  <img src="{% static 'img/loading_spinner.gif' %}" alt="Loading..."> {% endcomment %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Pagination controls -->
 <div class="pagination">
     <span class="step-links">
@@ -320,7 +340,6 @@
             <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
         {% endif %}
     </span>
-</div>
 </div>
 
 
@@ -429,127 +448,5 @@ document.addEventListener("DOMContentLoaded", function () {
 
 {% endblock %}
 
-<!--
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    const status = localStorage.getItem('upload_status');
-
-    if (status === 'processing') {
-        alert('Upload in process...');
-        localStorage.removeItem('upload_status');
-        // Optionally you can implement polling to check status here
-    }
-    if (status === 'failed') {
-        alert('Upload failed. Please try again.');
-        localStorage.removeItem('upload_status');
-    }
-});
-</script>
--->
 
 
-<!--
-<script>
-
-    document.addEventListener('DOMContentLoaded', function() {
-       {%comment%} const followForm = document.getElementById('follow-form');
-        const followButton = document.getElementById('follow-button');
-        const unfollowForm = document.getElementById('unfollow-form');
-        const unfollowButton = document.getElementById('unfollow-button');{%endcomment%}
-        const privacyButton = document.getElementById('privacy-button');
-
-        if (privacyButton) {
-            privacyButton.addEventListener('click', function() {
-                const url = "{% url 'user_profile:toggle_privacy' %}";
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        privacyButton.textContent = data.is_private ? 'Private' : 'Public';
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-    
-
-        let followButton = "";
-
-        if (item.show_follow) {
-            followButton = `
-                <button
-                    type="button"
-                    class="btn btn-sm ${item.is_following ? 'btn-secondary' : 'btn-primary'} follow-btn"
-                    data-follow-url="${item.follow_url}">
-                    ${item.is_following ? 'Unfollow' : 'Follow'}
-                </button>
-            `;
-        }
-
-
-        if (followForm) {
-            followForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                
-                const url = followForm.action;
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.action === 'followed') {
-                        followButton.textContent = 'Unfollow';
-                        location.reload(); // Reload to update the form to show the unfollow button
-                    } else {
-                        followButton.textContent = 'Follow';
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-    
-        if (unfollowForm) {
-            unfollowForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                
-                const url = unfollowForm.action;
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrfToken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.action === 'unfollowed') {
-                        location.reload(); // Reload to update the form to show the follow button
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            });
-        }
-    });
-</script>-->

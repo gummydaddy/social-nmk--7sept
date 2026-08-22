@@ -30,6 +30,7 @@ from .consumers import ChatConsumer
 from .notification_consumer import NotificationConsumer
 from .stranger_consumer import StrangerChatConsumer
 from .live_consumer import LiveConsumer
+from .group_consumer import GroupConsumer
 
 # Just export the websocket_urlpatterns
 websocket_urlpatterns = [
@@ -46,6 +47,10 @@ websocket_urlpatterns = [
 
     # ── NEW: live streaming ──
     re_path(r'ws/live/(?P<room_id>[\w-]+)/$', LiveConsumer.as_asgi()),
+
+    # --- new: group messaging ---
+    re_path(r'ws/group/(?P<group_id>[\w-]+)/$', GroupConsumer.as_asgi()),
+
 
 ]
 

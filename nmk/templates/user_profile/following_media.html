@@ -2,7 +2,7 @@
 {% load static %}
 {% load custom_filters %}
 
-<script src="{% static 'js/sharing.js' %}"></script>
+<script defer src="{% static 'js/sharing.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
 
 {% block profile_header_content %}
@@ -27,7 +27,7 @@
   <meta name="description" content="{{ media.description|truncatewords:50 }}">
 
 
-<script type="application/ld+json">
+<script defer type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
@@ -194,10 +194,10 @@
 }
 
 .video-chat-btn {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    min-width: 45px;
+    border-radius: 40%;
     background: #16a34a;
     color: #fff;
     display: flex;
@@ -227,7 +227,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 
-    <script src="{% static 'js/install-pwa.js' %}" defer></script>
+    <script async src="{% static 'js/install-pwa.js' %}" defer></script>
 
 
     <!--for displaying install button to the users who have not installed the app-->
@@ -235,27 +235,9 @@
 
 
 <br>
-{%comment%}
-<div class="uploads-section">
-    <div class="row row-cols-2 g-4">
-        {% if request.user.is_authenticated %}
-        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
-        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
-        {% else %}
-        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' %}'">Tags 🔖</button>
-        <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:saved_uploads' %}'">Saved</button>
-        {% endif %}
-    </div>
-</div>
-{%endcomment%}
-
 <div class="uploads-section">
     <div class="action-buttons">
         {% if request.user.is_authenticated %}
-            <!--<button type="button" class="btn btn-primary"
-                onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">
-                Tags 🔖
-            </button>-->
 
             <a href="{% url 'only_message:live_list_view' %}" class="video-chat-btn">
                 <span>Live</span>
@@ -270,10 +252,6 @@
                 Saved
             </button>
         {% else %}
-            <!--<button type="button" class="btn btn-primary"
-                onclick="location.href='{% url 'user_profile:media_tags' %}'">
-                Tags 🔖
-            </button>-->
 
             <a href="{% url 'only_message:live_list_view' %}" class="video-chat-btn">
                 <span>Live</span>
@@ -306,11 +284,11 @@
 {% endblock %}
 
 {% block following_media_script %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.1/purify.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.1/purify.min.js"></script>
 
-    <script src="{% static 'js/following_media.js' %}" defer></script>
+    <script defer src="{% static 'js/following_media.js' %}"></script>
 
-    <script src="{% static 'js/pull_to_refresh.js' %}"></script>
+    <script defer src="{% static 'js/pull_to_refresh.js' %}"></script>
 
 
 {% endblock %}

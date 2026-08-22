@@ -439,3 +439,20 @@ def send_web_push_task(self, user_id, notification_data):
                 raise self.retry(exc=exc)
             except self.MaxRetriesExceededError:
                 logger.info("Max push retries reached for user %s", user_id)
+
+#Live
+from service_auth.only_message import live_store as store
+
+@shared_task
+def cleanup_stale_live_rooms():
+    rooms = store.list_active_rooms(limit=500)
+    removed = 0
+
+    for room in rooms:
+        room_id = room["room_id"]
+
+        if not store.heartbeat_alive(room_id):
+            store.delete_room(room_id)
+            removed += 1
+
+    return f"Removed {removed} stale rooms."

@@ -134,7 +134,7 @@ COOLDOWN_MINUTES = 20
 DESCRIPTION_PRIORITY_UNIT = 5   # points per overlapping word (kept modest)
 
 SCORING_NOISE = 3.0
-PERSONALIZED_POOL_SIZE = 30  # From collaborative filtering
+PERSONALIZED_POOL_SIZE = 10  # From collaborative filtering
 CATEGORY_POOL_SIZE = 50      # From category matching
 
 #__________________________
@@ -1803,8 +1803,7 @@ def _get_co_viewed_related_media(
         return [], {}
 
 
-
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def explore_detail(request, media_id):
     """
     Media detail view with cursor-based infinite scroll
@@ -2379,19 +2378,19 @@ def explore_detail(request, media_id):
 
 logger = logging.getLogger(__name__)
 PAGE_SIZE = 9
-CANDIDATE_POOL_SIZE = 30
-GLOBAL_EXPLORE_CAP = 89
-CREATOR_COOLDOWN = 7          # posts before same creator can reappear strongly
+CANDIDATE_POOL_SIZE = 11
+GLOBAL_EXPLORE_CAP = 40
+CREATOR_COOLDOWN = 3          # posts before same creator can reappear strongly
 CATEGORY_STREAK_LIMIT = 3     # avoid too many same-category posts in a row
 CREATOR_FATIGUE_WINDOW = 4   # if user saw too many from same creator recently → downrank
 TRENDING_FETCH_LIMIT = 20  # Number of trending IDs to pull from Redis
-DISCOVERY_FETCH_LIMIT = 50
+DISCOVERY_FETCH_LIMIT = 35
 FOLLOWING_FETCH_LIMIT = 20
 MEDIA_OBJECT_CACHE_TIMEOUT = 60 * 5  # 30 minutes
 SESSION_SEEN_LIMIT =69  # prevent session from growing forever
 CACHE_EXPIRY_DAYS = 1
 
-PERSONALIZED_FETCH_LIMIT = 30  # Limit for personalized recommendations per fetch
+PERSONALIZED_FETCH_LIMIT = 10  # Limit for personalized recommendations per fetch
 
 # Randomization ranges per tier
 RANDOM_TIER_0 = 50   # Personalized
@@ -3027,7 +3026,7 @@ class FeedScorer:
         except Exception as e:
             logger.warning(f"Error calculating media score for {media.id}: {e}")
             # Fallback scoring
-            base_score = (getattr(media, 'likes_count', 0) or 0) + (media.view_count or 0) * 0.01
+            base_score = (getattr(media, 'likes_count', 0) or 0) + (media.view_count or 0) * 0.5
         
         priority = 4  # Default: general discovery
         
@@ -3426,7 +3425,6 @@ def track_category_exposure(redis_conn, user_id, page_obj):
         
     except Exception as e:
         logger.warning(f"Category exposure tracking failed: {e}")
-
 
 
 def following_media(request):
@@ -3915,6 +3913,7 @@ def track_unique_view(media, user):
 #_____________________________
 
 #@login_required
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def feed_page(request):
     return render(request, "following_media.html")
 
@@ -4100,6 +4099,7 @@ def log_interaction(request):
 # ===============================================================
 
 @login_required
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def search_users(request, user_id):
     """
     Enhanced user search with collaborative filtering integration
@@ -4698,8 +4698,7 @@ def delete_user_audio_comment(request, comment_id):
     return redirect(reverse('user_profile:voices', args=[audio.user.id]))
 
 
-
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def media_detail_view(request, media_id):
     media = get_object_or_404(Media, id=media_id)
     user = media.user  # The owner of the media
@@ -4815,8 +4814,7 @@ def media_detail_view(request, media_id):
 
 
 @login_required
-@cache_page(60 * 8)
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def profile_notifications(request):
     notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
 
@@ -4829,7 +4827,7 @@ def profile_notifications(request):
 
 
 @login_required
-@cache_control(private=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def edit_profile(request, user_id):
     profile_user = get_object_or_404(AuthUser, id=user_id)
     profile, created = Profile.objects.get_or_create(user=profile_user)
@@ -4926,7 +4924,7 @@ CATEGORY_CHOICES = [
 ]
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def update_category(request):
     profile = request.user.profile  # Access the Profile instance for the logged-in user
 
@@ -4961,7 +4959,7 @@ def update_category(request):
 
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def update_country(request):
     profile = request.user.profile
 
@@ -4999,7 +4997,7 @@ def update_country(request):
 
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def fetch_categories(request):
     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
         return JsonResponse({
@@ -5010,7 +5008,7 @@ def fetch_categories(request):
 
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def save_bio(request):
     profile = request.user.profile  # Assuming Profile is related to the user
 
@@ -5033,7 +5031,7 @@ def save_bio(request):
 
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def delete_media(request, media_id):
     media = get_object_or_404(Media, id=media_id)
 
@@ -5175,7 +5173,7 @@ def not_interested(request, media_id: int):
 
 @login_required
 @require_POST
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def not_interested(request, media_id: int):
     """
     Handles "Not Interested" action.
@@ -5412,7 +5410,7 @@ def report_media(request, media_id):
 
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def save_upload(request, media_id):
     media = get_object_or_404(Media, id=media_id)
     profile = get_object_or_404(Profile, user=request.user)
@@ -5433,8 +5431,7 @@ def save_upload(request, media_id):
 
 
 @login_required
-@cache_page(60 * 30)
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def saved_uploads(request):
     profile = get_object_or_404(Profile, user=request.user)
     saved_media = profile.saved_uploads.all().order_by('-created_at')
@@ -5742,7 +5739,7 @@ def toggle_media_privacy(request, media_id):
 #_______________________________________________________________
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def add_to_buddy(request, user_id):
     """Add a user to the current user's buddy list."""
     user_to_add = get_object_or_404(AuthUser, id=user_id)
@@ -5758,7 +5755,7 @@ def add_to_buddy(request, user_id):
     
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def buddy_list(request):
     """Display all users in the current user's buddy list."""
     buddies = Buddy.objects.filter(user=request.user).select_related('buddy')
@@ -5790,14 +5787,13 @@ def remove_from_buddy_list(request, user_id):
 # function for sitemap implementaion
 #________________________
 
-
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def profile_detail(request, username):
     user = get_object_or_404(AuthUser, username=username)
     return profile(request, user_id=user.id)  # Call your existing profile() view
 
 
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def media_detail(request, username, media_id):
     user = get_object_or_404(AuthUser, username=username)
     media = get_object_or_404(Media, id=media_id, user=user)
@@ -5808,7 +5804,7 @@ def media_detail(request, username, media_id):
 #view tracking using track_media_view util
 
 @require_POST
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def track_media_view(request, media_id):
     user = request.user
     try:
@@ -5843,7 +5839,7 @@ def track_media_view(request, media_id):
 #for directly sharing media from teh gallery without opening the app
 #for directly sharing, taking the user to the upload form 
 @csrf_exempt
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def share_upload(request):
     """
     Handles media shared directly to the PWA via share_target.
@@ -5936,7 +5932,7 @@ def share_upload(request):
 
 
 from bs4 import BeautifulSoup
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def get_shared_file(request):
     """
     Dual-purpose endpoint:
@@ -6298,7 +6294,7 @@ def share_media(request, media_id):
     return redirect('user_profile:explore_detail', context)
 
  
-@cache_control(public=True, max_age=3600)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def media_detail_public(request, media_id):
     """
     Public media detail page for shared links
