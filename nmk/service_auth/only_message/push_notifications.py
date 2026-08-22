@@ -380,6 +380,21 @@ def _build_push_payload(notification_data: dict) -> dict:
             "requireInteraction": False,
         }
 
+    if notif_type == "notion_notification":
+        title = notification_data.get("title", "🔔 Socyfie")
+        body  = notification_data.get("message") or "You have new activity"
+        return {
+            "type"              : "notion_notification",
+            "title"             : title,
+            "body"              : body,
+            "url"               : notification_data.get("url", "/"),
+            "tag"               : notification_data.get("id", "notion-notif"),
+            "sender"            : notification_data.get("sender", "Socyfie"),
+            "icon"              : icon,
+            "badge"             : badge,
+            "requireInteraction": False,
+        }
+
     return {
         "type" : notif_type,
         "title": "Socyfie",
@@ -509,7 +524,57 @@ def send_onesignal_push_to_user(user_id: int, notification_data: dict) -> bool:
             "requests is not installed. Run: pip install requests  "
             "then restart Celery workers."
         )
+ 
+    try:
+        import requests
+    except ImportError:
+        logger.warning(
+            "requests is not installed. Run: pip install requests  "
+            "then restart Celery workers."
+        )
         return False
+ 
+    payload = _build_onesignal_payload(notification_data)
+    payload.update({
+        "app_id": app_id,
+        "target_channel": "push",
+        "include_aliases": {"external_id": [str(user_id)]},
+    })
+ 
+    try:
+        resp = requests.post(
+            ONESIGNAL_API_URL,
+            json=payload,
+            headers={
+                "Authorization": f"Key {api_key}",
+                "Content-Type": "application/json; charset=utf-8",
+            },
+            timeout=10,
+        )
+ 
+        resp_data = {}
+        try:
+            resp_data = resp.json()
+        except ValueError:
+            pass
+ 
+        if resp.status_code in (200, 201):
+            recipients = resp_data.get("recipients", 0)
+            if recipients > 0:
+                logger.info(
+                    "📲 OneSignal push sent → user %s (%s recipient(s))",
+                    user_id, recipients,
+                )
+                return True
+ 
+            logger.info(
+                "OneSignal accepted the request for user %s but found 0 "
+                "recipients — confirm the client called "
+                "median.onesignal.login('%s') this session.",
+                user_id, user_id,
+            )
+            return False
+ 
  
     payload = _build_onesignal_payload(notification_data)
     payload.update({
@@ -555,7 +620,16 @@ def send_onesignal_push_to_user(user_id: int, notification_data: dict) -> bool:
         logger.warning(
             "OneSignal push failed for user %s (HTTP %s): %s",
             user_id, resp.status_code, resp_data or resp.text[:300],
+            "OneSignal push failed for user %s (HTTP %s): %s",
+            user_id, resp.status_code, resp_data or resp.text[:300],
         )
+        return False
+ 
+    except requests.exceptions.RequestException as exc:
+        logger.error("OneSignal request error for user %s: %s", user_id, exc)
+        return False
+ 
+ 
         return False
  
     except requests.exceptions.RequestException as exc:
@@ -565,10 +639,27 @@ def send_onesignal_push_to_user(user_id: int, notification_data: dict) -> bool:
  
 # ─────────────────────────────────────────────────────────────────────────────
 # Send Web Push — dispatches BOTH delivery paths, independently
+# Send Web Push — dispatches BOTH delivery paths, independently
 # ─────────────────────────────────────────────────────────────────────────────
+import copy
 import copy
 def send_web_push_to_user(user_id: int, notification_data: dict) -> bool:
     """
+    Send a notification to every device registered for user_id, across BOTH
+    delivery paths:
+ 
+      1. Browser Web Push (VAPID via pywebpush) — reaches real browsers and
+         installed PWAs where notification permission was granted.
+      2. OneSignal (native bridge) — reaches the Median-wrapped app even when
+         it's backgrounded or fully closed.
+ 
+    Called exclusively from the Celery task send_web_push_task — never from
+    the main request/response cycle or a WebSocket consumer directly.
+ 
+    IMPORTANT: this no longer returns early when there are no browser
+    subscriptions, because wrapped-app users typically have none at all
+    (their WebView never runs the browser's subscribe flow) — OneSignal must
+    still get a chance to fire for them.
     Send a notification to every device registered for user_id, across BOTH
     delivery paths:
  
@@ -593,7 +684,80 @@ def send_web_push_to_user(user_id: int, notification_data: dict) -> bool:
     browser_push_ok = False
     subscriptions   = get_push_subscriptions(user_id)
  
+ 
+    # ── 1. Browser Web Push (VAPID) ──────────────────────────────────────────
+    browser_push_ok = False
+    subscriptions   = get_push_subscriptions(user_id)
+ 
     if not subscriptions:
+        logger.debug("No browser push subscriptions for user %s", user_id)
+    else:
+        try:
+            from pywebpush import webpush, WebPushException
+        except ImportError:
+            webpush = None
+            logger.warning(
+                "pywebpush not installed. Run: pip install pywebpush  "
+                "then restart Celery workers."
+            )
+ 
+        if webpush:
+            private_key, claims = _get_vapid_config()
+            if private_key:
+                payload = _build_push_payload(notification_data)
+                stale   = []
+                success = 0
+ 
+                for sub in subscriptions:
+                    endpoint = sub.get("endpoint", "unknown")
+                    try:
+                        webpush(
+                            subscription_info=sub,
+                            data=json.dumps(payload),
+                            vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                            #vapid_claims=settings.VAPID_CLAIMS,
+                            vapid_claims=copy.copy(settings.VAPID_CLAIMS),   # ← fresh dict per subscription
+                        )
+                        success += 1
+                        logger.info("📲 Browser push sent → user %s (%s…)", user_id, endpoint[:55])
+ 
+                    except WebPushException as exc:
+                        status = exc.response.status_code if exc.response else None
+                        if status in (404, 410):
+                            stale.append(endpoint)
+                            logger.info("Removed stale push sub for user %s (HTTP %s)", user_id, status)
+                        elif status == 401:
+                            logger.error(
+                                "Push auth 401 for user %s — VAPID keys mismatch. "
+                                "Regen: python manage.py generate_vapid_keys",
+                                user_id,
+                            )
+                        else:
+                            logger.warning("WebPushException for user %s (HTTP %s): %s",
+                                           user_id, status, exc)
+ 
+                    except Exception as exc:
+                        logger.error("Push send error for user %s: %s", user_id, exc)
+ 
+                for ep in stale:
+                    delete_push_subscription(user_id, ep)
+ 
+                browser_push_ok = success > 0
+ 
+    # ── 2. OneSignal (native bridge) — independent of the path above ────────
+    try:
+        onesignal_ok = send_onesignal_push_to_user(user_id, notification_data)
+    except Exception as exc:
+        logger.warning("OneSignal dispatch failed (non-fatal) for user %s: %s", user_id, exc)
+        onesignal_ok = False
+ 
+    return browser_push_ok or onesignal_ok
+
+
+
+
+
+
         logger.debug("No browser push subscriptions for user %s", user_id)
     else:
         try:

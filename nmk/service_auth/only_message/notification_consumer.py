@@ -179,8 +179,12 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def _call_answer(self, data):
         caller_id = data.get('caller_id')
         call_id = data.get('call_id')
+        call_id = data.get('call_id')
         if not caller_id:
             return
+        if call_id:
+            await sync_to_async(mark_call_answered)(call_id)
+
         if call_id:
             await sync_to_async(mark_call_answered)(call_id)
 
@@ -198,8 +202,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         caller_id = data.get('caller_id')
         call_id = data.get('call_id')
 
+        call_id = data.get('call_id')
+
         if not caller_id:
             return
+        if call_id:
+            await sync_to_async(end_pending_call)(call_id)
+
         if call_id:
             await sync_to_async(end_pending_call)(call_id)
 
@@ -215,8 +224,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         peer_id = data.get('peer_id')
         call_id = data.get('call_id')
 
+        call_id = data.get('call_id')
+
         if not peer_id:
             return
+        if call_id:
+            await sync_to_async(end_pending_call)(call_id)
+
         if call_id:
             await sync_to_async(end_pending_call)(call_id)
 
@@ -232,8 +246,12 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         peer_id = data.get('peer_id')
         call_id = data.get('call_id')
 
+        call_id = data.get('call_id')
+
         if not peer_id:
             return
+        if call_id:
+            await sync_to_async(queue_ice_candidate)(call_id, data.get('candidate'), self.user.id)
         if call_id:
             await sync_to_async(queue_ice_candidate)(call_id, data.get('candidate'), self.user.id)
 
@@ -249,8 +267,13 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         caller_id = data.get('caller_id')
         call_id = data.get('call_id')
 
+        call_id = data.get('call_id')
+
         if not caller_id:
             return
+
+        if call_id:
+            await sync_to_async(end_pending_call)(call_id)
 
         if call_id:
             await sync_to_async(end_pending_call)(call_id)
