@@ -1,0 +1,207 @@
+{% extends 'landing_page.html' %}
+{% load static %}
+{% load media_filters %}
+
+{% block main_content %}
+<style>
+    .gl-header {
+        display: flex; align-items: center; justify-content: space-between;
+        margin: 10px 0 16px; flex-wrap: wrap; gap: 10px;
+    }
+    .gl-title { font-size: 20px; font-weight: 800; margin: 0; }
+    .gl-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .gl-new-btn {
+        border: none; border-radius: 20px; padding: 9px 18px; font-weight: 700;
+        font-size: 13px; cursor: pointer; color: #fff;
+    }
+    .gl-new-group { background: linear-gradient(135deg,#16a34a,#0d9488); }
+    .gl-new-channel { background: linear-gradient(135deg,#6366f1,#4338ca); }
+
+    .gl-join-row { display: flex; gap: 6px; margin-bottom: 18px; }
+    .gl-join-row input {
+        flex: 1; padding: 9px 12px; border: 1px solid #ddd; border-radius: 18px; font-size: 13px;
+    }
+    .gl-join-row button {
+        border: none; background: #333; color: #fff; border-radius: 18px; padding: 9px 16px;
+        font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+
+    .gl-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; opacity: .55; margin: 18px 0 8px; }
+
+    .gl-item {
+        display: flex; align-items: center; gap: 10px; padding: 10px;
+        border-radius: 12px; text-decoration: none; color: inherit;
+        border: 1px solid #eee; margin-bottom: 8px; transition: background .15s;
+    }
+    .gl-item:hover { background: #f7f7f9; color: inherit; }
+    .gl-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #eee; }
+    .gl-item-info { flex: 1; min-width: 0; }
+    .gl-item-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .gl-item-meta { font-size: 12px; opacity: .6; }
+    .gl-badge {
+        font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px;
+        text-transform: uppercase; letter-spacing: .3px;
+    }
+    .gl-badge-channel { background: #eef2ff; color: #4338ca; }
+    .gl-badge-group { background: #ecfdf5; color: #047857; }
+    .gl-empty { text-align: center; padding: 30px 10px; color: #888; font-size: 13px; }
+
+    /* ── Create modal ── */
+    .gl-modal-backdrop {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+        z-index: 20000; align-items: center; justify-content: center;
+    }
+    .gl-modal-backdrop.show { display: flex; }
+    .gl-modal { background: #fff; border-radius: 16px; padding: 22px; width: min(380px, 92vw); }
+    .gl-modal h3 { margin-top: 0; }
+    .gl-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+    .gl-tab {
+        flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer;
+        font-size: 13px; font-weight: 700; background: #f2f2f5; color: #666;
+    }
+    .gl-tab.active { background: #333; color: #fff; }
+    .gl-modal input[type="text"], .gl-modal textarea {
+        width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 10px;
+        font-size: 14px; margin-bottom: 12px; box-sizing: border-box; font-family: inherit;
+    }
+    .gl-modal label { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 14px; }
+    .gl-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .gl-modal-actions button {
+        border: none; border-radius: 20px; padding: 9px 18px; font-weight: 600; cursor: pointer;
+    }
+    .gl-cancel { background: #eee; }
+    .gl-submit { background: linear-gradient(135deg,#16a34a,#0d9488); color: #fff; }
+</style>
+</br></br>
+
+<div class="gl-header">
+    <h2 class="gl-title">Groups &amp; Channels</h2>
+    <div class="gl-actions">
+        <a href="{% url 'only_message:search_channels_view' %}" class="gl-new-btn" style="background:#333;">🔍 Find Channels</a>
+        <button class="gl-new-btn gl-new-group" onclick="openCreateModal('group')">+ New Group</button>
+        <button class="gl-new-btn gl-new-channel" onclick="openCreateModal('broadcast')">+ New Channel</button>
+    </div>
+</div>
+
+<form class="gl-join-row" id="join-invite-form">
+    <input type="text" id="invite-code-input" placeholder="Have an invite link or code? Paste it here">
+    <button type="submit">Join</button>
+</form>
+
+<div class="gl-section-title">Groups</div>
+{% for g in my_groups %}
+    <a class="gl-item" href="{% url 'only_message:group_chat_view' group_id=g.id %}">
+        {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+        <div class="gl-item-info">
+            <div class="gl-item-name">{{ g.name }} <span class="gl-badge gl-badge-group">Group</span></div>
+            <div class="gl-item-meta">{{ g.member_count }} members</div>
+        </div>
+    </a>
+{% empty %}
+    <div class="gl-empty">No groups yet. Create one or join with an invite link.</div>
+{% endfor %}
+
+<div class="gl-section-title">Channels</div>
+{% for g in my_channels %}
+    <a class="gl-item" href="{% url 'only_message:group_chat_view' group_id=g.id %}">
+        {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+        <div class="gl-item-info">
+            <div class="gl-item-name">{{ g.name }} <span class="gl-badge gl-badge-channel">Channel</span></div>
+            <div class="gl-item-meta">{{ g.member_count }} subscribers</div>
+        </div>
+    </a>
+{% empty %}
+    <div class="gl-empty">No channels yet.</div>
+{% endfor %}
+
+<!-- ── Create modal ── -->
+<div id="gl-create-backdrop" class="gl-modal-backdrop">
+    <div class="gl-modal">
+        <h3 id="gl-modal-title">Create Group</h3>
+
+        <form method="post" action="{% url 'only_message:create_group_view' %}">
+            {% csrf_token %}
+            <input type="hidden" name="kind" id="gl-kind-input" value="group">
+
+            <input type="text" name="name" maxlength="150" placeholder="Name" required>
+            <textarea name="description" maxlength="500" rows="3" placeholder="Description (optional)"></textarea>
+            {%comment%}
+            <div id="openCreateModalgl-channel-only" style="display:none;">
+                <input type="text" name="channel_username" maxlength="60" placeholder="Public username (optional, e.g. mychannel)">
+                <label>
+                    <input type="checkbox" name="is_public">
+                    Public channel (discoverable by username)
+                </label>
+            </div>
+            {%endcomment%}
+
+            <div id="gl-privacy-row">
+                <label>
+                    <input type="checkbox" name="is_public" id="gl-is-public-checkbox">
+                    <span id="gl-privacy-label">Make this group public (anyone with the invite link can join)</span>
+                </label>
+            </div>
+            <div id="gl-channel-only" style="display:none;">
+                <input type="text" name="channel_username" maxlength="60" placeholder="Public username (optional, e.g. mychannel)">
+            </div>
+
+
+            <div class="gl-modal-actions">
+                <button type="button" class="gl-cancel" onclick="closeCreateModal()">Cancel</button>
+                <button type="submit" class="gl-submit">Create</button>
+            </div>
+        </form>
+        <form style="display:none;">{% csrf_token %}</form>
+    </div>
+</div>
+
+<script>
+var INVITE_URL_TEMPLATE = "{% url 'only_message:invite_landing_view' code='PLACEHOLDER' %}";
+
+function openCreateModal(kind) {
+    document.getElementById('gl-kind-input').value = kind;
+    document.getElementById('gl-modal-title').textContent = kind === 'group' ? 'Create Group' : 'Create Channel';
+    document.getElementById('gl-channel-only').style.display = kind === 'broadcast' ? 'block' : 'none';
+
+    var label = document.getElementById('gl-privacy-label');
+    var checkbox = document.getElementById('gl-is-public-checkbox');
+    if (kind === 'group') {
+        label.textContent = 'Make this group public (anyone with the invite link can join themselves)';
+        checkbox.checked = false;   // groups default to private, matching WhatsApp
+    } else {
+        label.textContent = 'Public channel (discoverable by username search)';
+        checkbox.checked = false;
+    }
+
+    document.getElementById('gl-create-backdrop').classList.add('show');
+}
+
+function closeCreateModal() {
+    document.getElementById('gl-create-backdrop').classList.remove('show');
+}
+
+document.getElementById('join-invite-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var raw = document.getElementById('invite-code-input').value.trim();
+    if (!raw) return;
+    // Accept either a bare code or a full pasted invite URL
+    var code = raw.split('?')[0].split('/').filter(Boolean).pop();
+
+    var action = INVITE_URL_TEMPLATE.replace('PLACEHOLDER', encodeURIComponent(code));
+
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = action;
+    var csrf = document.createElement('input');
+    csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken';
+    csrf.value = document.querySelector('[name=csrfmiddlewaretoken]') ?
+        document.querySelector('[name=csrfmiddlewaretoken]').value :
+        (document.cookie.match('(^|;)\\s*csrftoken\\s*=\\s*([^;]+)') || [])[2];
+    form.appendChild(csrf);
+    document.body.appendChild(form);
+    form.submit();
+});
+</script>
+    <script src="{% static 'js/pull_to_refresh.js' %}"></script>
+
+{% endblock %}

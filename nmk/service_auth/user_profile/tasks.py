@@ -183,9 +183,10 @@ def process_media_upload(self, media_id, temp_file_path, file_name, media_type, 
                 ffmpeg_cmd = [
                     "ffmpeg",
 
-                    "-ss", "0",
-
                     "-i", temp_file_path,
+                    "-ss", "1",
+
+                    #"-i", temp_file_path,
                     "-vf", "scale='min(1280,iw)':-2",  #new
                     "-c:v", "libx264",
                     "-preset", "veryfast",
@@ -237,10 +238,10 @@ def process_media_upload(self, media_id, temp_file_path, file_name, media_type, 
 
                 thumb_cmd = [
                     "ffmpeg",
-                    #"-ss", "00:00:01.000",
+                    "-i", temp_file_path,   #before -ss Huge speedup on long videos
                     "-ss", "1",
 
-                    "-i", temp_file_path,   #before -ss Huge speedup on long videos
+                    #"-i", temp_file_path,   #before -ss Huge speedup on long videos
                     #"-vframes", "1",
                     "-frames:v", "1",
                     #"-an",    #Small CPU savings
@@ -726,7 +727,7 @@ def update_trending_scores():
 
 
 # Country affinity — boosts media whose `country` matches the user's profile country
-COUNTRY_BOOST = 1.35
+COUNTRY_BOOST = 3.5
 
 # ---------------------------
 # CO-VIEW RELATED MEDIA PRECOMPUTE

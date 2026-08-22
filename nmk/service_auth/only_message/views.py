@@ -44,6 +44,7 @@ import mimetypes
 from .tasks import process_uploaded_file
 
 from .tasks import process_message_file, optimize_image_for_upload, send_progress_update
+#from .tasks import process_message_file
 
 from .push_notifications import save_push_subscription, delete_push_subscription
 
@@ -1552,6 +1553,42 @@ def get_pending_call_api(request, call_id):
         'ice_candidates': ice,
     })
 
+
+
+# views.py
+@require_POST
+def decline_call_api(request, call_id):
+    """
+    Background decline, triggered from the service-worker notification
+    action button — no login_required decorator issue since the browser
+    still sends the session cookie with a same-origin fetch from the SW.
+    """
+    from .call_store import get_pending_call, end_pending_call
+
+    call = get_pending_call(call_id)
+    if not call:
+        return JsonResponse({'success': True, 'already_ended': True})
+
+    end_pending_call(call_id)
+
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f'notifications_{call["caller_id"]}',
+            {
+                'type': 'notification_message',
+                'notification': {
+                    'type': 'call_rejected',
+                    'rejector': 'callee',
+                    'call_id': call_id,
+                    'call_type': call.get('call_type', 'audio'),
+                },
+            },
+        )
+    except Exception as e:
+        logger.warning(f"decline_call_api: broadcast failed: {e}")
+
+    return JsonResponse({'success': True})
 #user audio and video calling setup
 #____________________________________________________________________________
 #____________________________________________________________________________

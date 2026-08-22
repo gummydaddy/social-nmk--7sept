@@ -17,7 +17,7 @@
     <!-- End Google Tag Manager -->
 
     <!-- Google tag (gtag.js) google analytics-->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-MQ4Q1F4FCE"></script>
+    <script src="https://www.googletagmanager.com/gtag/js?id=G-MQ4Q1F4FCE" async defer></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -79,11 +79,11 @@
 
     <!--app install related-->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <script src="{% static 'js/install-pwa.js' %}" defer></script>
+    <script src="{% static 'js/install-pwa.js' %}" async defer></script>
+    <script src="{% static 'js/day_night.js' %}" async defer></script>
     <!--app install related-->
 
     <style>
-        
         @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css");
 
         @keyframes colorMove {
@@ -256,7 +256,7 @@
 
         header{
             position: fixed; 
-            top: -13px;
+            top: -14px;
             height: var(--header-height);
             max-width: 710px;
             margin: auto;
@@ -266,63 +266,70 @@
         }
 
         .class-main {
-            padding-top: calc(var(--header-height) + 5px);
+            padding-top: calc(var(--header-height) + 40px);
         }
 
-.class-main.night-mode {
-    background: #121212 !important;
-    color: #fff !important;
-}
+        .class-main.night-mode {
+            background: #121212 !important;
+            color: #fff !important;
+        }
 
-/* Keep all items on one line */
-header .container {
-    display: flex !important;
-    align-items: center;
-    flex-wrap: nowrap !important;
-    gap: 4px;
-}
+        /* Keep all items on one line */
+        header .container {
+            display: flex !important;
+            align-items: center;
+            flex-wrap: nowrap !important;
+            gap: 4px;
+        }
 
-/* Search form should occupy remaining space */
-header form {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    margin-bottom: 0 !important; /* overrides mb-4 */
-    min-width: 0;
-}
+        /* Search form should occupy remaining space */
+        header form {
+            flex: .6;
+            display: flex;
+            /*align-items: center;*/
+            margin-bottom: 0 !important; /* overrides mb-4 */
+            min-width: 0;
+        }
 
-/* Search input shrinks when needed */
-header form input {
-    flex: 1;
-    min-width: 0;
-}
+        /* Search input shrinks when needed */
+        header form input {
+            flex: 1;
+            min-width: 0;
+        }
 
-/* Prevent icons from shrinking */
-.messagebtn,
-.openbtn {
-    flex-shrink: 0;
-}
+        /* Prevent icons from shrinking */
+        .messagebtn,
+        .openbtn {
+            flex-shrink: 0;
+        }
 
-/* Reduce spacing on small screens */
-@media (max-width: 576px) {
-    .openbtn,
-    .messagebtn {
-        background-color: #4F46E5;
-        border-radius: 50px;
-        padding: 6px 8px;
-        margin: 0 2px;
-        font-size: 19px;
-    }
+        /* Reduce spacing on small screens */
+        @media (max-width: 576px) {
+            .openbtn,
+            .messagebtn {
+                background-color: #4F46E5;
+                border-radius: 50px;
+                padding: 3px 10px;
+                margin: -2px 6px;
+                font-size: 14px;
+                margin-top: 4px;
+            }
 
-    header form input {
-        font-size: 14px;
-        padding: 6px 8px;
-    }
+            header form input {
+                font-size: 14px;
+                padding: 6px 8px;
+            }
 
-    header form button {
-        padding: 6px;
-    }
-}
+            header form button {
+                padding: 6px;
+            }
+        }
+
+        .action-buttons{
+            margin-top: 10px;
+        }
+
+        /*----footer----*/
         footer {
             position: fixed;
             bottom: 0;
@@ -500,7 +507,7 @@ header form input {
           
         form {
             width: auto;
-            margin-top: 5px;
+            margin-top: -10px;
             background-color: #fffff;
             margin-bottom: 5px;
             
@@ -672,42 +679,284 @@ body {
 
 </style>
 <!--language support ends-->
+<!--new footer-->
+<style>
+/* =========================================
+   MOBILE BOTTOM NAVIGATION
+   ========================================= */
 
+.mobile-bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 12px;
+    z-index: 9999;
+
+    display: flex;
+    justify-content: center;
+
+    pointer-events: none;
+}
+
+
+/* Main floating navigation container */
+.bottom-nav-inner {
+    width: calc(100% - 28px);
+    max-width: 800px;
+    height: 72px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+
+    background: rgba(255, 255, 255, 0.95);
+
+    border: 1px solid #e5e7eb;
+    border-radius: 38px;
+
+    box-shadow:
+        0 8px 30px rgba(0, 0, 0, 0.10),
+        0 2px 8px rgba(0, 0, 0, 0.05);
+
+    padding: 4px 10px;
+
+    pointer-events: auto;
+
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+
+/* Each navigation item */
+.footer-icon {
+    flex: 1;
+    height: 100%;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    position: relative;
+}
+
+
+/* Navigation link */
+.footer-icon a {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    text-decoration: none;
+
+    color: inherit;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+/* Normal icons */
+.footer-icon a > i {
+    font-size: 21px;
+    line-height: 1;
+
+    margin-bottom: 6px;
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+
+/* Labels */
+.footer-icon span {
+    font-size: 12px;
+    line-height: 1;
+
+    white-space: nowrap;
+}
+
+
+/* Hover / tap effect */
+.footer-icon a:hover > i {
+    transform: translateY(-2px);
+}
+
+.footer-icon a:active > i {
+    transform: scale(0.90);
+}
+
+
+/* =========================================
+   UPLOAD BUTTON
+   ========================================= */
+
+.upload-footer-icon {
+    margin-top: -28px;
+
+    flex: 1.15;
+
+    z-index: 2;
+}
+
+
+.upload-footer-icon a {
+    justify-content: flex-start;
+    padding-top: 0;
+}
+
+
+/* Floating upload circle */
+.upload-footer-circle {
+    width: 62px;
+    height: 62px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: inherit;
+
+    border: 6px solid #fff;
+
+    box-shadow:
+        0 5px 18px rgba(0, 0, 0, 0.12);
+
+    margin-bottom: 5px;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* Upload icon */
+.upload-footer-circle i {
+    font-size: 25px;
+    margin: 0;
+}
+
+
+/* Upload text */
+.upload-footer-icon span {
+    margin-top: 0;
+}
+
+
+/* Upload interaction */
+.upload-footer-icon a:hover .upload-footer-circle {
+    transform: translateY(-3px);
+}
+
+.upload-footer-icon a:active .upload-footer-circle {
+    transform: scale(0.92);
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 576px) {
+
+    .mobile-bottom-nav {
+        bottom: 10px;
+    }
+
+    .bottom-nav-inner {
+        width: calc(100% - 24px);
+        height: 70px;
+
+        border-radius: 36px;
+
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .footer-icon a > i {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+
+    .footer-icon span {
+        font-size: 11px;
+    }
+
+    .upload-footer-circle {
+        width: 62px;
+        height: 62px;
+    }
+
+    .upload-footer-circle i {
+        font-size: 24px;
+    }
+}
+
+
+/* =========================================
+   VERY SMALL SCREENS
+   ========================================= */
+
+@media (max-width: 360px) {
+
+    .bottom-nav-inner {
+        width: calc(100% - 16px);
+    }
+
+    .footer-icon a > i {
+        font-size: 18px;
+    }
+
+    .footer-icon span {
+        font-size: 10px;
+    }
+
+    .upload-footer-circle {
+        width: 56px;
+        height: 56px;
+    }
+}
+</style>
 
     {% load static %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism.min.css" rel="stylesheet" />
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
 
     <!--script for including lazy loading-->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            let lazyImages = document.querySelectorAll("img.lazyload");
-        
-            const lazyLoad = () => {
-                lazyImages.forEach(img => {
-                    if (img.getBoundingClientRect().top < window.innerHeight && img.dataset.src) {
-                        img.src = img.dataset.src;  // Replace thumbnail with full media
-                        img.classList.remove("lazyload");
-                    }
-                });
-            };
-        
-            // Load images when scrolling
-            window.addEventListener("scroll", lazyLoad);
-            window.addEventListener("resize", lazyLoad);
-            lazyLoad();  // Load visible images immediately
-        });
-    </script>        
+    <script src="{% static 'js/lazyloading.js' %}" async defer></script>
 
-    <!-- Include Vue.js from a CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+<!-- Popper -->
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+
+<!-- Include Vue.js from a CDN -->
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
 <script src="{% static 'js/sharing.js' %}"></script>
 
 <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
-<script src="{% static 'js/notifications.js' %}"></script>
+<script src="{% static 'js/notifications.js' %}" async defer></script>
 
     <!--google one click login setup-->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -728,7 +977,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
-{%comment%}
 <!--Onesignal push deferred-->
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 <script>
@@ -744,7 +992,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 </script>
 <!--Onesignal push deferred-->
-{%endcomment%}
 </head>
 
 <body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-id="{% if user.is_authenticated %}{{ request.user.id }}{% endif %}">
@@ -791,6 +1038,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
                 </a>
 
+                <a>
+                    <button onclick="toggleSocyfieTheme()">
+                        Change Theme
+                    </button>
+                </a>
+
                 <a><div id="google_translate_element"></div></a>
 
                 <div class="footer-icon text-center py-3 flex justify-center items-center" style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;">
@@ -823,27 +1076,38 @@ document.addEventListener("DOMContentLoaded", () => {
                 </script>
 
             </div>
+
             {% block header %}
-            <header>
+            <header style="background-color: #ffffff;">
               <nav class="navbar navbar-expand-lg navbar-dark ">
                 <div class="container  d-flex align-items-center">
-                  <a href="{% url 'only_message:message_list_view' %}">
-                    <button class="messagebtn">💬</button>
-                  </a>
-                  <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-4">
-                      <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
-                      <button type="submit" class="fas fa-search"></button> 
-                  </form>
-
+                  <div>
+                      <div>
+                          <h1 style="font-weight:650;">SOCYFIE<h1>
+                      </div>
+                      <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
+                          <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
+                          <button type="submit" class="fas fa-search"></button> 
+                      </form>
+                  </div>
                   <a>
                       <div>
                           <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'" class="fas fa-bell">
-                          <!--<i class="fas fa-bell"></i>-->
                           </button>
                       </div>
-                  </a>
 
-                  <!--<button class="openbtn" onclick="openNav()">☰</button>>-->
+                      <div>
+                          <a href="{% url 'only_message:message_list_view' %}">
+                            <button class="messagebtn">💬</button>
+                          </a>
+                          <div>
+                              <a href="{% url 'only_message:group_list_view' %}" style="display:inline-block;margin:5px 0;padding:2px 3px;background:#4338ca;color:#fff;border-radius:10px;text-decoration:none;font-weight:480;">
+                                  👥G&C
+                              </a>
+                          </div>
+                      </div>
+
+                  </a>
                 </div>
               </nav>
 
@@ -853,6 +1117,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             </header>
             {% endblock %}
+
             <main id="main" class="class-main">
                 {% block main_content %}
                 <!-- card_snippet.html -->
@@ -871,7 +1136,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <div class="row my-3">
                         {% if user_uploads %}
                             {% for upload in user_uploads %}
-                                <div class="col-md-4 mb-4">
+                                <div class="col-md-4 mb-0">
                                     <div class="card">
                                         <div class="card-body">
                                             <h5 class="card-title">{{ upload.file_name }}</h5>
@@ -1006,7 +1271,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 {% endblock %}
                 
             </main>
-
+{%comment%}
          {% block footer %}
          <div class="container  d-flex align-items-center">
             <footer style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;" class="text-center py-3">
@@ -1071,11 +1336,86 @@ document.addEventListener("DOMContentLoaded", () => {
             </footer>
          </div> 
          {% endblock %}
+{%endcomment%}
+
+        {% block footer %}
+        <div class="mobile-bottom-nav">
+
+            <div class="bottom-nav-inner">
+
+                <!-- HOME -->
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:feed_page' %}">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </div>
+
+
+                <!-- NOTIONS -->
+                {% if request.user.is_authenticated %}
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Notions</span>
+                    </a>
+                </div>
+                {% else %}
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' %}">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Notions</span>
+                    </a>
+                </div>
+                {% endif %}
+
+
+                <!-- UPLOAD - ACTIVE / FLOATING -->
+                <div class="footer-icon upload-footer-icon">
+                    <a href="{% url 'user_profile:upload_media' %}">
+                        <div class="upload-footer-circle">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <span>Upload</span>
+                    </a>
+                </div>
+
+
+                <!-- EXPLORE -->
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:explore_me' %}">
+                        <i class="fas fa-search"></i>
+                        <span>Explore</span>
+                    </a>
+                </div>
+
+
+                <!-- PROFILE -->
+                {% if request.user.is_authenticated %}
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:profile' user_id=request.user.id %}">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                </div>
+                {% else %}
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:profile' %}">
+                        <i class="fas fa-user"></i>
+                        <span>Profile</span>
+                    </a>
+                </div>
+                {% endif %}
+
+            </div>
+
+        </div>
+        {% endblock %}
+
     
         </div>
 
-
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" async defer></script>
 
             <script>
                 function openNav() {
@@ -1089,65 +1429,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             </script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Check the saved mode in localStorage
-    var currentMode = localStorage.getItem('mode');
+            <script src="{% static 'js/day_night.js' %}" defer></script>
 
-    var container = document.querySelector('.content-container');
-    var classMain = document.querySelector('.class-main');
-
-    var mediaWrappers = document.querySelectorAll('.media-wrapper');
-    var mediaContents = document.querySelectorAll('.media-content');
-
-    var button = document.getElementById('toggleButton');
-
-    function enableNightMode() {
-        if (container) container.classList.add('night-mode');
-        if (classMain) classMain.classList.add('night-mode');
-
-        mediaWrappers.forEach(el => el.classList.add('night-mode'));
-        mediaContents.forEach(el => el.classList.add('night-mode'));
-
-        if (button) {
-            button.textContent = 'Switch to Day Mode🌒';
-        }
-    }
-
-    function enableDayMode() {
-        if (container) container.classList.remove('night-mode');
-        if (classMain) classMain.classList.remove('night-mode');
-
-        mediaWrappers.forEach(el => el.classList.remove('night-mode'));
-        mediaContents.forEach(el => el.classList.remove('night-mode'));
-
-        if (button) {
-            button.textContent = 'Switch to Night Mode🌒';
-        }
-    }
-
-    // Apply saved mode
-    if (currentMode === 'night') {
-        enableNightMode();
-    } else {
-        enableDayMode();
-    }
-
-    // Toggle background mode and save to localStorage
-    window.toggleBackground = function () {
-        if (container && container.classList.contains('night-mode')) {
-            enableDayMode();
-            localStorage.setItem('mode', 'day');
-        } else {
-            enableNightMode();
-            localStorage.setItem('mode', 'night');
-        }
-    };
-});
-</script>
-
-            <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+            <script src="{% static 'js/theme.js' %}" ></script>
 
             <script>
               // Replace current history so back button won't return to login
@@ -1158,87 +1442,17 @@ document.addEventListener('DOMContentLoaded', function () {
             </script>
 
 
-<!--for dissabling right click and long press-->
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('img').forEach(function (img) {
-      // Disable right-click context menu
-      img.addEventListener('contextmenu', function (e) {
-        e.preventDefault();
-      });
-
-      // Prevent long-press menu on mobile (without blocking scrolling)
-      let pressTimer;
-
-      img.addEventListener('touchstart', function (e) {
-        // Start a timer on touchstart
-        pressTimer = setTimeout(() => {
-          e.preventDefault(); // Only prevent default if held long enough
-        }, 600); // Adjust delay as needed (600ms is common)
-      });
-
-      img.addEventListener('touchend', function () {
-        clearTimeout(pressTimer);
-      });
-
-      img.addEventListener('touchmove', function () {
-        clearTimeout(pressTimer); // Cancel if user scrolls
-      });
-    });
-  });
-</script>
+    <!--for dissabling right click and long press-->
+    <script src="{% static 'js/disable_rightclick_longpress.js' %}" async defer></script>
 
 <!--dissabling dragging behaviour-->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Disable drag behavior on all images
-  document.querySelectorAll('img').forEach(img => {
-    img.setAttribute('draggable', 'false');
-    img.addEventListener('dragstart', e => e.preventDefault());
-    img.addEventListener('contextmenu', e => e.preventDefault()); // disables right-click
-  });
-
-  // Optional: Block text/image selection
-  document.body.addEventListener('selectstart', e => e.preventDefault());
-});
-</script>
+    <script src="{% static 'js/disable_dragging.js' %}" async defer></script>
 
 <!--script for language selection-->
-<script type="text/javascript">
-function googleTranslateElementInit() {
-    new google.translate.TranslateElement(
-        {
-            pageLanguage: 'en',
-            <!--includedLanguages: 'en,hi,mr,ta,bn,te,ml,gu,kn,pa,or,ur',-->
-            layout: google.translate.TranslateElement.InlineLayout.HORIZONTAL
-        },
-        'google_translate_element'
-    );
-}
-</script>
+    <script src="{% static 'js/language_selection.js' %}" async defer></script>
 
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-<script>
-/* hide Chrome/Google Translate secure banner */
-function hideGoogleTranslateBar() {
-    const frames = document.getElementsByTagName('iframe');
-
-    for (const f of frames) {
-        if (f.src.includes('translate.googleapis')) {
-            f.style.display = 'none';
-        }
-    }
-
-    // Remove the margin/padding shift
-    document.documentElement.style.top = '0px';
-    document.body.style.top = '0px';
-}
-
-/* check repeatedly because Google injects it after translation */
-setInterval(hideGoogleTranslateBar, 500);
-</script>
-
+<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 <!--script for language selection ends-->
 
 
@@ -1363,173 +1577,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <!--onesignal push notification setup-->
-<script>
-(function () {
-    'use strict';
-
-    console.log("========== OneSignal Login Debug ==========");
-    console.log("Landing page OneSignal script loaded");
-    console.log("User Agent:", navigator.userAgent);
-
-    var isAuthenticated = document.body.dataset.authenticated === 'true';
-    var currentUserId = document.body.dataset.userId;
-
-    console.log("Authenticated:", isAuthenticated);
-    console.log("Current User ID:", currentUserId);
-
-    if (!isAuthenticated || !currentUserId) {
-        console.log("User is anonymous. Skipping OneSignal login.");
-        return;
-    }
-
-    var loggedIn = false;
-
-    function attemptOneSignalLogin() {
-
-        console.log("attemptOneSignalLogin() called");
-
-        console.log({
-            medianExists: !!window.median,
-            onesignalExists: !!(window.median && window.median.onesignal),
-            loginExists: !!(
-                window.median &&
-                window.median.onesignal &&
-                typeof window.median.onesignal.login === "function"
-            )
-        });
-
-        if (loggedIn) {
-            console.log("Already logged into OneSignal.");
-            return true;
-        }
-
-        if (
-            window.median &&
-            window.median.onesignal &&
-            typeof window.median.onesignal.login === "function"
-        ) {
-
-            console.log("Calling median.onesignal.login() for user:", currentUserId);
-
-            window.median.onesignal.login(String(currentUserId))
-                .then(function (result) {
-
-                    console.log("login() promise resolved:", result);
-
-                    if (result && result.success) {
-
-                        loggedIn = true;
-
-                        console.log("✅ OneSignal external ID set for user:", currentUserId);
-
-                        if (typeof window.median.onesignal.onesignalInfo === "function") {
-
-                            window.median.onesignal.onesignalInfo()
-                                .then(function (info) {
-
-                                    console.log("========== OneSignal Info ==========");
-                                    console.log(info);
-                                    console.log("Subscribed:", info.oneSignalSubscribed);
-                                    console.log("Player ID:", info.playerId);
-                                    console.log("External ID:", info.externalId);
-
-                                })
-                                .catch(function (err) {
-                                    console.warn("onesignalInfo() failed:", err);
-                                });
-
-                        } else {
-                            console.warn("onesignalInfo() is not available.");
-                        }
-
-                    } else {
-
-                        console.warn(
-                            "median.onesignal.login() returned unsuccessful:",
-                            result
-                        );
-
-                    }
-
-                })
-                .catch(function (err) {
-
-                    console.error("OneSignal login promise rejected:", err);
-
-                });
-
-            return true;
-        }
-
-        console.log("Median bridge not available yet.");
-
-        return false;
-    }
-
-    // Try immediately.
-    if (!attemptOneSignalLogin()) {
-
-        console.log("Starting bridge polling...");
-
-        var attempts = 0;
-        var maxAttempts = 30;
-
-        var pollId = setInterval(function () {
-
-            attempts++;
-
-            console.log(
-                "Poll #" + attempts,
-                {
-                    medianExists: !!window.median,
-                    onesignalExists: !!(
-                        window.median &&
-                        window.median.onesignal
-                    ),
-                    loginExists: !!(
-                        window.median &&
-                        window.median.onesignal &&
-                        typeof window.median.onesignal.login === "function"
-                    )
-                }
-            );
-
-            if (attemptOneSignalLogin() || attempts >= maxAttempts) {
-
-                clearInterval(pollId);
-
-                if (attempts >= maxAttempts && !loggedIn) {
-
-                    console.warn(
-                        "Median bridge never became available after " +
-                        maxAttempts +
-                        " attempts."
-                    );
-
-                } else {
-
-                    console.log("Stopped polling.");
-
-                }
-            }
-
-        }, 500);
-    }
-
-    // Listen for the Median ready event.
-    window.addEventListener("median.library.ready", function () {
-
-        console.log("====================================");
-        console.log("✅ median.library.ready event fired");
-        console.log("window.median =", window.median);
-        console.log("====================================");
-
-        attemptOneSignalLogin();
-
-    });
-
-})();
-</script>
+<script src="{% static 'js/onesignal_push_notification.js' %}" async defer></script>
 
 <!-- Global Call UI -->
 {% include 'only_message/global_call_ui.html' %}
@@ -1537,8 +1585,6 @@ if ('serviceWorker' in navigator) {
 {% include 'only_message/push_notification_init.html' %}
 
     <!--script for loading popup messages-->
-    <div id="popup-notification-container"></div>
-    <script src="{% static 'js/popup_loading.js' %}"></script>
     <!--script for loading popup messages-->
     <!--<div id="popup-container" class="popup-container"></div>-->
     </body>

@@ -130,7 +130,7 @@ def pwa_cache_manifest(request):
 def home(request):
     return render(request, 'home.html')
 
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=86400, s_maxage=7200, must_revalidate=True)
 def TermAndCondition(request):
     return render(request, 'TermAndCondition.html')
 
@@ -297,7 +297,8 @@ def login_view(request):
 
 @csrf_exempt
 #@never_cache
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050)
+# must_revalidate=True)
 def login_view(request):
     if request.user.is_authenticated:
 
@@ -587,14 +588,15 @@ def password_reset(request):
     return render(request, 'password_reset.html', {'form': form})
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050)
+# must_revalidate=True)
 def landing_page(request):
     cache_key = f'user_{request.user.id}_username'
     user_username = cache.get(cache_key)
     #user_username = cache.get(f'user_{request.user.id}')
     if not user_username:
         user_username = request.user.username
-        cache.set(cache_key, user_username, timeout=60 * 60 * 24)  # Cache for 1 day
+        cache.set(cache_key, user_username, timeout=60 * 60 * 24 * 10)  # Cache for 1 day
         #cache.set(f'user_{request.user.id}', user_username, timeout=3600)
     try:
         user_card = request.user.card

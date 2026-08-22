@@ -431,6 +431,49 @@ def send_web_push_task(self, user_id, notification_data):
                 logger.info("Max push retries reached for user %s", user_id)
 
 
+# ── add near the other push-related tasks ──────────────────────────────────
+
+RING_INTERVAL_SECONDS = 4      # how often to re-push while ringing
+RING_MAX_ATTEMPTS = 14         # ~56s of ringing, just under call_store.RING_TTL
+
+@shared_task(bind=True, ignore_result=True, max_retries=0)
+def ring_call_push(self, call_id, recipient_id, notification_data, attempt=1):
+    """
+    Re-sends the incoming_call push every RING_INTERVAL_SECONDS while the
+    call is still 'ringing' in Redis (call_store.get_pending_call).
+
+    Stops automatically once:
+      - the callee answers   (call_store.mark_call_answered -> key deleted)
+      - either side ends/rejects (call_store.end_pending_call -> key deleted)
+      - RING_TTL expires      (key auto-expires in Redis)
+      - RING_MAX_ATTEMPTS reached
+    """
+    from .call_store import get_pending_call
+    from .push_notifications import send_web_push_to_user
+
+    call = get_pending_call(call_id)
+    if not call:
+        logger.info(f"🔕 ring_call_push: call {call_id} no longer pending — stopping ringer")
+        return
+
+    try:
+        send_web_push_to_user(recipient_id, notification_data)
+        logger.info(f"🔔 ring_call_push: attempt {attempt} for call {call_id}")
+    except Exception as exc:
+        logger.warning(f"ring_call_push send failed (attempt {attempt}): {exc}")
+
+    if attempt < RING_MAX_ATTEMPTS:
+        ring_call_push.apply_async(
+            kwargs={
+                'call_id': call_id,
+                'recipient_id': recipient_id,
+                'notification_data': notification_data,
+                'attempt': attempt + 1,
+            },
+            countdown=RING_INTERVAL_SECONDS,
+        )
+
+
 
 #Live
 from service_auth.only_message import live_store as store

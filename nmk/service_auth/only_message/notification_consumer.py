@@ -147,7 +147,8 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         # Give the caller their call_id so ice/end/reject can reference it
         await self.send(text_data=json.dumps({'type': 'call_id_assigned', 'call_id': call_id}))
 
-        await send_notification_via_websocket(recipient_id, {
+        #await send_notification_via_websocket(recipient_id, {
+        notification_payload = {
             'type':       'incoming_call',
             'caller':     self.user.username,
             'caller_id':  self.user.id,
@@ -156,7 +157,23 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             'call_type':  call_type,
             'call_id':    call_id,
             'chat_url':   call_url,   # push notification will open the call page
-        })
+        }
+
+        # WS delivery (in-app, instant) + first push — unchanged
+        await send_notification_via_websocket(recipient_id, notification_payload)
+
+        # NEW: schedule the repeating ringer pushes (attempt 1 = the *next* one,
+        # since attempt 0 was already fired by send_notification_via_websocket above)
+        from .tasks import ring_call_push, RING_INTERVAL_SECONDS
+        await sync_to_async(ring_call_push.apply_async)(
+            kwargs={
+                'call_id': call_id,
+                'recipient_id': recipient_id,
+                'notification_data': notification_payload,
+                'attempt': 1,
+            },
+            countdown=RING_INTERVAL_SECONDS,
+        )
 
 
     async def _call_answer(self, data):

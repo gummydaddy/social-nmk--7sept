@@ -15,13 +15,14 @@ import logging
 
 from django.conf import settings
 from django_redis import get_redis_connection
+from django.urls import reverse
 
 logger = logging.getLogger(__name__)
 
 _PREFIX    = "push:subs:"
 _TTL       = 60 * 60 * 24 * 90   # 90 days
 
-PUSH_WORTHY = {"new_message", "incoming_call", "notion_notification"}
+PUSH_WORTHY = {"new_message", "incoming_call", "notion_notification", "group_message"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -273,23 +274,66 @@ def send_web_push_to_user(user_id: int, notification_data: dict) -> bool:
 
 def _build_push_payload(notification_data: dict) -> dict:
     notif_type = notification_data.get("type", "")
-    icon  = "/static/images/android-icon-192x192.png"
-    badge = "/static/images/android-icon-192x192.png"
+
+    # Base URL of your deployed application
+    base_url = "https://socyfie.com" 
+
+    icon  = f"{base_url}/staticfiles/images/launchericon-192x192.png"
+    badge = f"{base_url}/staticfiles/images/launchericon-192x192.png" 
 
     if notif_type == "new_message":
         sender  = notification_data.get("sender", "Someone")
         preview = (notification_data.get("message") or "Sent you a message")[:120]
-        url     = (notification_data.get("url")
+
+        relative_url     = (notification_data.get("url")
                    or f"/user_messages_view/{sender}/")
+        absolute_url = f"{base_url}{relative_url}" if relative_url.startswith("/") else relative_url
+
+        
         return {
             "type"  : "new_message",
             "title" : f"💬 {sender}",
             "body"  : preview,
-            "url"   : url,
+            "url"   : absolute_url,
             "tag"   : f"msg-{notification_data.get('message_id', '')}",
             "sender": sender,
             "icon"  : icon,
             "badge" : badge,
+            "requireInteraction": False,
+        }
+        """
+
+        # 🟢 FIX 2: Restructure payload to standard Web Push format
+        return {
+            "data": {
+                "type"  : "new_message",
+                "url"   : absolute_url,
+                "sender": sender,
+            },
+            "notification": {
+                "title" : f"💬 {sender}",
+                "body"  : preview,
+                "icon"  : icon,
+                "badge" : badge,
+                "tag"   : f"msg-{notification_data.get('message_id', '')}",
+                "requireInteraction": False,
+            }
+        }
+        """
+
+    if notif_type == "group_message":
+        sender = notification_data.get("sender", "Someone")
+        group_name = notification_data.get("group_name", "Group")
+        emoji = "📢" if notification_data.get("group_kind") == "broadcast" else "👥"
+        fallback_url = reverse('only_message:group_list_view')
+
+        return {
+            "type": "group_message",
+            "title": f"{emoji} {group_name}",
+            "body": f"{sender}: {notification_data.get('message', '')}",
+            "url": notification_data.get("url", fallback_url),
+            "tag": notification_data.get("id", "group-msg"),
+            "icon": icon, "badge": badge,
             "requireInteraction": False,
         }
 
@@ -305,13 +349,20 @@ def _build_push_payload(notification_data: dict) -> dict:
             "body"              : f"{caller} is calling – tap to answer",
             "url"               : chat_url,
             "tag"               : "incoming-call",
+            "renotify"          : True,                 # force sound/vibrate again on each repeat push
             "caller"            : caller,
             "caller_id"         : notification_data.get("caller_id"),
             "caller_pic"        : caller_pic,
             "call_type"         : call_type,
+            "call_id"           : notification_data.get("call_id"),
             "icon"              : caller_pic,
             "badge"             : badge,
             "requireInteraction": True,
+            "vibrate"           : [400, 200, 400, 200, 400, 800],   # phone-ring-ish cadence
+            "actions"           : [
+                {"action": "accept-call",  "title": "✅ Accept"},
+                {"action": "decline-call", "title": "❌ Decline"},
+            ],
         }
 
     if notif_type == "notion_notification":
@@ -408,10 +459,21 @@ def _build_onesignal_payload(notification_data: dict) -> dict:
         body["priority"]      = 10
         body["ios_sound"]     = "default"
         body["android_sound"] = "default"
+        body["android_group"] = "incoming_call"      # collapses repeats into one slot
+        body["collapse_id"]   = f"call-{notification_data.get('call_id', '')}"  # re-alerts w/ same key on iOS
+        body["android_visibility"] = 1                # show full content on lock screen
+
         pic = base.get("caller_pic") or notification_data.get("caller_pic")
         if pic:
             body["big_picture"]    = pic
             body["ios_attachments"] = {"call_avatar": pic}
+        # Accept / Decline action buttons
+        body["buttons"] = [
+            {"id": "accept-call",  "text": "✅ Accept"},
+            {"id": "decline-call", "text": "❌ Decline"},
+        ]
+        body["ios_category"] = "incoming_call"
+
     else:
         body["priority"] = 7
  

@@ -82,8 +82,6 @@
     .lm-start { background: linear-gradient(135deg, #ff3b5c, #ff2d95); color: #fff; }
 </style>
 </br>
-</br>
-</br>
 <div id="media-detail-container">
     <div class="live-page-header">
         <h2 class="live-page-title">🔴 Live Now</h2>
@@ -211,4 +209,7 @@ function closeGoLiveModal() {
     setInterval(poll, 8000);
 })();
 </script>
+
+    <script src="{% static 'js/pull_to_refresh.js' %}"></script>
+
 {% endblock %}

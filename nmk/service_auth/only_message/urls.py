@@ -3,6 +3,7 @@ from . import views
 from service_auth.only_card import views as only_card_views  # Import views from only_card
 from service_auth.user_profile import views as user_profile_views
 from . import live_views
+from . import group_views
 
 app_name = 'only_message'
 
@@ -46,6 +47,7 @@ urlpatterns = [
     #user audio and video calling setup
     path('call/<str:call_id>/', views.call_page_view, name='call_page'),
     path('api/call/<str:call_id>/pending/', views.get_pending_call_api, name='get_pending_call_api'),
+    path('api/call/<str:call_id>/decline/', views.decline_call_api, name='decline_call_api'),
 
     #Live
     path('live/', live_views.live_list_view, name='live_list_view'),
@@ -53,6 +55,23 @@ urlpatterns = [
     path('live/<str:room_id>/', live_views.live_room_view, name='live_room_view'),
     path('api/live/rooms/', live_views.live_rooms_api, name='live_rooms_api'),
     path('api/live/<str:room_id>/end/', live_views.end_live_room_api, name='end_live_room_api'),
+
+    #group messaging
+    path('groups/', group_views.group_list_view, name='group_list_view'),
+    path('groups/create/', group_views.create_group_view, name='create_group_view'),
+    path('groups/search/', group_views.search_channels_view, name='search_channels_view'),   # NEW
+
+    path('group/<str:group_id>/', group_views.group_chat_view, name='group_chat_view'),
+    path('group/<str:group_id>/leave/', group_views.leave_group_view, name='leave_group_view'),
+    path('group/<str:group_id>/delete/', group_views.delete_group_view, name='delete_group_view'),
+    path('group/<str:group_id>/mute/', group_views.mute_group_view, name='mute_group_view'),
+    path('group/<str:group_id>/reset-invite/', group_views.reset_invite_view, name='reset_invite_view'),
+    path('group/<str:group_id>/members/', group_views.group_members_api, name='group_members_api'),
+    #path('invite/<str:code>/', group_views.join_via_invite_view, name='join_via_invite_view'),
+    path('group/<str:group_id>/search-users/', group_views.search_addable_users_api, name='group_search_users_api'),  # NEW
+
+    path('group/<str:group_id>/upload/', group_views.group_file_upload_view, name='group_file_upload_view'),
+    path('invite/<str:code>/', group_views.invite_landing_view, name='invite_landing_view'),   # CHANGED
 
     # Web Push
     path('api/push/subscribe/',   views.push_subscribe,        name='push_subscribe'),
