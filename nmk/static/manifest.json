@@ -7,17 +7,16 @@
   "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/static/images/launchericon-192x192.png",
+      "src": "/staticfiles/images/launchericon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/static/images/launchericon-512x512.png",
+      "src": "/staticfiles/images/launchericon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
   ],
-
   "share_target": {
     "action": "/share-upload/",
     "method": "POST",

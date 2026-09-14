@@ -476,6 +476,7 @@ def ring_call_push(self, call_id, recipient_id, notification_data, attempt=1):
 
 
 #Live
+'''
 from service_auth.only_message import live_store as store
 
 @shared_task
@@ -491,3 +492,91 @@ def cleanup_stale_live_rooms():
             removed += 1
 
     return f"Removed {removed} stale rooms."
+'''
+
+
+
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from service_auth.only_message import live_store as store
+from service_auth.only_message import group_store
+
+
+@shared_task
+def cleanup_stale_live_rooms():
+    rooms = store.list_active_rooms(limit=500)
+    removed = 0
+
+    channel_layer = get_channel_layer()
+
+    for room in rooms:
+        room_id = room["room_id"]
+
+        if not store.heartbeat_alive(room_id):
+            linked_gid = room.get("linked_group_id")
+
+            # Delete the stale live room
+            store.delete_room(room_id)
+            removed += 1
+
+            logger.info(
+                "Removed stale live room: %s (host: %s)",
+                room_id,
+                room.get("host_username"),
+            )
+
+            # Notify linked group, if any
+            if linked_gid:
+                try:
+                    msg = group_store.push_message(
+                        linked_gid,
+                        sender_id=0,
+                        sender_username='',
+                        sender_pic='',
+                        content='🔴 Live stream ended',
+                        message_type='system',
+                    )
+
+                    # Send system message to the group
+                    async_to_sync(
+                        channel_layer.group_send
+                    )(
+                        f"group_{linked_gid}",
+                        {
+                            "type": "group_message_event",
+                            "message": msg,
+                        },
+                    )
+
+                    # Notify connected clients that the live stream ended
+                    async_to_sync(
+                        channel_layer.group_send
+                    )(
+                        f"group_{linked_gid}",
+                        {
+                            "type": "live_ended_event",
+                        },
+                    )
+
+                    logger.info(
+                        "Sent live-ended notifications to group %s "
+                        "for stale live room %s",
+                        linked_gid,
+                        room_id,
+                    )
+
+                except Exception:
+                    logger.exception(
+                        "Could not notify group %s about ended "
+                        "live room %s",
+                        linked_gid,
+                        room_id,
+                    )
+
+    logger.info(
+        "Cleanup complete. Removed %s stale live room(s).",
+        removed,
+    )
+
+    return f"Removed {removed} stale live room(s)."

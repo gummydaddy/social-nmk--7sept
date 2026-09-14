@@ -16,6 +16,7 @@ urlpatterns = [
     path("open/", views.open_bridge, name="open_bridge"), #to open the shared links in the installed pwa
 
     path('profile/<int:user_id>/', views.profile, name='profile'),
+    path('profile/<str:username>/', views.profile, name='profile'),
     path('profile/', views.profile, name='profile'), #for unauthenticated users
 
     path('profile/<int:user_id>/edit/', views.edit_profile, name='edit_profile'),
@@ -119,8 +120,9 @@ urlpatterns = [
     path('media/<int:media_id>/download/', views.download_media, name='download_media'),
 
 
-
-
+    # in-reel comment drawer
+    path('media/<int:media_id>/comments/', views.get_media_comments, name='get_media_comments'),
+    path('media/<int:media_id>/comments/post/', views.post_media_comment_api, name='post_media_comment_api'),
 
     path('<str:username>/', views.profile_detail, name='profile_detail'), #new for sitemap purpose to add the username of users to the sitemap
     #re_path(r'^(?!following_media$)(?P<username>[\w.@+-]+)/$', views.profile_detail, name='profile_detail'),

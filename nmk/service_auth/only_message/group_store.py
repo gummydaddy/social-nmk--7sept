@@ -202,8 +202,15 @@ def list_user_groups(user_id):
         g = get_group(_safe_decode(gid))
         if g:
             groups.append(g)
-    groups.sort(key=lambda g: float(g.get("created_at", 0)), reverse=True)
+
+    def _sort_key(g):
+        return float(g.get("last_message_at") or g.get("created_at", 0))
+
+    groups.sort(key=_sort_key, reverse=True)
     return groups
+
+    #groups.sort(key=lambda g: float(g.get("created_at", 0)), reverse=True)
+    #return groups
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -440,7 +447,7 @@ def join_via_invite(code, user_id, username, pic):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def push_message(gid, sender_id, sender_username, sender_pic, content,
-                  message_type="text", file_url=None, reply_to=None):
+                  message_type="text", file_url=None, reply_to=None, live_room_id=None):
     r = _redis()
     group = get_group(gid)
     if not group:
@@ -465,6 +472,9 @@ def push_message(gid, sender_id, sender_username, sender_pic, content,
         "content": encrypted_content or "",
         "message_type": message_type,   # text | image | video | file | system
         "file_url": file_url,
+
+        "live_room_id": live_room_id,        # ← NEW
+
         "reply_to": reply_to,
         "timestamp": now,
         "edited": False,
@@ -473,6 +483,7 @@ def push_message(gid, sender_id, sender_username, sender_pic, content,
 
     r.rpush(_messages_key(gid), json.dumps(msg))
     r.ltrim(_messages_key(gid), -MESSAGE_CAP, -1)
+    r.hset(_gkey(gid), "last_message_at", str(now))   # ← NEW: drives recency sort
 
     # Return a plaintext copy for immediate WS broadcast (client never needs
     # to decrypt live traffic — same pattern as 1:1 chat).
@@ -549,6 +560,37 @@ def delete_message(gid, message_id, actor_id):
             r.lset(_messages_key(gid), i, json.dumps(m))
             return True, None
     return False, "Message not found."
+
+
+def _user_unread_key(uid):
+    return f"user:group_unread:{uid}"
+
+
+def increment_unread_for_others(gid, sender_id):
+    """Bump the unread counter for every member except the sender."""
+    r = _redis()
+    for m in list_members(gid):
+        uid = m["user_id"]
+        if str(uid) == str(sender_id):
+            continue
+        r.hincrby(_user_unread_key(uid), gid, 1)
+
+
+def get_all_unread(user_id):
+    """{gid: unread_count} for every group/channel this user belongs to."""
+    raw = _redis().hgetall(_user_unread_key(user_id))
+    return {_safe_decode(k): int(_safe_decode(v)) for k, v in raw.items()}
+
+
+def clear_unread(gid, user_id):
+    _redis().hdel(_user_unread_key(user_id), gid)
+
+
+def get_total_unread(user_id):
+    """Sum of all unread counts across every group/channel this user is in —
+    used for the global nav badge, independent of which page they're on."""
+    unread_map = get_all_unread(user_id)
+    return sum(unread_map.values())
 
 
 # ─────────────────────────────────────────────────────────────────────────────

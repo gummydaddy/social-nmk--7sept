@@ -3,6 +3,8 @@ from urllib import request
 import uuid
 import zipfile
 import pyrebase
+import requests
+
 from django import forms
 from django.forms import CharField, EmailField
 from django.shortcuts import render, redirect, get_object_or_404
@@ -63,6 +65,7 @@ from allauth.socialaccount.helpers import complete_social_login
 
 # Google security validation library
 from google.oauth2 import id_token
+#from google.auth.transport import requests as google_requests
 from google.auth.transport import requests
 
 logger = logging.getLogger(__name__)
@@ -296,9 +299,6 @@ def login_view(request):
 
 
 @csrf_exempt
-#@never_cache
-@cache_control(public=True, max_age=864000, s_maxage=864050)
-# must_revalidate=True)
 def login_view(request):
     if request.user.is_authenticated:
 
@@ -521,6 +521,244 @@ def google_one_tap_callback(request):
         messages.error(request, f"One-Tap Login crashed: {str(e)}")
         return redirect('/')
 
+'''
+
+
+@csrf_exempt
+def google_one_tap_callback(request):
+    """
+    Handles the backend token verification payload posted securely
+    by the frontend Google One-Tap prompt component.
+    """
+
+    if request.method != 'POST':
+        return redirect('/')
+
+    # ---------------------------------------------------------
+    # 1. Extract Google credential
+    # ---------------------------------------------------------
+    token = request.POST.get('credential')
+
+    # Fallback if the data arrived as JSON
+    if not token and request.body:
+        try:
+            body_data = json.loads(request.body.decode('utf-8'))
+            token = body_data.get('credential')
+        except Exception:
+            pass
+
+    if not token:
+        messages.error(request, "Google verification token missing.")
+        return redirect('/')
+
+    try:
+        # ---------------------------------------------------------
+        # 2. Get Google Client ID
+        # ---------------------------------------------------------
+        google_client_id = (
+            settings.SOCIALACCOUNT_PROVIDERS['google']['APP']['client_id']
+        )
+
+        # ---------------------------------------------------------
+        # 3. Verify Google ID token
+        # ---------------------------------------------------------
+        idinfo = id_token.verify_oauth2_token(
+            token,
+            google_requests.Request(),
+            #requests.Request(),
+            google_client_id,
+        )
+
+        email = idinfo.get('email')
+
+        if not email:
+            messages.error(
+                request,
+                "Unable to extract email from your Google Profile."
+            )
+            return redirect('/')
+
+        first_name = idinfo.get('given_name', '')
+        last_name = idinfo.get('family_name', '')
+
+        # ---------------------------------------------------------
+        # 4. Detect user's country from IP address
+        # ---------------------------------------------------------
+        forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+
+        if forwarded_for:
+            client_ip = forwarded_for.split(',')[0].strip()
+        else:
+            client_ip = request.META.get('REMOTE_ADDR')
+
+        detected_country = None
+
+        try:
+
+            # Fix: Always include a custom User-Agent to avoid being blocked
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                              'AppleWebKit/537.36 (KHTML, like Gecko) '
+                              'Chrome/120.0.0.0 Safari/537.36'
+            }
+
+            geo_response = requests.get(
+                f'https://ipapi.co/{client_ip}/json/',
+                headers=headers,
+                timeout=3
+            )
+
+            if geo_response.ok:
+                geo_data = geo_response.json()
+
+                # ipapi returns country_code such as:
+                # IN, US, GB, etc.
+                #detected_country = geo_data.get('country_code')
+                # Check for rate-limiting or explicit error responses
+                if not geo_data.get('error'):
+                    detected_country = geo_data.get('country_code')
+                else:
+                    logger.warning(
+                        f"ipapi API Error for IP {client_ip}: {geo_data.get('reason')}"
+                    )
+
+        except Exception as geo_err:
+            # Location detection must never prevent Google login
+            logger.warning(
+                f"Could not detect country for IP {client_ip}: {geo_err}"
+            )
+            detected_country = None
+
+        # ---------------------------------------------------------
+        # 5. Find existing Django user or create a new one
+        # ---------------------------------------------------------
+        try:
+            user = User.objects.get(email=email)
+
+        except User.DoesNotExist:
+
+            # -----------------------------------------------------
+            # 5A. Create Firebase account
+            # -----------------------------------------------------
+            try:
+                random_password = User.objects.make_random_password(
+                    length=16
+                )
+
+                auth.create_user_with_email_and_password(
+                    email,
+                    random_password
+                )
+
+            except Exception as fb_err:
+                # Firebase user may already exist
+                if "EMAIL_EXISTS" not in str(fb_err):
+                    raise fb_err
+
+            # -----------------------------------------------------
+            # 5B. Generate username
+            # -----------------------------------------------------
+            email_prefix = email.split('@')[0]
+
+            clean_username = "".join(
+                c for c in email_prefix
+                if c.isalnum() or c in '._-'
+            )[:20]
+
+            if not clean_username:
+                clean_username = f"user_{uuid.uuid4().hex[:8]}"
+
+            # -----------------------------------------------------
+            # 5C. Ensure username uniqueness
+            # -----------------------------------------------------
+            if User.objects.filter(username=clean_username).exists():
+                clean_username = (
+                    f"{clean_username}_{uuid.uuid4().hex[:4]}"
+                )
+
+            # -----------------------------------------------------
+            # 5D. Create Django user
+            #
+            # Your post_save signal will automatically create
+            # Profile.objects.create(user=user)
+            # -----------------------------------------------------
+            user = User.objects.create_user(
+                username=clean_username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name
+            )
+
+        # ---------------------------------------------------------
+        # 6. Get the Profile created by your signal
+        # ---------------------------------------------------------
+        profile = user.profile
+
+        # ---------------------------------------------------------
+        # 7. Save detected country
+        # ---------------------------------------------------------
+        if detected_country:
+            profile.country = detected_country
+            profile.save(update_fields=['country'])
+
+        # ---------------------------------------------------------
+        # 8. Login
+        # ---------------------------------------------------------
+        login(
+            request,
+            user,
+            backend='django.contrib.auth.backends.ModelBackend'
+        )
+
+        # ---------------------------------------------------------
+        # 9. Remember Me - 14 days
+        # ---------------------------------------------------------
+        request.session.set_expiry(
+            60 * 60 * 24 * 14
+        )
+
+        # ---------------------------------------------------------
+        # 10. Redirect to feed
+        # ---------------------------------------------------------
+        response = redirect('/feed')
+
+        # ---------------------------------------------------------
+        # 11. Username cookie
+        # ---------------------------------------------------------
+        response.set_cookie(
+            'username',
+            user.username,
+            max_age=60 * 60 * 24 * 14,
+            httponly=False,
+            samesite='Lax'
+        )
+
+        return response
+
+    except KeyError:
+        messages.error(
+            request,
+            "Google APP configurations missing inside settings.py."
+        )
+        return redirect('/')
+
+    except ValueError:
+        messages.error(
+            request,
+            "Security signature validation failed for Google payload."
+        )
+        return redirect('/')
+
+    except Exception as e:
+        logger.exception("Google One-Tap Login crashed")
+
+        messages.error(
+            request,
+            f"One-Tap Login crashed: {str(e)}"
+        )
+        return redirect('/')
+'''
+
 
 
 @staff_member_required
@@ -588,15 +826,13 @@ def password_reset(request):
     return render(request, 'password_reset.html', {'form': form})
 
 @login_required
-@cache_control(public=True, max_age=864000, s_maxage=864050)
-# must_revalidate=True)
 def landing_page(request):
     cache_key = f'user_{request.user.id}_username'
     user_username = cache.get(cache_key)
     #user_username = cache.get(f'user_{request.user.id}')
     if not user_username:
         user_username = request.user.username
-        cache.set(cache_key, user_username, timeout=60 * 60 * 24 * 10)  # Cache for 1 day
+        cache.set(cache_key, user_username, timeout=60 * 60 * 24 * 30)  # Cache for 1 day
         #cache.set(f'user_{request.user.id}', user_username, timeout=3600)
     try:
         user_card = request.user.card

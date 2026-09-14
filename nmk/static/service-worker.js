@@ -1,4 +1,4 @@
-const CACHE_NAME = 'socyfie-v3.1.4';
+const CACHE_NAME = 'socyfie-v3.1.6';
 
 // Minimal pre-cache list — only truly static assets that never redirect
 const PRE_CACHE_URLS = [
@@ -9,17 +9,16 @@ const PRE_CACHE_URLS = [
   "/static/images/apple-touch-icon.png",
   "/static/images/favicon.ico",
   "/static/images/favicon.svg",
-  "/templates/user_profile/following_media.html",
+  //"/templates/user_profile/following_media.html",
   "/templates/user_profile/media_detail.html",
   "/templates/user_profile/profile.html",
-  "/templates/landings/landing_page.html",
-  "/static/js/install-pwa.js",
+  //"/templates/landings/landing_page.html",
   "/static/js/pull_to_refresh.js",
   "/feed/",
   "/explore_me/",
   "/upload_media/",
   "/notion_home/",
-  "/landing_page/",
+  //"/landing_page/",
 ];
 
 
@@ -97,7 +96,7 @@ self.addEventListener('fetch', function (event) {
 
   // 6. HTML files (shouldn't exist under /static/ but guard anyway)
   if (url.pathname.slice(-5) === '.html' ||
-      url.pathname.slice(-4) === '.htm') { return; }
+    url.pathname.slice(-4) === '.htm') { return; }
 
   // ── Cache-first for verified /static/ assets ─────────────────────────────
   event.respondWith(
@@ -136,20 +135,20 @@ self.addEventListener('push', function (event) {
   } catch (_) {
     payload = {
       title: 'Socyfie',
-      body : event.data ? event.data.text() : 'New notification',
+      body: event.data ? event.data.text() : 'New notification',
     };
   }
 
   var title = payload.title || 'Socyfie';
   var options = {
-    body              : payload.body   || '',
-    icon              : payload.icon   || '/static/images/android-icon-192x192.png',
-    badge             : payload.badge  || '/static/images/android-icon-192x192.png',
-    tag               : payload.tag    || 'socyfie',
-    renotify          : true,
+    body: payload.body || '',
+    icon: payload.icon || '/static/images/android-icon-192x192.png',
+    badge: payload.badge || '/static/images/android-icon-192x192.png',
+    tag: payload.tag || 'socyfie',
+    renotify: true,
     requireInteraction: payload.requireInteraction === true,
-    data              : payload,
-    vibrate           : [200, 100, 200],
+    data: payload,
+    vibrate: [200, 100, 200],
   };
 
   if (payload.type === 'incoming_call') {
@@ -178,7 +177,7 @@ self.addEventListener('notificationclick', function (event) {
       fetch('/message/api/call/' + data.call_id + '/decline/', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      }).catch(function () {})
+      }).catch(function () { })
     );
     return;
   }

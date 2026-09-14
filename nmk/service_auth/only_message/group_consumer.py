@@ -56,6 +56,9 @@ class GroupConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
 
+        await sync_to_async(store.clear_unread)(self.gid, self.user.id)   # ← THIS LINE — must be present
+
+
         recent = await sync_to_async(store.get_messages)(self.gid, limit=50)
         members = await sync_to_async(store.list_members)(self.gid)
         pinned = await sync_to_async(store.list_pinned)(self.gid)
@@ -130,6 +133,8 @@ class GroupConsumer(AsyncWebsocketConsumer):
         )
         if not msg:
             return
+
+        await sync_to_async(store.increment_unread_for_others)(self.gid, self.user.id)   # ← NEW
 
         await self.channel_layer.group_send(self.group_name, {
             'type': 'group_message_event',
@@ -390,3 +395,16 @@ class GroupConsumer(AsyncWebsocketConsumer):
 
     async def _ping(self, data):
         await self.send(text_data=json.dumps({'type': 'pong'}))
+
+
+
+    async def live_started_event(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'live_started',
+            'room_id': event['room_id'],
+            'title': event.get('title', ''),
+            'started_by': event.get('started_by', ''),
+        }))
+
+    async def live_ended_event(self, event):
+        await self.send(text_data=json.dumps({'type': 'live_ended'}))

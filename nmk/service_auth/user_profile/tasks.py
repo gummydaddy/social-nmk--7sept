@@ -537,7 +537,7 @@ def process_media_upload(self, media_id, temp_file_path, file_name, media_type, 
 '''
 
 
-
+'''
 @shared_task(bind=True, max_retries=3, soft_time_limit=130, time_limit=70, acks_late=True)
 def process_profile_images(self, profile_id):
     try:
@@ -618,6 +618,357 @@ def process_profile_images(self, profile_id):
     except Exception as e:
         logger.error(f"Failed to process profile images for profile {profile_id}: {e}")
         self.retry(exc=e)
+
+'''
+
+
+import os
+import logging
+from io import BytesIO
+
+from celery import shared_task
+from celery.exceptions import SoftTimeLimitExceeded
+
+from django.core.files import File
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.exceptions import ObjectDoesNotExist
+
+from PIL import Image, ImageOps
+
+from .models import Profile
+from .storage import CompressedMediaStorage
+
+
+logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# IMAGE SETTINGS
+# ============================================================
+
+@shared_task(
+    bind=True,
+    max_retries=3,
+    soft_time_limit=130,
+    time_limit=70,
+    acks_late=True,
+)
+def process_profile_images(self, profile_id):
+
+    try:
+
+        # =====================================================
+        # GET PROFILE
+        # =====================================================
+
+        try:
+            profile = Profile.objects.get(id=profile_id)
+
+        except ObjectDoesNotExist:
+            logger.error(
+                f"Profile {profile_id} not found. Will not retry."
+            )
+            return
+
+        storage = CompressedMediaStorage()
+
+        # =====================================================
+        # IMAGE PROCESSING FUNCTION
+        # =====================================================
+
+        def process_image(image_field, output_size):
+
+            if not image_field:
+                return None
+
+            original_name = image_field.name
+
+            logger.info(
+                f"Opening profile image: {original_name}"
+            )
+
+            # -------------------------------------------------
+            # Open image from storage
+            # -------------------------------------------------
+
+            with default_storage.open(
+                original_name,
+                "rb"
+            ) as f:
+
+                image = Image.open(f)
+
+                # Force Pillow to load the image completely
+                image.load()
+
+            # -------------------------------------------------
+            # EXIF ORIENTATION
+            # -------------------------------------------------
+
+            try:
+
+                image = ImageOps.exif_transpose(image)
+
+                logger.info(
+                    f"Applied EXIF orientation to "
+                    f"{original_name}"
+                )
+
+            except Exception as e:
+
+                logger.warning(
+                    f"EXIF orientation failed for "
+                    f"profile {profile_id}: {e}"
+                )
+
+            # -------------------------------------------------
+            # RESIZE
+            # -------------------------------------------------
+            #
+            # output_size is the profile-specific maximum:
+            #
+            # profile picture -> 400 x 400
+            # cover photo      -> 1280 x 720
+            #
+            # MAX_IMAGE_DIMENSION is an additional safety limit.
+            # -------------------------------------------------
+
+            max_width = min(
+                output_size[0],
+                MAX_IMAGE_DIMENSION
+            )
+
+            max_height = min(
+                output_size[1],
+                MAX_IMAGE_DIMENSION
+            )
+
+            image.thumbnail(
+                (max_width, max_height),
+                Image.LANCZOS
+            )
+
+            logger.info(
+                f"Resized {original_name} "
+                f"to {image.size}"
+            )
+
+            # -------------------------------------------------
+            # CONVERT IMAGE MODE
+            # -------------------------------------------------
+
+            if image.mode != "RGB":
+                image = image.convert("RGB")
+
+            # -------------------------------------------------
+            # SAVE AS WEBP
+            # -------------------------------------------------
+
+            buffer = BytesIO()
+
+            image.save(
+                buffer,
+                format="WEBP",
+                quality=IMAGE_QUALITY,
+                method=6
+            )
+
+            buffer.seek(0)
+
+            # -------------------------------------------------
+            # GENERATE WEBP NAME
+            # -------------------------------------------------
+
+            webp_name = (
+                os.path.splitext(original_name)[0]
+                + ".webp"
+            )
+
+            return {
+                "content": ContentFile(
+                    buffer.getvalue(),
+                    name=webp_name
+                ),
+                "original_name": original_name,
+            }
+
+        # =====================================================
+        # PROCESS PROFILE PICTURE
+        # =====================================================
+
+        if profile.profile_picture:
+
+            logger.info(
+                f"Processing profile picture for "
+                f"user {profile.user.username}"
+            )
+
+            result = process_image(
+                profile.profile_picture,
+                output_size=(400, 400)
+            )
+
+            if result:
+
+                old_name = result["original_name"]
+                content = result["content"]
+
+                # -------------------------------------------------
+                # Upload new WebP first
+                # -------------------------------------------------
+
+                new_name = storage.save(
+                    content.name,
+                    content
+                )
+
+                logger.info(
+                    f"Saved processed profile picture: "
+                    f"{new_name}"
+                )
+
+                # -------------------------------------------------
+                # Delete old image ONLY after successful upload
+                # -------------------------------------------------
+
+                if (
+                    old_name != new_name
+                    and storage.exists(old_name)
+                ):
+
+                    try:
+
+                        storage.delete(old_name)
+
+                        logger.info(
+                            f"Deleted original profile picture: "
+                            f"{old_name}"
+                        )
+
+                    except Exception as e:
+
+                        logger.warning(
+                            f"Failed to delete original "
+                            f"profile picture {old_name}: {e}"
+                        )
+
+                # -------------------------------------------------
+                # Update model field
+                # -------------------------------------------------
+
+                profile.profile_picture.name = new_name
+
+        # =====================================================
+        # PROCESS COVER PHOTO
+        # =====================================================
+
+        if profile.cover_photo:
+
+            logger.info(
+                f"Processing cover photo for "
+                f"user {profile.user.username}"
+            )
+
+            result = process_image(
+                profile.cover_photo,
+                output_size=(1280, 720)
+            )
+
+            if result:
+
+                old_name = result["original_name"]
+                content = result["content"]
+
+                # -------------------------------------------------
+                # Upload new WebP first
+                # -------------------------------------------------
+
+                new_name = storage.save(
+                    content.name,
+                    content
+                )
+
+                logger.info(
+                    f"Saved processed cover photo: "
+                    f"{new_name}"
+                )
+
+                # -------------------------------------------------
+                # Delete old image ONLY after successful upload
+                # -------------------------------------------------
+
+                if (
+                    old_name != new_name
+                    and storage.exists(old_name)
+                ):
+
+                    try:
+
+                        storage.delete(old_name)
+
+                        logger.info(
+                            f"Deleted original cover photo: "
+                            f"{old_name}"
+                        )
+
+                    except Exception as e:
+
+                        logger.warning(
+                            f"Failed to delete original "
+                            f"cover photo {old_name}: {e}"
+                        )
+
+                # -------------------------------------------------
+                # Update model field
+                # -------------------------------------------------
+
+                profile.cover_photo.name = new_name
+
+        # =====================================================
+        # SAVE PROFILE
+        # =====================================================
+
+        profile.save(
+            update_fields=[
+                "profile_picture",
+                "cover_photo",
+            ]
+        )
+
+        logger.info(
+            f"Profile images processed successfully "
+            f"for user {profile.user.username}"
+        )
+
+    # =========================================================
+    # CELERY TIME LIMIT
+    # =========================================================
+
+    except SoftTimeLimitExceeded:
+
+        logger.error(
+            f"Profile image task exceeded time limit "
+            f"for profile {profile_id}"
+        )
+
+        return
+
+    # =========================================================
+    # ANY OTHER ERROR
+    # =========================================================
+
+    except Exception as e:
+
+        logger.exception(
+            f"Failed to process profile images "
+            f"for profile {profile_id}"
+        )
+
+        raise self.retry(
+            exc=e,
+            countdown=60
+        )
 
 
 
@@ -855,6 +1206,98 @@ def precompute_related_coview_media():
         logger.exception(f"Error precomputing co-view relations: {e}")
         return f"error:{str(e)}"
 
+
+# =====================================================================================
+# ADD to service_auth/user_profile/tasks.py (anywhere near precompute_related_coview_media).
+#
+# On-demand, single-media companion to `precompute_related_coview_media`.
+#
+# Why this exists: the batch task only runs on a schedule (every 15-30 min per
+# the existing docstring), so brand-new media has NO co-view cache yet the
+# first few times someone opens it in the reel. `explore_detail` now computes
+# a small LIVE fallback synchronously for that one request (capped, cheap) and
+# fires this task async so the *next* viewer gets the properly-computed,
+# cached version — same story as the cold-start pattern already used for
+# `build_user_recommendations_WITH_BLOCK_FILTER`.
+# =====================================================================================
+
+@shared_task
+def precompute_single_media_coview(media_id):
+    """
+    Same overlap-counting logic as `precompute_related_coview_media`, scoped
+    to ONE media item. Call this .delay(media_id) whenever explore_detail
+    finds an empty media:related_coview:{media_id} cache so the item gets a
+    proper cached entry before the next viewer needs it.
+    """
+    from .models import Media
+
+    redis_conn = get_redis_connection("default")
+
+    try:
+        media = Media.objects.only('id', 'category', 'is_private', 'created_at').get(
+            id=media_id, is_private=False
+        )
+    except Media.DoesNotExist:
+        return f"skip:media_{media_id}_not_found_or_private"
+
+    try:
+        viewer_ids_raw = redis_conn.zrevrange(
+            f"media:viewed_by:{media_id}", 0, CO_VIEW_PRECOMPUTE_MAX_VIEWERS - 1
+        )
+
+        if not viewer_ids_raw:
+            return f"skip:{media_id}_no_viewers_yet"
+
+        overlap_counter = defaultdict(int)
+
+        for viewer_id_raw in viewer_ids_raw:
+            viewer_id = viewer_id_raw.decode() if isinstance(viewer_id_raw, bytes) else viewer_id_raw
+
+            viewed_raw = redis_conn.zrevrange(
+                f"user:viewed:{viewer_id}", 0, CO_VIEW_PRECOMPUTE_MAX_HISTORY - 1
+            )
+
+            for mid_raw in viewed_raw:
+                mid = mid_raw.decode() if isinstance(mid_raw, bytes) else mid_raw
+                mid_int = int(mid)
+                if mid_int != media_id:
+                    overlap_counter[mid_int] += 1
+
+        coview_key = f"media:related_coview:{media_id}"
+
+        if not overlap_counter:
+            redis_conn.delete(coview_key)
+            return f"skip:{media_id}_no_overlap"
+
+        top_candidates = dict(
+            sorted(overlap_counter.items(), key=lambda x: x[1], reverse=True)[:CO_VIEW_PRECOMPUTE_MAX_CANDIDATES]
+        )
+
+        redis_conn.delete(coview_key)
+        score_dict = {str(mid): float(count) for mid, count in top_candidates.items()}
+        redis_conn.zadd(coview_key, score_dict)
+        redis_conn.expire(coview_key, CO_VIEW_PRECOMPUTE_TTL)
+
+        return f"success:{media_id}:{len(top_candidates)}_candidates"
+
+    except Exception as e:
+        logger.warning(f"precompute_single_media_coview failed for media {media_id}: {e}")
+        return f"error:{str(e)}"
+
+
+# =====================================================================================
+# ADD to service_auth/user_profile/tasks.py (anywhere near precompute_related_coview_media).
+#
+# On-demand, single-media companion to `precompute_related_coview_media`.
+#
+# Why this exists: the batch task only runs on a schedule (every 15-30 min per
+# the existing docstring), so brand-new media has NO co-view cache yet the
+# first few times someone opens it in the reel. `explore_detail` now computes
+# a small LIVE fallback synchronously for that one request (capped, cheap) and
+# fires this task async so the *next* viewer gets the properly-computed,
+# cached version — same story as the cold-start pattern already used for
+# `build_user_recommendations_WITH_BLOCK_FILTER`.
+# =====================================================================================
 
 
 @shared_task

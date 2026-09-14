@@ -6,24 +6,28 @@
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 
     <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-N3MB6KL6');</script>
+    <script>(function (w, d, s, l, i) {
+            w[l] = w[l] || []; w[l].push({
+                'gtm.start':
+                    new Date().getTime(), event: 'gtm.js'
+            }); var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+                    'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-N3MB6KL6');</script>
     <!-- End Google Tag Manager -->
 
     <!-- Google tag (gtag.js) google analytics-->
     <script src="https://www.googletagmanager.com/gtag/js?id=G-MQ4Q1F4FCE" async defer></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-      gtag('config', 'G-MQ4Q1F4FCE');
+        gtag('config', 'G-MQ4Q1F4FCE');
     </script>
 
     <!--for google search console-->
@@ -79,7 +83,7 @@
 
     <!--app install related-->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <script src="{% static 'js/install-pwa.js' %}" async defer></script>
+    <script src="{% static 'js/install-pwa.js' %}"></script>
     <script src="{% static 'js/day_night.js' %}" async defer></script>
     <!--app install related-->
 
@@ -90,18 +94,45 @@
             0% {
                 background-position: 0% 50%;
             }
+
             100% {
                 background-position: 100% 50%;
             }
         }
 
-        main {
+        < !--double tap zoom and normal screen on pinch relese-->html,
+        body {
+            touch-action: manipulation;
+        }
+
+        /*
+         * Media that can be pinch-zoomed.
+         */
+        .pinch-zoom-media {
+            touch-action: pan-x pan-y;
+            transform-origin: center center;
+            will-change: transform;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /*
+         * Prevent Safari's native image interaction.
+         */
+        .pinch-zoom-media img,
+        .pinch-zoom-media video {
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+
+        < !--double tap zoom and normal screen on pinch relese-->main {
             transition: margin-right 0.5s;
             padding: 24px;
             overflow-y: hidden;
             overflow-x: hidden;
         }
-        
+
 
         .profile-container {
             max-width: 800px;
@@ -139,14 +170,17 @@
             width: 150px;
             border-radius: 40%;
             object-fit: cover;
-            bottom: 3px;  /* Half the height of the profile picture */
+            bottom: 3px;
+            /* Half the height of the profile picture */
             left: 50%;
             transform: translateX(-25%);
-            border: 4px solid #fff;  /* Optional: adds a white border around the profile picture */
+            border: 4px solid #fff;
+            /* Optional: adds a white border around the profile picture */
         }
 
         .profile-info {
-            margin-top: auto;  /* To account for the overlapping profile picture */
+            margin-top: auto;
+            /* To account for the overlapping profile picture */
             text-align: left;
         }
 
@@ -159,7 +193,8 @@
             background-color: #f8f9fa;
             margin: 0;
             padding: 0;
-            padding-bottom: 60px; /* Add padding equal to the footer height */
+            padding-bottom: 60px;
+            /* Add padding equal to the footer height */
 
             position: static !important;
             top: 0px !important;
@@ -171,7 +206,17 @@
             box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
             border-radius: 20px;
             position: relative;
-            {%comment%}top: 20px;{%endcomment%}
+
+                {
+                %comment%
+            }
+
+            top: 20px;
+
+                {
+                %endcomment%
+            }
+
             transition: background-color 0.3s ease;
         }
 
@@ -179,19 +224,23 @@
         .night-mode {
             background-color: black;
         }
-        
-        .night-mode > * {
+
+        .night-mode>* {
             color: white;
         }
 
-        
-        .home a, .notion a, .profile a {
+
+        .home a,
+        .notion a,
+        .profile a {
             color: #333;
             text-decoration: none;
             padding: 10px;
         }
 
-        .home a:hover, .notion a:hover, .profile a:hover {
+        .home a:hover,
+        .notion a:hover,
+        .profile a:hover {
             color: #000;
         }
 
@@ -227,7 +276,8 @@
             transform-style: preserve-3d;
         }
 
-        .card-front, .card-back {
+        .card-front,
+        .card-back {
             position: relative;
             width: 100%;
             height: 100%;
@@ -254,15 +304,16 @@
             --header-height: 15px;
         }
 
-        header{
-            position: fixed; 
+        header {
+            position: fixed;
             top: -14px;
             height: var(--header-height);
             max-width: 710px;
             margin: auto;
             left: 0;
             right: 0;
-            z-index: 1000; /* keep header above content */
+            z-index: 1000;
+            /* keep header above content */
         }
 
         .class-main {
@@ -287,7 +338,8 @@
             flex: .6;
             display: flex;
             /*align-items: center;*/
-            margin-bottom: 0 !important; /* overrides mb-4 */
+            margin-bottom: 0 !important;
+            /* overrides mb-4 */
             min-width: 0;
         }
 
@@ -305,6 +357,7 @@
 
         /* Reduce spacing on small screens */
         @media (max-width: 576px) {
+
             .openbtn,
             .messagebtn {
                 background-color: #4F46E5;
@@ -325,7 +378,7 @@
             }
         }
 
-        .action-buttons{
+        .action-buttons {
             margin-top: 10px;
         }
 
@@ -404,16 +457,19 @@
 
         .content-area {
             display: flex;
-            flex-wrap: wrap; /* Allow items to wrap to the next row */
-            justify-content: space-around; /* Distribute items evenly */
-            align-items: flex-start; /* Align items to the top of the container */
+            flex-wrap: wrap;
+            /* Allow items to wrap to the next row */
+            justify-content: space-around;
+            /* Distribute items evenly */
+            align-items: flex-start;
+            /* Align items to the top of the container */
             margin: 20px 0;
             padding: 20px;
             border: 4px solid lightgray;
             border-radius: 4px;
             background-color: white;
         }
-                  
+
 
         .upload-item {
             background-color: white;
@@ -421,12 +477,12 @@
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-    
-        .upload-item + .upload-item {
+
+        .upload-item+.upload-item {
             margin-top: 20px;
         }
 
-    
+
         .upload-item img,
         .upload-item video {
             width: 100%;
@@ -461,7 +517,8 @@
             overflow-x: hidden;
             transition: 0.5s;
             padding-top: 60px;
-            z-index: 9999; /* Highest z-index for the sidebar */
+            z-index: 9999;
+            /* Highest z-index for the sidebar */
         }
 
         /* Backdrop styling */
@@ -471,9 +528,12 @@
             left: 0;
             height: 100%;
             width: 100%;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent black backdrop */
-            z-index: 9998; /* Just below the sidebar */
-            display: none; /* Hidden by default */
+            background: rgba(0, 0, 0, 0.5);
+            /* Semi-transparent black backdrop */
+            z-index: 9998;
+            /* Just below the sidebar */
+            display: none;
+            /* Hidden by default */
         }
 
 
@@ -484,9 +544,9 @@
             color: #ffffff;
             display: block;
             transition: 0.3s;
-    
+
         }
-    
+
 
         .sidebar a:hover {
             color: #f1f1f1;
@@ -504,16 +564,23 @@
             padding: 2px;
         }
 
-          
+
         form {
             width: auto;
             margin-top: -10px;
             background-color: #fffff;
             margin-bottom: 5px;
-            
-        } 
-        
-        {% comment %} following media {% endcomment %}
+
+        }
+
+            {
+            % comment %
+        }
+
+        following media {
+            % endcomment %
+        }
+
         .media-wrapper {
             max-width: 100%;
             margin: 0 auto;
@@ -524,26 +591,34 @@
             border-color: #333 !important;
             color: #fff !important;
         }
-    
+
         .media-item {
-            content-visibility:auto;
+            content-visibility: auto;
             border: 0px solid #ddd;
             padding: 1px;
             border-radius: 2px;
-           {% comment %} box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);{% endcomment %}
+
+                {
+                % comment %
+            }
+
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+                {
+                % endcomment %
+            }
         }
 
-        .row>*{ 
+        .row>* {
             margin-top: initial
-
         }
 
-    
+
         .media-content img,
         .media-content video {
-            content-visibility:auto;
+            content-visibility: auto;
             Display":flex;
-            width: 85%;
+ width: 85%;
             height: 580px;
             justify-content: center;
             align-items: center;
@@ -562,7 +637,7 @@
         .media-wrapper.night-mode a {
             color: #fff !important;
         }
-    
+
         .text-center {
             text-align: center;
         }
@@ -571,16 +646,17 @@
             margin: 0;
             font-family: inherit;
             font-size: small;
-          }
+        }
 
         nav.navbar {
-           z-index: 1950;
-           border-radius: 12px;
-           margin-bottom: 10px;
+            z-index: 1950;
+            border-radius: 12px;
+            margin-bottom: 10px;
 
         }
+
         .navbar-dark .navbar-nav .nav-link {
-          color: white;
+            color: white;
         }
 
         .mention-with-avatar {
@@ -588,343 +664,354 @@
             align-items: center;
             gap: 4px;
         }
-        
     </style>
-<!--for pull-to-refresh gesture-->
-<style>
-#pull-to-refresh {
-    position: relative;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 0;
-    background: #f1f1f1;
-    text-align: center;
-    overflow: hidden;
-    font-family: sans-serif;
-    font-size: 14px;
-    color: #555;
-    transition: height 0.3s ease;
-    z-index: 9999;
-}
+    <!--for pull-to-refresh gesture-->
+    <style>
+        #pull-to-refresh {
+            position: relative;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            background: #f1f1f1;
+            text-align: center;
+            overflow: hidden;
+            font-family: sans-serif;
+            font-size: 14px;
+            color: #555;
+            transition: height 0.3s ease;
+            z-index: 9999;
+        }
 
-#pull-to-refresh .spinner {
-    margin: 10px auto;
-    width: 24px;
-    height: 24px;
-    border: 3px solid #ccc;
-    border-top: 3px solid #555;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: none;
-}
+        #pull-to-refresh .spinner {
+            margin: 10px auto;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #ccc;
+            border-top: 3px solid #555;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
 
-#pull-to-refresh.show-spinner .spinner {
-    display: inline-block;
-}
+        #pull-to-refresh.show-spinner .spinner {
+            display: inline-block;
+        }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-</style>
-<!--profile image with user name -->
-<style>
-.mention-with-avatar {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
 
-.mention-avatar {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-</style>
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <!--profile image with user name -->
+    <style>
+        .mention-with-avatar {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-<!--disable dragging-->
-<style>
-img {
-  pointer-events: none;       /* Prevent clicks, drag */
-  user-select: none;          /* Prevent selection */
-  -webkit-user-drag: none;    /* Disable image dragging in Safari */
-  -webkit-touch-callout: none; /* disables iOS Safari long-press menu */
+        .mention-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+    </style>
 
-}
-body {
-  user-select: none;          /* Disable selection globally */
-  -webkit-user-select: none;
-}
-</style>
+    <!--disable dragging-->
+    <style>
+        img {
+            pointer-events: none;
+            /* Prevent clicks, drag */
+            user-select: none;
+            /* Prevent selection */
+            -webkit-user-drag: none;
+            /* Disable image dragging in Safari */
+            -webkit-touch-callout: none;
+            /* disables iOS Safari long-press menu */
 
-<!--language support-->
-<style>
-/* Remove the top blue Google Translate bar */
-.goog-te-banner-frame.skiptranslate {
-    display: none !important;
-}
+        }
 
-/* Remove all Google Translate UI artifacts */
-.goog-logo-link {
-    display: none !important;
-}
-.goog-te-gadget {
-    font-size: 0 !important;
-}
-.goog-te-gadget span {
-    display: none !important;
-}
+        body {
+            user-select: none;
+            /* Disable selection globally */
+            -webkit-user-select: none;
+        }
+    </style>
 
-</style>
-<!--language support ends-->
-<!--new footer-->
-<style>
-/* =========================================
+    <!--language support-->
+    <style>
+        /* Remove the top blue Google Translate bar */
+        .goog-te-banner-frame.skiptranslate {
+            display: none !important;
+        }
+
+        /* Remove all Google Translate UI artifacts */
+        .goog-logo-link {
+            display: none !important;
+        }
+
+        .goog-te-gadget {
+            font-size: 0 !important;
+        }
+
+        .goog-te-gadget span {
+            display: none !important;
+        }
+    </style>
+    <!--language support ends-->
+    <!--new footer-->
+    <style>
+        /* =========================================
    MOBILE BOTTOM NAVIGATION
    ========================================= */
 
-.mobile-bottom-nav {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 12px;
-    z-index: 9999;
+        .mobile-bottom-nav {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 12px;
+            z-index: 9999;
 
-    display: flex;
-    justify-content: center;
+            display: flex;
+            justify-content: center;
 
-    pointer-events: none;
-}
-
-
-/* Main floating navigation container */
-.bottom-nav-inner {
-    width: calc(100% - 28px);
-    max-width: 800px;
-    height: 72px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-around;
-
-    background: rgba(255, 255, 255, 0.95);
-
-    border: 1px solid #e5e7eb;
-    border-radius: 38px;
-
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.10),
-        0 2px 8px rgba(0, 0, 0, 0.05);
-
-    padding: 4px 10px;
-
-    pointer-events: auto;
-
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
+            pointer-events: none;
+        }
 
 
-/* Each navigation item */
-.footer-icon {
-    flex: 1;
-    height: 100%;
+        /* Main floating navigation container */
+        .bottom-nav-inner {
+            width: calc(100% - 28px);
+            max-width: 800px;
+            height: 72px;
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
 
-    position: relative;
-}
+            background: rgba(255, 255, 255, 0.95);
 
+            border: 1px solid #e5e7eb;
+            border-radius: 38px;
 
-/* Navigation link */
-.footer-icon a {
-    width: 100%;
-    height: 100%;
+            box-shadow:
+                0 8px 30px rgba(0, 0, 0, 0.10),
+                0 2px 8px rgba(0, 0, 0, 0.05);
 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+            padding: 4px 10px;
 
-    text-decoration: none;
+            pointer-events: auto;
 
-    color: inherit;
-
-    font-size: 12px;
-    font-weight: 500;
-
-    -webkit-tap-highlight-color: transparent;
-}
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
 
 
-/* Normal icons */
-.footer-icon a > i {
-    font-size: 21px;
-    line-height: 1;
+        /* Each navigation item */
+        .footer-icon {
+            flex: 1;
+            height: 100%;
 
-    margin-bottom: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
 
-    transition:
-        transform 0.2s ease,
-        opacity 0.2s ease;
-}
-
-
-/* Labels */
-.footer-icon span {
-    font-size: 12px;
-    line-height: 1;
-
-    white-space: nowrap;
-}
+            position: relative;
+        }
 
 
-/* Hover / tap effect */
-.footer-icon a:hover > i {
-    transform: translateY(-2px);
-}
+        /* Navigation link */
+        .footer-icon a {
+            width: 100%;
+            height: 100%;
 
-.footer-icon a:active > i {
-    transform: scale(0.90);
-}
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+
+            text-decoration: none;
+
+            color: inherit;
+
+            font-size: 12px;
+            font-weight: 500;
+
+            -webkit-tap-highlight-color: transparent;
+        }
 
 
-/* =========================================
+        /* Normal icons */
+        .footer-icon a>i {
+            font-size: 21px;
+            line-height: 1;
+
+            margin-bottom: 6px;
+
+            transition:
+                transform 0.2s ease,
+                opacity 0.2s ease;
+        }
+
+
+        /* Labels */
+        .footer-icon span {
+            font-size: 12px;
+            line-height: 1;
+
+            white-space: nowrap;
+        }
+
+
+        /* Hover / tap effect */
+        .footer-icon a:hover>i {
+            transform: translateY(-2px);
+        }
+
+        .footer-icon a:active>i {
+            transform: scale(0.90);
+        }
+
+
+        /* =========================================
    UPLOAD BUTTON
    ========================================= */
 
-.upload-footer-icon {
-    margin-top: -28px;
+        .upload-footer-icon {
+            margin-top: -28px;
 
-    flex: 1.15;
+            flex: 1.15;
 
-    z-index: 2;
-}
-
-
-.upload-footer-icon a {
-    justify-content: flex-start;
-    padding-top: 0;
-}
+            z-index: 2;
+        }
 
 
-/* Floating upload circle */
-.upload-footer-circle {
-    width: 62px;
-    height: 62px;
-
-    border-radius: 50%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: inherit;
-
-    border: 6px solid #fff;
-
-    box-shadow:
-        0 5px 18px rgba(0, 0, 0, 0.12);
-
-    margin-bottom: 5px;
-
-    transition:
-        transform 0.2s ease,
-        box-shadow 0.2s ease;
-}
+        .upload-footer-icon a {
+            justify-content: flex-start;
+            padding-top: 0;
+        }
 
 
-/* Upload icon */
-.upload-footer-circle i {
-    font-size: 25px;
-    margin: 0;
-}
+        /* Floating upload circle */
+        .upload-footer-circle {
+            width: 62px;
+            height: 62px;
+
+            border-radius: 50%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: inherit;
+
+            border: 6px solid #fff;
+
+            box-shadow:
+                0 5px 18px rgba(0, 0, 0, 0.12);
+
+            margin-bottom: 5px;
+
+            transition:
+                transform 0.2s ease,
+                box-shadow 0.2s ease;
+        }
 
 
-/* Upload text */
-.upload-footer-icon span {
-    margin-top: 0;
-}
+        /* Upload icon */
+        .upload-footer-circle i {
+            font-size: 25px;
+            margin: 0;
+        }
 
 
-/* Upload interaction */
-.upload-footer-icon a:hover .upload-footer-circle {
-    transform: translateY(-3px);
-}
-
-.upload-footer-icon a:active .upload-footer-circle {
-    transform: scale(0.92);
-}
+        /* Upload text */
+        .upload-footer-icon span {
+            margin-top: 0;
+        }
 
 
-/* =========================================
+        /* Upload interaction */
+        .upload-footer-icon a:hover .upload-footer-circle {
+            transform: translateY(-3px);
+        }
+
+        .upload-footer-icon a:active .upload-footer-circle {
+            transform: scale(0.92);
+        }
+
+
+        /* =========================================
    MOBILE
    ========================================= */
 
-@media (max-width: 576px) {
+        @media (max-width: 576px) {
 
-    .mobile-bottom-nav {
-        bottom: 10px;
-    }
+            .mobile-bottom-nav {
+                bottom: 10px;
+            }
 
-    .bottom-nav-inner {
-        width: calc(100% - 24px);
-        height: 70px;
+            .bottom-nav-inner {
+                width: calc(100% - 24px);
+                height: 70px;
 
-        border-radius: 36px;
+                border-radius: 36px;
 
-        padding-left: 5px;
-        padding-right: 5px;
-    }
+                padding-left: 5px;
+                padding-right: 5px;
+            }
 
-    .footer-icon a > i {
-        font-size: 20px;
-        margin-bottom: 6px;
-    }
+            .footer-icon a>i {
+                font-size: 20px;
+                margin-bottom: 6px;
+            }
 
-    .footer-icon span {
-        font-size: 11px;
-    }
+            .footer-icon span {
+                font-size: 11px;
+            }
 
-    .upload-footer-circle {
-        width: 62px;
-        height: 62px;
-    }
+            .upload-footer-circle {
+                width: 62px;
+                height: 62px;
+            }
 
-    .upload-footer-circle i {
-        font-size: 24px;
-    }
-}
+            .upload-footer-circle i {
+                font-size: 24px;
+            }
+        }
 
 
-/* =========================================
+        /* =========================================
    VERY SMALL SCREENS
    ========================================= */
 
-@media (max-width: 360px) {
+        @media (max-width: 360px) {
 
-    .bottom-nav-inner {
-        width: calc(100% - 16px);
-    }
+            .bottom-nav-inner {
+                width: calc(100% - 16px);
+            }
 
-    .footer-icon a > i {
-        font-size: 18px;
-    }
+            .footer-icon a>i {
+                font-size: 18px;
+            }
 
-    .footer-icon span {
-        font-size: 10px;
-    }
+            .footer-icon span {
+                font-size: 10px;
+            }
 
-    .upload-footer-circle {
-        width: 56px;
-        height: 56px;
-    }
-}
-</style>
+            .upload-footer-circle {
+                width: 56px;
+                height: 56px;
+            }
+        }
+    </style>
 
     {% load static %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
@@ -937,125 +1024,124 @@ body {
     <!--script for including lazy loading-->
     <script src="{% static 'js/lazyloading.js' %}" async defer></script>
 
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-<!-- Popper -->
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <!-- Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
 
-<!-- Include Vue.js from a CDN -->
-<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
+    <!-- Include Vue.js from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 
-<!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 
-<!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<link rel="stylesheet" href="{% static 'css/sharing.css' %}">
-<script src="{% static 'js/sharing.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'css/sharing.css' %}">
+    <script src="{% static 'js/sharing.js' %}"></script>
 
-<link rel="stylesheet" href="{% static 'css/notifications.css' %}">
-<script src="{% static 'js/notifications.js' %}" async defer></script>
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+    <script src="{% static 'js/notifications.js' %}" async defer></script>
 
     <!--google one click login setup-->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!--google one click login setup-->
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes("instagram") && !window.matchMedia('(display-mode: standalone)').matches) {
-    const banner = document.createElement("div");
-    banner.style.cssText = `
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const ua = navigator.userAgent.toLowerCase();
+            if (ua.includes("instagram") && !window.matchMedia('(display-mode: standalone)').matches) {
+                const banner = document.createElement("div");
+                banner.style.cssText = `
       position: fixed; bottom: 0; left: 0; right: 0;
       background: #000; color: #fff; text-align: center;
       padding: 12px; font-size: 15px; z-index: 10000;
     `;
-    banner.textContent = ' Tap ⋯ and choose "Open in Safari" to view this in the Socyfie App';
-    document.body.appendChild(banner);
-  }
-});
-</script>
-<!--Onesignal push deferred-->
-<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-<script>
-  window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(async function(OneSignal) {
-    await OneSignal.init({
-      appId: "495037c9-c117-43c9-b57b-f8fe671c827f",
-      safari_web_id: "web.onesignal.auto.271ef36b-44de-4fef-87dc-9a2f81b1418e",
-      notifyButton: {
-        enable: true,
-      },
-    });
-  });
-</script>
-<!--Onesignal push deferred-->
+                banner.textContent = ' Tap ⋯ and choose "Open in Safari" to view this in the Socyfie App';
+                document.body.appendChild(banner);
+            }
+        });
+    </script>
+    <!--Onesignal push deferred-->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function (OneSignal) {
+            await OneSignal.init({
+                appId: "495037c9-c117-43c9-b57b-f8fe671c827f",
+                safari_web_id: "web.onesignal.auto.271ef36b-44de-4fef-87dc-9a2f81b1418e",
+                notifyButton: {
+                    enable: true,
+                },
+            });
+        });
+    </script>
+    <!--Onesignal push deferred-->
 </head>
 
-<body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}" data-user-id="{% if user.is_authenticated %}{{ request.user.id }}{% endif %}">
+<body style="padding-bottom: 60px;" data-authenticated="{% if user.is_authenticated %}true{% else %}false{% endif %}"
+    data-user-id="{% if user.is_authenticated %}{{ request.user.id }}{% endif %}">
 
     <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N3MB6KL6"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N3MB6KL6" height="0" width="0"
+            style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
 
     <!-- Main Content -->
-        <div class="content-container">
+    <div class="content-container">
 
-            <div id="mySidebar" class="sidebar">
-                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
-                <a>
-                    <div>
-                        <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
+        <div id="mySidebar" class="sidebar">
+            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">×</a>
+            <a>
+                <div>
+                    <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'">
                         <i class="fas fa-bell"></i>
-                        </button>
-                    </div>
-                </a>
-                <a>
-                    <form method="GET" action="{% url 'user_profile:search_users' %}">
-                        <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
-                        <button type="submit">Search</button>
-                    </form>
-                </a>
-
-
-                <a href="{% url 'user_profile:buddy_list' %}">
-                    <button type="button">View Buddies</button>
-                </a>
-                <a href="{% url 'user_profile:blocked_user_list' %}">
-                    <button type="button">View Blocked Users</button>
-                </a>
-
-                <a>
-                {% if request.user.is_authenticated %}
-                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>
-                {% endif %}
-                </a>
-
-                <a>
-                    <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
-                </a>
-
-                <a>
-                    <button onclick="toggleSocyfieTheme()">
-                        Change Theme
                     </button>
+                </div>
+            </a>
+            <a>
+                <form method="GET" action="{% url 'user_profile:search_users' %}">
+                    <input type="text" name="q" placeholder="Search users..." value="{{ query }}">
+                    <button type="submit">Search</button>
+                </form>
+            </a>
+
+
+            <a href="{% url 'user_profile:buddy_list' %}">
+                <button type="button">View Buddies</button>
+            </a>
+            <a href="{% url 'user_profile:blocked_user_list' %}">
+                <button type="button">View Blocked Users</button>
+            </a>
+
+            <a>
+                <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
+            </a>
+
+            <a>
+                <button onclick="toggleSocyfieTheme()">
+                    Change Theme
+                </button>
+            </a>
+
+            <a>
+                <div id="google_translate_element"></div>
+            </a>
+
+            <div class="footer-icon text-center py-3 flex justify-center items-center"
+                style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;">
+                <a href="{% url 'only_card:landing_page' %}"
+                    class="bg-black text-white px-4 py-2 rounded shadow-md flex items-center gap-2">
+                    <i class="fas fa-shield-alt"></i>
+                    Vault
                 </a>
 
-                <a><div id="google_translate_element"></div></a>
+            </div>
 
-                <div class="footer-icon text-center py-3 flex justify-center items-center" style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;">
-                    <a href="{% url 'only_card:landing_page' %}" class="bg-black text-white px-4 py-2 rounded shadow-md flex items-center gap-2">
-                        <i class="fas fa-shield-alt"></i>
-                        Vault
-                   </a>
-
-                </div>
-                
-                <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
-                <script>
+            <a href="{% url 'only_card:logout' %}" style="position: absolute; bottom: 50px;">Logout</a>
+            <script>
                 document.getElementById("logout-link").addEventListener("click", async function (e) {
                     e.preventDefault();
 
@@ -1073,166 +1159,214 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     window.location.href = "{% url 'only_card:logout' %}";
                 });
-                </script>
+            </script>
 
-            </div>
+        </div>
 
-            {% block header %}
-            <header style="background-color: #ffffff;">
-              <nav class="navbar navbar-expand-lg navbar-dark ">
+        {% block header %}
+        <header style="background-color: #ffffff;">
+            <nav class="navbar navbar-expand-lg navbar-dark ">
                 <div class="container  d-flex align-items-center">
-                  <div>
-                      <div>
-                          <h1 style="font-weight:650;">SOCYFIE<h1>
-                      </div>
-                      <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
-                          <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
-                          <button type="submit" class="fas fa-search"></button> 
-                      </form>
-                  </div>
-                  <a>
-                      <div>
-                          <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'" class="fas fa-bell">
-                          </button>
-                      </div>
+                    <div>
+                        <div>
+                            <h1 style="font-weight:650;">SOCYFIE<h1>
+                        </div>
 
-                      <div>
-                          <a href="{% url 'only_message:message_list_view' %}">
-                            <button class="messagebtn">💬</button>
-                          </a>
-                          <div>
-                              <a href="{% url 'only_message:group_list_view' %}" style="display:inline-block;margin:5px 0;padding:2px 3px;background:#4338ca;color:#fff;border-radius:10px;text-decoration:none;font-weight:480;">
-                                  👥G&C
-                              </a>
-                          </div>
-                      </div>
+                        <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
 
-                  </a>
+                            <input type="text" name="q" class="form-control me-2"
+                                placeholder="SOCYFIE Search descriptions, hashtags, users..."
+                                value="{{ request.GET.q|default:'' }}">
+
+                            <button type="submit" class="search-btn" aria-label="Search uploads">
+                                <i class="fas fa-search"></i>
+                            </button>
+
+                            <button type="submit" class="search-btn" formaction="{% url 'user_profile:search_users' %}"
+                                aria-label="Search users">
+                                <i class="fas fa-user"></i>
+                            </button>
+                        </form>
+
+                    </div>
+                    <a>
+                        <div>
+                            <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'"
+                                class="fas fa-bell">
+                            </button>
+                        </div>
+                        {% comment %}
+                        <div>
+                            <a href="{% url 'only_message:message_list_view' %}">
+                                <button class="messagebtn">💬</button>
+                            </a>
+                            {% endcomment %}
+
+                            <div>
+                                <a href="{% url 'only_message:group_list_view' %}" id="gc-nav-link"
+                                    style="display:inline-flex;align-items:center;gap:4px;margin:5px 0;padding:2px 3px;background:#4338ca;color:#fff;border-radius:10px;text-decoration:none;font-weight:480;position:relative;">
+                                    👥G&C
+                                    <span id="gc-nav-badge"
+                                        style="display:none;background:#dc2626;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 4px;border-radius:9px;align-items:center;justify-content:center;">0</span>
+                                </a>
+                            </div>
+
+                        </div>
+
+                    </a>
                 </div>
-              </nav>
+            </nav>
 
-              <div class="other-actions">
-                  <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
-                  <br>
-              </div>
-            </header>
-            {% endblock %}
-
-              <div class="other-actions">
-                  <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
-                  <br>
-              </div>
-            </header>
-            {% endblock %}
-            <main id="main" class="class-main">
-                {% block main_content %}
-                <!-- card_snippet.html -->
+            <div class="other-actions">
+                <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
                 <br>
-        
-                <a href="{% url 'only_card:upload_document' %}" >
-                    <button type="button">Upload Documents</button>
-                </a>
+            </div>
+        </header>
+        {% endblock %}
 
-                <div class="container my-5">
-                    <div class="row">
-                        <div class="col-12 text-center">
-                            <h1>Welcome, {{ user_username }}!</h1>
+        <div class="other-actions">
+            <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
+            <br>
+        </div>
+        </header>
+        {% endblock %}
+
+        <div class="other-actions">
+            <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
+            <br>
+        </div>
+        </header>
+        {% endblock %}
+        <main id="main" class="class-main">
+            {% block main_content %}
+            <!-- card_snippet.html -->
+            <br>
+
+            <a href="{% url 'only_card:upload_document' %}">
+                <button type="button">Upload Documents</button>
+            </a>
+
+            <div class="container my-5">
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <h1>Welcome, {{ user_username }}!</h1>
+                    </div>
+                </div>
+                <div class="row my-3">
+                    {% if user_uploads %}
+                    {% for upload in user_uploads %}
+                    <div class="col-md-4 mb-0">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ upload.file_name }}</h5>
+                                <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
+                                <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#fileModal{{ upload.id }}">View File</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="row my-3">
-                        {% if user_uploads %}
-                            {% for upload in user_uploads %}
-                                <div class="col-md-4 mb-0">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h5 class="card-title">{{ upload.file_name }}</h5>
-                                            <p class="card-text">Uploaded on: {{ upload.upload_date }}</p>
-                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#fileModal{{ upload.id }}">View File</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% if forloop.counter|divisibleby:3 %}
-                                    </div>
-                                    <div class="row">
-                                {% endif %}
-                            {% endfor %}
-                            <div class="col-12 text-center">
-                            </div>
-                        {% endif %}
+                    {% if forloop.counter|divisibleby:3 %}
+                </div>
+                <div class="row">
+                    {% endif %}
+                    {% endfor %}
+                    <div class="col-12 text-center">
                     </div>
+                    {% endif %}
+                </div>
 
-                    <!-- Modals for each file -->
-                    {% for upload in user_uploads %}
-                        <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1" aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="fileModal{{ upload.id }}Label">{{ upload.file_name }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p>Uploaded on: {{ upload.upload_date }}</p>
-                                        <p>Document Type: {{ upload.document_type }}</p>
-                                        <p>Country: {{ upload.country }}</p>
-                                            <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                            </form>
-                        
-                                        {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in upload.file.name|lower or ".gif" in upload.file.name|lower %}
-                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Image</a>
-                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Image</a>
+                <!-- Modals for each file -->
+                {% for upload in user_uploads %}
+                <div class="modal fade" id="fileModal{{ upload.id }}" tabindex="-1"
+                    aria-labelledby="fileModal{{ upload.id }}Label" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="fileModal{{ upload.id }}Label">{{ upload.file_name }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Uploaded on: {{ upload.upload_date }}</p>
+                                <p>Document Type: {{ upload.document_type }}</p>
+                                <p>Country: {{ upload.country }}</p>
+                                <form method="post" action="{% url 'only_card:delete_upload' upload.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                </form>
 
-                                        {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".avi" in upload.file.name|lower or ".webm" in upload.file.name|lower %}
-                                           {% comment %}<video width="100%" height="auto" controls>
-                                                <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
-                                                Your browser does not support the video tag.
-                                            </video>{% endcomment %}
-                                            <a href="{% url 'only_card:view_video_page' upload.id %}" class="btn btn-primary">Preview Video</a>
-                                            <a href="{% url 'only_card:view_media' upload.id %}" download>Download Video</a>
+                                {% if ".jpg" in upload.file.name|lower or ".jpeg" in upload.file.name|lower or ".png" in
+                                upload.file.name|lower or ".gif" in upload.file.name|lower %}
+                                <a href="{% url 'only_card:view_video_page' upload.id %}"
+                                    class="btn btn-primary">Preview Image</a>
+                                <a href="{% url 'only_card:view_media' upload.id %}" download>Download Image</a>
 
-                                        {% elif upload.is_folder %}
-                                            <a href="{% url 'only_card:view_folder' upload.id %}">
-                                                <i class="fa fa-folder"></i> {{ upload.file_name }}
-                                            </a>
-                                        
-                                        {% elif ".pdf" in upload.file.name|lower %}
-                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf" width="100%" height="500px" />
-                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview pdf Document</a>
-                                            <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name }}</a>
-    
-                                        {% elif ".docx" in upload.file.name|lower or ".doc" in upload.file.name|lower %}
-                                            <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview Word Document</a>
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
-    
-                                        {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
-                                            <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
-                                            <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview Excel Document</a>
-                                            <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
-                                            <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View Excel Sheet</a>
-                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
-                                            <!-- Button to download the Excel file -->
-                                            <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel Sheet</a> {% endcomment %}
-    
-                                        
-                                        {% elif ".xml" in upload.file.name|lower %}
-                                            <!-- XML files -->
-                                            <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml" width="100%" height="500px" />
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                        
-                                        {% elif ".zip" in upload.file.name|lower or ".xlsx" in upload.file.name|lower %}
-                                            <!-- ZIP and XLSX files (served as ZIP) -->
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
-                                        
-    
-                                        {% elif ".pptx" in upload.file.name|lower %}
-                                            <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview ppt Document</a>
-                                            {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {% endcomment %}
-                                            <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint Presentation</a>                                    
-    
-                                        {% elif ".txt" in upload.file.name|lower or ".py" in upload.file.name|lower or ".js" in upload.file.name|lower %}
-                                            <!-- Handle .py, .js, and .txt files -->
-                                            <pre class="
+                                {% elif ".mp4" in upload.file.name|lower or ".mov" in upload.file.name|lower or ".avi"
+                                in upload.file.name|lower or ".webm" in upload.file.name|lower %}
+                                {% comment %}<video width="100%" height="auto" controls>
+                                    <source src="{% url 'only_card:view_media' upload.id %}" type="{{ mime_type }}">
+                                    Your browser does not support the video tag.
+                                </video>{% endcomment %}
+                                <a href="{% url 'only_card:view_video_page' upload.id %}"
+                                    class="btn btn-primary">Preview Video</a>
+                                <a href="{% url 'only_card:view_media' upload.id %}" download>Download Video</a>
+
+                                {% elif upload.is_folder %}
+                                <a href="{% url 'only_card:view_folder' upload.id %}">
+                                    <i class="fa fa-folder"></i> {{ upload.file_name }}
+                                </a>
+
+                                {% elif ".pdf" in upload.file.name|lower %}
+                                <embed src="{% url 'only_card:view_file' upload.id %}" type="application/pdf"
+                                    width="100%" height="500px" />
+                                <a href="{% url 'only_card:view_pdf_file' upload.id %}" class="btn btn-primary">Preview
+                                    pdf Document</a>
+                                <a href="{% url 'only_card:view_pdf_file' upload.id %}" download>{{ upload.file_name
+                                    }}</a>
+
+                                {% elif ".docx" in upload.file.name|lower or ".doc" in upload.file.name|lower %}
+                                <a href="{% url 'only_card:view_docx_file' upload.id %}" class="btn btn-primary">Preview
+                                    Word Document</a>
+                                <a href="{% url 'only_card:view_file' upload.id %}" download>Download Word Document</a>
+
+                                {% comment %} {% elif ".xlsx" in upload.file.name or ".xls" in upload.file.name %}
+                                <!-- Button to preview the Excel file using your view (which handles both XML and Excel files) -->
+                                <a href="{% url 'only_card:view_xml_file' upload.id %}" class="btn btn-primary">Preview
+                                    Excel Document</a>
+                                <!-- Optional: Google Docs Viewer link (for online viewing of Excel sheet in a new tab) -->
+                                <a href="https://docs.google.com/viewer?url={{ upload.file.url }}" target="_blank"
+                                    class="btn btn-primary">View Excel Sheet</a>
+                                <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview
+                                    text Document</a>
+                                <!-- Button to download the Excel file -->
+                                <a href="{{ upload.file.url }}" download class="btn btn-secondary">Download Excel
+                                    Sheet</a> {% endcomment %}
+
+
+                                {% elif ".xml" in upload.file.name|lower %}
+                                <!-- XML files -->
+                                <embed src="{% url 'only_card:view_file' upload.id %}" type="application/xml"
+                                    width="100%" height="500px" />
+                                <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+
+                                {% elif ".zip" in upload.file.name|lower or ".xlsx" in upload.file.name|lower %}
+                                <!-- ZIP and XLSX files (served as ZIP) -->
+                                <a href="{% url 'only_card:view_file' upload.id %}" download>{{ upload.file_name }}</a>
+
+
+                                {% elif ".pptx" in upload.file.name|lower %}
+                                <a href="{% url 'only_card:view_pptx_file' upload.id %}" class="btn btn-primary">Preview
+                                    ppt Document</a>
+                                {% comment %} <a href="https://docs.google.com/viewer?url={{ upload.file.url }}"
+                                    target="_blank" class="btn btn-primary">View PowerPoint Presentation</a> {%
+                                endcomment %}
+                                <a href="{% url 'only_card:view_file' upload.id %}" download>Download PowerPoint
+                                    Presentation</a>
+
+                                {% elif ".txt" in upload.file.name|lower or ".py" in upload.file.name|lower or ".js" in
+                                upload.file.name|lower %}
+                                <!-- Handle .py, .js, and .txt files -->
+                                <pre class="
                                             {% if '.py' in upload.file.name|lower %}
                                                         language-python
                                                     {% elif '.js' in upload.file.name|lower %}
@@ -1244,61 +1378,69 @@ document.addEventListener("DOMContentLoaded", () => {
                                                     {{ upload.file.read|escape }}
                                                     
                                             </pre>
-                                            <!-- Download option for these files -->
-                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{ upload.file_name }}</a>
-                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
-                                        
-                                        {% else %}
-                                            <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{ upload.file_name }}</a>
-                                            <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview text Document</a>
-                                            {% comment %} <a href="{% url 'only_card:view_file' upload.id %}" class="btn btn-primary">Preview excel  Document</a> {% endcomment %}
-                                        {% endif %}
-                                    </div>
-                                </div>
+                                <!-- Download option for these files -->
+                                <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download {{
+                                    upload.file_name }}</a>
+                                <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview
+                                    text Document</a>
+
+                                {% else %}
+                                <a href="{% url 'only_card:view_text_file' upload.id %}" download>Download{{
+                                    upload.file_name }}</a>
+                                <a href="{% url 'only_card:view_text_file' upload.id %}" class="btn btn-primary">Preview
+                                    text Document</a>
+                                {% comment %} <a href="{% url 'only_card:view_file' upload.id %}"
+                                    class="btn btn-primary">Preview excel Document</a> {% endcomment %}
+                                {% endif %}
                             </div>
                         </div>
-                    {% endfor %}
-    
-                    
-            <!-- Main content of landing_page.html goes here -->
+                    </div>
+                </div>
+                {% endfor %}
+
+
+                <!-- Main content of landing_page.html goes here -->
                 {% endblock %}
-    
+
                 {% comment %} subgroup {% endcomment %}
                 {% block Subgroup %}
-    
+
                 {% endblock %}
-    
+
                 {% comment %} messages {% endcomment %}
                 {% block content %}
-                
+
                 {% endblock %}
-    
+
                 {% block media_detail_content%}
                 {% endblock %}
-                
-            </main>
-{%comment%}
-         {% block footer %}
-         <div class="container  d-flex align-items-center">
-            <footer style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;" class="text-center py-3">
-                <div class="bottom-strip d-flex justify-content-around align-items-center">
 
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:feed_page' %}" class="fas fa-home">
-                            <!--<i class="fas fa-home"></i>-->
-                            <span>Home</span>
-                        </a>
-                    </div>
+        </main>
 
+
+        {% block footer %}
+        <div class="mobile-bottom-nav">
+
+            <div class="bottom-nav-inner">
+
+                <!-- HOME -->
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:feed_page' %}">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
+                    </a>
+                </div>
+
+
+                <!-- NOTIONS -->
                 {% if request.user.is_authenticated %}
-                    <div class="footer-icon">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}" class="fas fa-lightbulb">
-                            <!--<i class="fas fa-lightbulb"></i>-->
-                            <span>Notions</span>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'notion:notion_home' notion_id=request.user.id %}">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Notions</span>
+                    </a>
+                </div>
                 {% else %}
-
                 <div class="footer-icon">
                     <a href="{% url 'notion:notion_home' %}" class="fas fa-lightbulb">
                         <!--<i class="fas fa-lightbulb"></i>-->
@@ -1307,42 +1449,42 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
                 {% endif %}
 
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:upload_media' %}" class="fas fa-upload">
-                            <!--<i class="fas fa-upload"></i>-->
-                            <span>Upload</span>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:upload_media' %}" class="fas fa-upload">
+                        <!--<i class="fas fa-upload"></i>-->
+                        <span>Upload</span>
+                    </a>
+                </div>
 
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore_me' %}" class="fas fa-search">
-                            <!--<i class="fas fa-search"></i>-->
-                            <span>Explore</span>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:explore_me' %}" class="fas fa-search">
+                        <!--<i class="fas fa-search"></i>-->
+                        <span>Explore</span>
+                    </a>
+                </div>
 
                 {% if request.user.is_authenticated %}
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id%}" class="fas fa-user-circle">
-                            <!--<i class="fas fa-user-circle"></i>-->
-                            <span>Profile</span>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:profile' user_id=request.user.id%}" class="fas fa-user-circle">
+                        <!--<i class="fas fa-user-circle"></i>-->
+                        <span>Profile</span>
+                    </a>
+                </div>
 
                 {% else %}
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile'%}" class="fas fa-user-circle">
-                            <!--<i class="fas fa-user-circle"></i>-->
-                            <span>Profile</span>
-                        </a>
-                    </div>
+                <div class="footer-icon">
+                    <a href="{% url 'user_profile:profile'%}" class="fas fa-user-circle">
+                        <!--<i class="fas fa-user-circle"></i>-->
+                        <span>Profile</span>
+                    </a>
+                </div>
                 {% endif %}
 
-                </div>
+            </div>
             </footer>
-         </div> 
-         {% endblock %}
-{%endcomment%}
+        </div>
+        {% endblock %}
+        {%endcomment%}
 
         {% block footer %}
         <div class="mobile-bottom-nav">
@@ -1418,61 +1560,61 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         {% endblock %}
 
-    
-        </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" async defer></script>
+    </div>
 
-            <script>
-                function openNav() {
-                    document.getElementById("mySidebar").style.width = "250px";
-                    document.getElementById("main").style.marginRight = "250px"; // Add margin to main content
-                }
-        
-                function closeNav() {
-                    document.getElementById("mySidebar").style.width = "0";
-                    document.getElementById("main").style.marginRight = "0"; // Remove margin from main content
-                }
-            </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" async defer></script>
 
-            <script src="{% static 'js/day_night.js' %}" defer></script>
+    <script>
+        function openNav() {
+            document.getElementById("mySidebar").style.width = "250px";
+            document.getElementById("main").style.marginRight = "250px"; // Add margin to main content
+        }
 
-            <script src="{% static 'js/theme.js' %}" ></script>
+        function closeNav() {
+            document.getElementById("mySidebar").style.width = "0";
+            document.getElementById("main").style.marginRight = "0"; // Remove margin from main content
+        }
+    </script>
 
-            <script>
-              // Replace current history so back button won't return to login
-              window.history.pushState(null, "", window.location.href);
-              window.onpopstate = function() {
-                window.history.pushState(null, "", window.location.href);
-              };
-            </script>
+    <script src="{% static 'js/day_night.js' %}" defer></script>
+
+    <script src="{% static 'js/theme.js' %}"></script>
+
+    <script>
+        // Replace current history so back button won't return to login
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, "", window.location.href);
+        };
+    </script>
 
 
     <!--for dissabling right click and long press-->
     <script src="{% static 'js/disable_rightclick_longpress.js' %}" async defer></script>
 
-<!--dissabling dragging behaviour-->
+    <!--dissabling dragging behaviour-->
     <script src="{% static 'js/disable_dragging.js' %}" async defer></script>
 
-<!--script for language selection-->
+    <!--script for language selection-->
     <script src="{% static 'js/language_selection.js' %}" async defer></script>
 
 
-<script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
-<!--script for language selection ends-->
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
+    <!--script for language selection ends-->
 
 
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const buttons = document.querySelectorAll('.view-file-btn');
-  buttons.forEach(button => {
-    button.addEventListener('click', function () {
-      const fileId = this.getAttribute('data-file-id');
-      const modalContent = document.getElementById('dynamic-modal-content');
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = document.querySelectorAll('.view-file-btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    const fileId = this.getAttribute('data-file-id');
+                    const modalContent = document.getElementById('dynamic-modal-content');
 
-      // Show loading spinner
-      modalContent.innerHTML = `
+                    // Show loading spinner
+                    modalContent.innerHTML = `
         <div class="modal-body text-center">
           <div class="spinner-border" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -1480,118 +1622,432 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
       `;
 
-      fetch(`/only_card/fetch_file_modal/${fileId}/`)
-        .then(response => response.text())
-        .then(html => {
-          modalContent.innerHTML = html;
-        })
-        .catch(error => {
-          modalContent.innerHTML = `
+                    fetch(`/only_card/fetch_file_modal/${fileId}/`)
+                        .then(response => response.text())
+                        .then(html => {
+                            modalContent.innerHTML = html;
+                        })
+                        .catch(error => {
+                            modalContent.innerHTML = `
             <div class="modal-body">
               <p class="text-danger">Failed to load file details.</p>
             </div>
           `;
-        });
-    });
-  });
-});
-</script>
-
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const message = sessionStorage.getItem('uploadMessage');
-    if (message) {
-        alert(message);
-        sessionStorage.removeItem('uploadMessage');
-    }
-});
-</script>
-
-{% block media_detail_script %}
-<script>
- // Replace current history so back button won't return to login
- window.history.pushState(null, "", window.location.href);
- window.onpopstate = function() {
-   window.history.pushState(null, "", window.location.href);
- };
-</script>
-{% endblock %}
-
-{% block edit_profile_script%}
-{% endblock %}
-
-
-{% block explore_detail_script %}
-{% endblock %}
-
-{%block explore_script%}
-{% endblock %}
-
-{% block following_media_script %}
-{%endblock%}
-
-{% block upload_script %}
-{% endblock %}
-
-{% block notionHome_script %}
-{% endblock %}
-
-{% block my_notion_script%}
-{% endblock %}
-
-{% block Message_script %}
-{% endblock %}
-
-{%block buddy_script%}
-{% endblock %}
-
-{% block extra_js %}
-{% endblock %}
-
-{% block vault_doc_script%}
-{% endblock %}
-
-{% block script-user-status %}
-{% endblock %}
-
-<!--SERVICE_WORKER_REGISTRATION_JS = """-->
-<script>
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-        navigator.serviceWorker
-            .register('{% static "service-worker.js" %}', { scope: '/' })
-            .then(function (reg) {
-                console.log('✅ SW registered (scope:', reg.scope, ')');
-                window._swRegistration = reg;
- 
-                reg.onupdatefound = function () {
-                    var installing = reg.installing;
-                    installing.onstatechange = function () {
-                        if (installing.state === 'installed' &&
-                            navigator.serviceWorker.controller) {
-                            console.log('🔄 SW updated — active on next page load');
-                        }
-                    };
-                };
-            })
-            .catch(function (err) {
-                console.error('❌ SW registration failed:', err);
+                        });
+                });
             });
-    });
-}
-</script>
+        });
+    </script>
 
-<!--onesignal push notification setup-->
-<script src="{% static 'js/onesignal_push_notification.js' %}" async defer></script>
 
-<!-- Global Call UI -->
-{% include 'only_message/global_call_ui.html' %}
-{% include 'only_message/global_video_call_ui.html' %}
-{% include 'only_message/push_notification_init.html' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const message = sessionStorage.getItem('uploadMessage');
+            if (message) {
+                alert(message);
+                sessionStorage.removeItem('uploadMessage');
+            }
+        });
+    </script>
+
+    {% block media_detail_script %}
+    <script>
+        // Replace current history so back button won't return to login
+        window.history.pushState(null, "", window.location.href);
+        window.onpopstate = function () {
+            window.history.pushState(null, "", window.location.href);
+        };
+    </script>
+    {% endblock %}
+
+    {% block edit_profile_script%}
+    {% endblock %}
+
+
+    {% block explore_detail_script %}
+    {% endblock %}
+
+    {%block explore_script%}
+    {% endblock %}
+
+    {% block following_media_script %}
+    {%endblock%}
+
+    {% block upload_script %}
+    {% endblock %}
+
+    {% block notionHome_script %}
+    {% endblock %}
+
+    {% block my_notion_script%}
+    {% endblock %}
+
+    {% block Message_script %}
+    {% endblock %}
+
+    {%block buddy_script%}
+    {% endblock %}
+
+    {% block extra_js %}
+    {% endblock %}
+
+    {% block vault_doc_script%}
+    {% endblock %}
+
+    {% block script-user-status %}
+    {% endblock %}
+
+    <script src="{% static 'js/pinch-zoom.js' %}" async defer></script>
+    {% comment %}
+    <script>
+        (function () {
+            'use strict';
+
+            let activeMedia = null;
+
+            let startDistance = 0;
+            let currentScale = 1;
+
+            let startCenterX = 0;
+            let startCenterY = 0;
+
+            let initialTransform = '';
+
+            function getDistance(touch1, touch2) {
+                const dx =
+                    touch2.clientX - touch1.clientX;
+
+                const dy =
+                    touch2.clientY - touch1.clientY;
+
+                return Math.sqrt(
+                    dx * dx + dy * dy
+                );
+            }
+
+            function getCenter(touch1, touch2) {
+                return {
+                    x:
+                        (touch1.clientX + touch2.clientX) / 2,
+
+                    y:
+                        (touch1.clientY + touch2.clientY) / 2
+                };
+            }
+
+
+            /*
+             * ---------------------------------------------------------
+             * PINCH START
+             * ---------------------------------------------------------
+             */
+
+            document.addEventListener(
+                'touchstart',
+                function (event) {
+
+                    /*
+                     * Only activate when exactly two fingers
+                     * are touching a pinch-enabled media element.
+                     */
+                    if (event.touches.length !== 2) {
+                        return;
+                    }
+
+                    const target =
+                        event.target.closest(
+                            '.pinch-zoom-media'
+                        );
+
+                    if (!target) {
+                        return;
+                    }
+
+                    activeMedia = target;
+
+                    const touch1 = event.touches[0];
+                    const touch2 = event.touches[1];
+
+                    startDistance =
+                        getDistance(
+                            touch1,
+                            touch2
+                        );
+
+                    const center =
+                        getCenter(
+                            touch1,
+                            touch2
+                        );
+
+                    startCenterX = center.x;
+                    startCenterY = center.y;
+
+                    currentScale = 1;
+
+                    initialTransform =
+                        activeMedia.style.transform || '';
+
+                    /*
+                     * Prevent Safari from interpreting this as
+                     * page-level pinch zoom.
+                     */
+                    event.preventDefault();
+
+                },
+                { passive: false }
+            );
+
+
+            /*
+             * ---------------------------------------------------------
+             * PINCH MOVE
+             * ---------------------------------------------------------
+             */
+
+            document.addEventListener(
+                'touchmove',
+                function (event) {
+
+                    if (
+                        !activeMedia ||
+                        event.touches.length !== 2
+                    ) {
+                        return;
+                    }
+
+                    const touch1 = event.touches[0];
+                    const touch2 = event.touches[1];
+
+                    const distance =
+                        getDistance(
+                            touch1,
+                            touch2
+                        );
+
+                    if (startDistance <= 0) {
+                        return;
+                    }
+
+                    /*
+                     * Calculate pinch scale.
+                     */
+                    let scale =
+                        distance / startDistance;
+
+                    /*
+                     * Limit zoom.
+                     */
+                    scale = Math.max(
+                        1,
+                        Math.min(scale, 3)
+                    );
+
+                    currentScale = scale;
+
+                    /*
+                     * Keep the media centered around the
+                     * pinch point.
+                     */
+                    const center =
+                        getCenter(
+                            touch1,
+                            touch2
+                        );
+
+                    const deltaX =
+                        center.x - startCenterX;
+
+                    const deltaY =
+                        center.y - startCenterY;
+
+                    activeMedia.style.transform =
+                        `translate(${deltaX}px, ${deltaY}px) scale(${scale})`;
+
+                    event.preventDefault();
+
+                },
+                { passive: false }
+            );
+
+
+            /*
+             * ---------------------------------------------------------
+             * PINCH END
+             * ---------------------------------------------------------
+             */
+
+            document.addEventListener(
+                'touchend',
+                function (event) {
+
+                    if (!activeMedia) {
+                        return;
+                    }
+
+                    /*
+                     * When one or both fingers are released,
+                     * immediately restore original size.
+                     */
+                    if (event.touches.length < 2) {
+
+                        resetMedia();
+
+                    }
+
+                },
+                { passive: true }
+            );
+
+
+            /*
+             * ---------------------------------------------------------
+             * TOUCH CANCEL
+             * ---------------------------------------------------------
+             */
+
+            document.addEventListener(
+                'touchcancel',
+                function () {
+
+                    if (activeMedia) {
+                        resetMedia();
+                    }
+
+                },
+                { passive: true }
+            );
+
+
+            /*
+             * ---------------------------------------------------------
+             * RESET MEDIA
+             * ---------------------------------------------------------
+             */
+
+            function resetMedia() {
+
+                if (!activeMedia) {
+                    return;
+                }
+
+                activeMedia.style.transform =
+                    initialTransform;
+
+                activeMedia = null;
+
+                startDistance = 0;
+                currentScale = 1;
+
+                startCenterX = 0;
+                startCenterY = 0;
+
+                initialTransform = '';
+
+            }
+
+        })();
+    </script>
+    {% endcomment %}
+    <!--SERVICE_WORKER_REGISTRATION_JS = """-->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker
+                    .register('{% static "service-worker.js" %}', { scope: '/' })
+                    .then(function (reg) {
+                        console.log('✅ SW registered (scope:', reg.scope, ')');
+                        window._swRegistration = reg;
+
+                        reg.onupdatefound = function () {
+                            var installing = reg.installing;
+                            installing.onstatechange = function () {
+                                if (installing.state === 'installed' &&
+                                    navigator.serviceWorker.controller) {
+                                    console.log('🔄 SW updated — active on next page load');
+                                }
+                            };
+                        };
+                    })
+                    .catch(function (err) {
+                        console.error('❌ SW registration failed:', err);
+                    });
+            });
+        }
+    </script>
+
+    <!--onesignal push notification setup-->
+    <script src="{% static 'js/onesignal_push_notification.js' %}" async defer></script>
+
+    <!--group message counter-->
+    <script>
+        (function () {
+            'use strict';
+
+            // Only run for logged-in users — matches the auth flag already set on <body>
+            if (document.body.dataset.authenticated !== 'true') { return; }
+
+            var UNREAD_API = "{% url 'only_message:group_unread_counts_api' %}";
+            var badge = document.getElementById('gc-nav-badge');
+            if (!badge) { return; }
+
+            function fmtCount(n) {
+                return n > 99 ? '99+' : String(n);
+            }
+
+            function applyBadge(total) {
+                if (total > 0) {
+                    badge.textContent = fmtCount(total);
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            function refreshBadge() {
+                fetch(UNREAD_API, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) { applyBadge(data.grand_total || 0); })
+                    .catch(function () { /* non-fatal — leave last known state on screen */ });
+            }
+
+            // Initial load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', refreshBadge);
+            } else {
+                refreshBadge();
+            }
+
+            // Refresh when returning via bfcache (same fix as the group-list page needed)
+            window.addEventListener('pageshow', function (e) {
+                if (e.persisted) { refreshBadge(); }
+            });
+
+            // Refresh when the tab/app regains focus
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible') { refreshBadge(); }
+            });
+
+            // Light polling so the badge updates live even while sitting on another page
+            setInterval(refreshBadge, 15000);
+
+            // Expose so GroupConsumer-aware pages (like group_chat.html) can force an
+            // immediate refresh right after a WS message arrives, instead of waiting
+            // for the next poll tick.
+            window.SocyfieRefreshGroupBadge = refreshBadge;
+        })();
+    </script>
+    <!--group message counter-->
+
+
+    <!-- Global Call UI -->
+    {% include 'only_message/global_call_ui.html' %}
+    {% include 'only_message/global_video_call_ui.html' %}
+    {% include 'only_message/push_notification_init.html' %}
 
     <!--script for loading popup messages-->
     <!--script for loading popup messages-->
     <!--<div id="popup-container" class="popup-container"></div>-->
-    </body>
+</body>
+
 </html>

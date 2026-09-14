@@ -44,6 +44,10 @@ urlpatterns = [
     path('stranger-chat/', views.stranger_chat_view, name='stranger_chat_view'),
     path('crumbing/', views.stranger_chat_view, name='stranger_chat_view'),
 
+    # user dm counter setup
+    path('api/messages/unread-counts/', views.dm_unread_counts_api, name='dm_unread_counts_api'),
+    path('api/nav/unread-counts/', views.unread_counts_api, name='unread_counts_api'),
+
     #user audio and video calling setup
     path('call/<str:call_id>/', views.call_page_view, name='call_page'),
     path('api/call/<str:call_id>/pending/', views.get_pending_call_api, name='get_pending_call_api'),
@@ -55,6 +59,7 @@ urlpatterns = [
     path('live/<str:room_id>/', live_views.live_room_view, name='live_room_view'),
     path('api/live/rooms/', live_views.live_rooms_api, name='live_rooms_api'),
     path('api/live/<str:room_id>/end/', live_views.end_live_room_api, name='end_live_room_api'),
+    path('group/<str:group_id>/live/start/', live_views.start_group_live_view, name='group_start_live_view'),
 
     #group messaging
     path('groups/', group_views.group_list_view, name='group_list_view'),
@@ -69,6 +74,8 @@ urlpatterns = [
     path('group/<str:group_id>/members/', group_views.group_members_api, name='group_members_api'),
     #path('invite/<str:code>/', group_views.join_via_invite_view, name='join_via_invite_view'),
     path('group/<str:group_id>/search-users/', group_views.search_addable_users_api, name='group_search_users_api'),  # NEW
+
+    path('groups/unread-counts/', group_views.group_unread_counts_api, name='group_unread_counts_api'),
 
     path('group/<str:group_id>/upload/', group_views.group_file_upload_view, name='group_file_upload_view'),
     path('invite/<str:code>/', group_views.invite_landing_view, name='invite_landing_view'),   # CHANGED

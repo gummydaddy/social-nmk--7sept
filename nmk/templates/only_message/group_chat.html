@@ -4,14 +4,22 @@
 
 {% block main_content %}
 
+{% block header %}
+{% endblock %}
 
 <style>
     /* ══════════════════════════════════════════════════════════
        BASE / OVERFLOW SAFETY
        ══════════════════════════════════════════════════════════ */
-    body.gc-open { overflow: hidden !important; overflow-x: hidden !important; }
+    body.gc-open {
+        overflow: hidden !important;
+        overflow-x: hidden !important;
+    }
 
-    #gc-root, #gc-root * { box-sizing: border-box; }
+    #gc-root,
+    #gc-root * {
+        box-sizing: border-box;
+    }
 
     #gc-root {
         display: flex;
@@ -38,33 +46,69 @@
         flex-shrink: 0;
         margin-top: 30px;
     }
+
     #gc-topbar img {
-        width: 38px; height: 38px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
     }
-    #gc-topbar .gc-info { flex: 1; min-width: 0; cursor: pointer; }
+
+    #gc-topbar .gc-info {
+        flex: 1;
+        min-width: 0;
+        cursor: pointer;
+    }
+
     #gc-topbar .gc-name {
-        font-weight: 700; font-size: 14px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        font-weight: 700;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+
     #gc-topbar .gc-meta {
-        font-size: 11px; opacity: .6;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        font-size: 11px;
+        opacity: .6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+
     #gc-topbar .gc-icon-btn {
-        background: none; border: none; font-size: 18px; cursor: pointer;
-        padding: 6px; border-radius: 50%; flex-shrink: 0;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
     }
-    #gc-topbar .gc-icon-btn:hover { background: #eee; }
+
+    #gc-topbar .gc-icon-btn:hover {
+        background: #eee;
+    }
 
     /* ══════════════════════════════════════════════════════════
        PINNED BANNER
        ══════════════════════════════════════════════════════════ */
     #gc-pinned-banner {
-        display: none; align-items: center; gap: 8px; padding: 6px 12px;
-        background: #fff8e1; border-bottom: 1px solid #ffe58f; font-size: 12px;
-        cursor: pointer; flex-shrink: 0;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: #fff8e1;
+        border-bottom: 1px solid #ffe58f;
+        font-size: 12px;
+        cursor: pointer;
+        flex-shrink: 0;
     }
-    #gc-pinned-banner.show { display: flex; }
+
+    #gc-pinned-banner.show {
+        display: flex;
+    }
 
     /* ══════════════════════════════════════════════════════════
        MESSAGE LIST
@@ -87,10 +131,18 @@
         max-width: 82%;
         min-width: 0;
     }
-    .gc-msg-row.gc-me { align-self: flex-end; flex-direction: row-reverse; }
+
+    .gc-msg-row.gc-me {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
 
     .gc-msg-row img.gc-avatar {
-        width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
     }
 
     .gc-bubble {
@@ -98,236 +150,663 @@
         border-radius: 14px;
         padding: 7px 11px;
         font-size: 13px;
-        box-shadow: 0 1px 2px rgba(0,0,0,.06);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
         position: relative;
         min-width: 0;
         max-width: 100%;
         word-break: break-word;
         overflow-wrap: break-word;
     }
-    .gc-me .gc-bubble { background: #dcf8c6; }
 
-    .gc-msg-content { word-break: break-word; overflow-wrap: break-word; }
+    .gc-me .gc-bubble {
+        background: #dcf8c6;
+    }
 
-    .gc-sender-name { font-size: 11px; font-weight: 700; color: #6366f1; margin-bottom: 2px; }
-    .gc-msg-time { font-size: 10px; color: #999; margin-top: 3px; text-align: right; }
-    .gc-msg-edited { font-size: 9px; color: #aaa; font-style: italic; margin-left: 4px; }
+    .gc-msg-content {
+        word-break: break-word;
+        overflow-wrap: break-word;
+    }
+
+    .gc-sender-name {
+        font-size: 11px;
+        font-weight: 700;
+        color: #6366f1;
+        margin-bottom: 2px;
+    }
+
+    .gc-msg-time {
+        font-size: 10px;
+        color: #999;
+        margin-top: 3px;
+        text-align: right;
+    }
+
+    .gc-msg-edited {
+        font-size: 9px;
+        color: #aaa;
+        font-style: italic;
+        margin-left: 4px;
+    }
 
     .gc-msg-file img.gc-att,
     .gc-msg-file video.gc-att,
     .gc-att {
-        max-width: 100%; width: auto; height: auto; display: block;
-        border-radius: 8px; margin-bottom: 4px;
+        max-width: 100%;
+        width: auto;
+        height: auto;
+        display: block;
+        border-radius: 8px;
+        margin-bottom: 4px;
     }
-    .gc-msg-file a { font-size: 12px; color: #4338ca; }
 
-    .gc-msg-deleted { font-style: italic; color: #999; font-size: 12px; }
-    .gc-system-msg { align-self: center; font-size: 11px; color: #888; font-style: italic; margin: 4px 0; }
-    .gc-view-count { font-size: 10px; color: #999; margin-top: 2px; }
+    .gc-msg-file a {
+        font-size: 12px;
+        color: #4338ca;
+    }
+
+    .gc-msg-deleted {
+        font-style: italic;
+        color: #999;
+        font-size: 12px;
+    }
+
+    .gc-system-msg {
+        align-self: center;
+        font-size: 11px;
+        color: #888;
+        font-style: italic;
+        margin: 4px 0;
+    }
+
+    .gc-view-count {
+        font-size: 10px;
+        color: #999;
+        margin-top: 2px;
+    }
 
     .gc-msg-actions {
-        display: none; position: absolute; top: -10px; right: -6px; background: #fff;
-        border: 1px solid #eee; border-radius: 10px; box-shadow: 0 2px 6px rgba(0,0,0,.1); font-size: 10px;
+        display: none;
+        position: absolute;
+        top: -10px;
+        right: -6px;
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .1);
+        font-size: 10px;
     }
-    .gc-bubble:hover .gc-msg-actions { display: flex; }
-    .gc-msg-actions button { border: none; background: none; padding: 4px 7px; cursor: pointer; font-size: 12px; }
+
+    .gc-bubble:hover .gc-msg-actions {
+        display: flex;
+    }
+
+    .gc-msg-actions button {
+        border: none;
+        background: none;
+        padding: 4px 7px;
+        cursor: pointer;
+        font-size: 12px;
+    }
 
     /* ══════════════════════════════════════════════════════════
        TYPING INDICATOR
        ══════════════════════════════════════════════════════════ */
-    #gc-typing { font-size: 11px; color: #888; padding: 2px 12px; min-height: 16px; flex-shrink: 0; }
+    #gc-typing {
+        font-size: 11px;
+        color: #888;
+        padding: 2px 12px;
+        min-height: 16px;
+        flex-shrink: 0;
+    }
 
     /* ══════════════════════════════════════════════════════════
        COMPOSER
        ══════════════════════════════════════════════════════════ */
-    #gc-composer-wrap { border-top: 1px solid #eee; background: #fff; flex-shrink: 0; }
+    #gc-composer-wrap {
+        border-top: 1px solid #eee;
+        background: #fff;
+        flex-shrink: 0;
+    }
 
     #gc-file-preview {
-        display: none; align-items: center; gap: 8px; padding: 8px 12px;
-        background: #eef4ff; border-bottom: 1px solid #b8d0ff;
+        display: none;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #eef4ff;
+        border-bottom: 1px solid #b8d0ff;
     }
-    #gc-file-preview img.gc-preview-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; flex-shrink: 0; }
 
-    #gc-composer { display: flex; align-items: flex-end; gap: 6px; padding: 8px 10px; }
+    #gc-file-preview img.gc-preview-thumb {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    #gc-composer {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        padding: 8px 10px;
+    }
+
     #gc-composer textarea {
-        flex: 1; min-width: 0; width: 100%; max-width: 100%;
-        resize: none; border: 1px solid #ddd; border-radius: 18px;
-        padding: 9px 14px; font-size: 13px; max-height: 100px; font-family: inherit;
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+        resize: none;
+        border: 1px solid #ddd;
+        border-radius: 18px;
+        padding: 9px 14px;
+        font-size: 13px;
+        max-height: 100px;
+        font-family: inherit;
     }
-    #gc-composer button.gc-round {
-        width: 36px; height: 36px; border-radius: 50%; border: none; background: #eee;
-        font-size: 15px; cursor: pointer; flex-shrink: 0;
-    }
-    #gc-send-btn { background: linear-gradient(135deg,#16a34a,#0d9488); color: #fff; }
 
-    #gc-no-permission { text-align: center; padding: 14px; font-size: 12px; color: #888; }
+    #gc-composer button.gc-round {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: none;
+        background: #eee;
+        font-size: 15px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    #gc-send-btn {
+        background: linear-gradient(135deg, #16a34a, #0d9488);
+        color: #fff;
+    }
+
+    #gc-no-permission {
+        text-align: center;
+        padding: 14px;
+        font-size: 12px;
+        color: #888;
+    }
 
     /* ══════════════════════════════════════════════════════════
        SIDE PANELS (Members / Settings shell)
        ══════════════════════════════════════════════════════════ */
     .gc-panel {
-        position: fixed; top: 0; right: 0; bottom: 0; z-index: 9600;
-        width: min(340px, 90vw); max-width: 100vw;
-        background: #fff; box-shadow: -4px 0 20px rgba(0,0,0,.25);
-        transform: translateX(100%); transition: transform .22s ease;
-        display: flex; flex-direction: column;
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9600;
+        width: min(340px, 90vw);
+        max-width: 100vw;
+        background: #fff;
+        box-shadow: -4px 0 20px rgba(0, 0, 0, .25);
+        transform: translateX(100%);
+        transition: transform .22s ease;
+        display: flex;
+        flex-direction: column;
     }
-    .gc-panel.open { transform: translateX(0); }
+
+    .gc-panel.open {
+        transform: translateX(0);
+    }
 
     .gc-panel-header {
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 14px 16px; border-bottom: 1px solid #eee; font-weight: 700; flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid #eee;
+        font-weight: 700;
+        flex-shrink: 0;
     }
-    .gc-panel-close { background: none; border: none; font-size: 18px; cursor: pointer; }
+
+    .gc-panel-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+    }
 
     .gc-panel-body {
-        flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 10px 14px;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px 14px;
     }
 
     /* ══════════════════════════════════════════════════════════
        MEMBERS PANEL — member rows, role pills
        ══════════════════════════════════════════════════════════ */
     .gc-member-row {
-        display: flex; align-items: center; gap: 8px; padding: 9px 2px;
-        border-bottom: 1px solid #f2f2f2; min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 2px;
+        border-bottom: 1px solid #f2f2f2;
+        min-width: 0;
     }
-    .gc-member-row img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
+    .gc-member-row img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
     .gc-member-name {
-        flex: 1; min-width: 0; font-size: 13px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+
     .gc-role-pill {
-        font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px;
-        text-transform: uppercase; flex-shrink: 0; white-space: nowrap;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        flex-shrink: 0;
+        white-space: nowrap;
     }
-    .gc-role-creator { background: #fef3c7; color: #92400e; }
-    .gc-role-admin   { background: #dbeafe; color: #1e40af; }
-    .gc-role-member  { background: #f3f4f6; color: #666; }
+
+    .gc-role-creator {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .gc-role-admin {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .gc-role-member {
+        background: #f3f4f6;
+        color: #666;
+    }
 
     .gc-role-select {
-        font-size: 11px; margin-left: 6px; padding: 3px 6px; border-radius: 8px;
-        border: 1px solid #ddd; background: #fff; max-width: 90px; flex-shrink: 0;
+        font-size: 11px;
+        margin-left: 6px;
+        padding: 3px 6px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        background: #fff;
+        max-width: 90px;
+        flex-shrink: 0;
     }
+
     .gc-member-menu-btn {
-        background: none; border: none; font-size: 14px; cursor: pointer; padding: 4px; flex-shrink: 0;
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 4px;
+        flex-shrink: 0;
     }
 
     /* ══════════════════════════════════════════════════════════
        ADD-PEOPLE SEARCH RESULTS
        ══════════════════════════════════════════════════════════ */
     #gc-add-search-input {
-        width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px;
-        font-size: 13px; box-sizing: border-box;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 13px;
+        box-sizing: border-box;
     }
+
     .gc-search-result-row {
-        display: flex; align-items: center; gap: 8px; padding: 7px; border-radius: 8px; min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px;
+        border-radius: 8px;
+        min-width: 0;
     }
-    .gc-search-result-row img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+
+    .gc-search-result-row img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
     .gc-search-result-row .gc-sr-name {
-        flex: 1; min-width: 0; font-size: 12.5px;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        flex: 1;
+        min-width: 0;
+        font-size: 12.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
+
     .gc-search-result-row button {
-        border: none; background: #16a34a; color: #fff; border-radius: 14px;
-        padding: 4px 10px; font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+        border: none;
+        background: #16a34a;
+        color: #fff;
+        border-radius: 14px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        flex-shrink: 0;
     }
-    .gc-search-result-row button:disabled { background: #ccc; cursor: default; }
+
+    .gc-search-result-row button:disabled {
+        background: #ccc;
+        cursor: default;
+    }
 
     /* ══════════════════════════════════════════════════════════
        INVITE LINK BOX
        ══════════════════════════════════════════════════════════ */
     #gc-invite-link-input {
-        flex: 1; min-width: 0; font-size: 11px; padding: 8px 10px;
-        border: 1px solid #ddd; border-radius: 8px; background: #f7f7f9;
+        flex: 1;
+        min-width: 0;
+        font-size: 11px;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #f7f7f9;
         text-overflow: ellipsis;
     }
+
     #gc-copy-invite-btn {
-        border: none; background: #333; color: #fff; border-radius: 8px;
-        padding: 0 12px; cursor: pointer; font-size: 13px; flex-shrink: 0;
+        border: none;
+        background: #333;
+        color: #fff;
+        border-radius: 8px;
+        padding: 0 12px;
+        cursor: pointer;
+        font-size: 13px;
+        flex-shrink: 0;
     }
+
     #gc-reset-invite-btn {
-        margin-top: 8px; width: 100%; background: #eef2ff; color: #4338ca; border: none;
-        border-radius: 8px; padding: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+        margin-top: 8px;
+        width: 100%;
+        background: #eef2ff;
+        color: #4338ca;
+        border: none;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
     }
 
     /* ══════════════════════════════════════════════════════════
        SETTINGS PANEL — fields, toggles, buttons
        ══════════════════════════════════════════════════════════ */
-    .gc-settings-field { margin-bottom: 14px; }
-    .gc-settings-field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 5px; }
+    .gc-settings-field {
+        margin-bottom: 14px;
+    }
+
+    .gc-settings-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
     .gc-settings-field input[type="text"],
     .gc-settings-field textarea,
     .gc-settings-field select {
-        width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px;
-        font-size: 13px; box-sizing: border-box; font-family: inherit;
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 13px;
+        box-sizing: border-box;
+        font-family: inherit;
     }
 
     .gc-toggle-row {
-        display: flex; align-items: center; justify-content: space-between;
-        margin-bottom: 12px; font-size: 13px; gap: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        font-size: 13px;
+        gap: 10px;
     }
 
-    .gc-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
-    .gc-switch input { opacity: 0; width: 0; height: 0; }
+    .gc-switch {
+        position: relative;
+        width: 42px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+
+    .gc-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
     .gc-slider {
-        position: absolute; inset: 0; background: #ddd; border-radius: 24px;
-        cursor: pointer; transition: .2s;
+        position: absolute;
+        inset: 0;
+        background: #ddd;
+        border-radius: 24px;
+        cursor: pointer;
+        transition: .2s;
     }
+
     .gc-slider:before {
-        content: ""; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px;
-        background: #fff; border-radius: 50%; transition: .2s;
+        content: "";
+        position: absolute;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: .2s;
     }
-    .gc-switch input:checked + .gc-slider { background: #16a34a; }
-    .gc-switch input:checked + .gc-slider:before { transform: translateX(18px); }
+
+    .gc-switch input:checked+.gc-slider {
+        background: #16a34a;
+    }
+
+    .gc-switch input:checked+.gc-slider:before {
+        transform: translateX(18px);
+    }
 
 
     .gc-save-btn {
-        width: 100%; background: linear-gradient(135deg,#16a34a,#0d9488); color: #fff; border: none;
-        border-radius: 10px; padding: 10px; font-weight: 700; cursor: pointer; margin-top: 6px;
+        width: 100%;
+        background: linear-gradient(135deg, #16a34a, #0d9488);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 6px;
     }
+
     .gc-danger-btn {
-        width: 100%; background: #fee2e2; color: #b91c1c; border: none; border-radius: 8px;
-        padding: 9px; font-weight: 700; cursor: pointer; margin-top: 8px; font-size: 12px;
+        width: 100%;
+        background: #fee2e2;
+        color: #b91c1c;
+        border: none;
+        border-radius: 8px;
+        padding: 9px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 8px;
+        font-size: 12px;
     }
 
     /* ══════════════════════════════════════════════════════════
        TOAST
        ══════════════════════════════════════════════════════════ */
     #gc-toast {
-        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-        background: rgba(0,0,0,.82); color: #fff; padding: 8px 18px; border-radius: 20px;
-        font-size: 12.5px; z-index: 10000; opacity: 0; transition: opacity .3s; pointer-events: none;
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, .82);
+        color: #fff;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 12.5px;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity .3s;
+        pointer-events: none;
     }
-    #gc-toast.show { opacity: 1; }
+
+    #gc-toast.show {
+        opacity: 1;
+    }
 
     /* ══════════════════════════════════════════════════════════
        MOBILE
        ══════════════════════════════════════════════════════════ */
     @media (max-width: 480px) {
-        .gc-msg-row { max-width: 90%; }
-        #gc-topbar { padding: 8px 10px; gap: 8px; }
-        #gc-messages { padding: 8px; }
-        .gc-panel { width: 100vw; }
-        .gc-role-select { max-width: 74px; }
+        .gc-msg-row {
+            max-width: 90%;
+        }
+
+        #gc-topbar {
+            padding: 8px 10px;
+            gap: 8px;
+        }
+
+        #gc-messages {
+            padding: 8px;
+        }
+
+        .gc-panel {
+            width: 100vw;
+        }
+
+        .gc-role-select {
+            max-width: 74px;
+        }
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       LIVE
+       ══════════════════════════════════════════════════════════ */
+    .gc-modal-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, .55);
+        z-index: 20000;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .gc-modal-backdrop.show {
+        display: flex;
+    }
+
+    .gc-modal {
+        background: #fff;
+        border-radius: 16px;
+        padding: 22px;
+        width: min(360px, 92vw);
+    }
+
+    .gc-modal h3 {
+        margin-top: 0;
+    }
+
+    .gc-modal input[type="text"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        font-size: 14px;
+        margin-bottom: 14px;
+        box-sizing: border-box;
+    }
+
+    .gc-modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .gc-modal-actions button {
+        border: none;
+        border-radius: 20px;
+        padding: 9px 18px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .gc-cancel {
+        background: #eee;
+    }
+
+    .gc-live-submit {
+        background: linear-gradient(135deg, #ff3b5c, #ff2d95);
+        color: #fff;
+    }
+
+    .gc-live-card {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, #ff3b5c, #ff2d95);
+        color: #fff;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .gc-live-card:hover {
+        color: #fff;
+        opacity: .92;
     }
 </style>
 
 <div id="gc-root">
     <div id="gc-topbar">
-        {% if group.icon_url %}<img src="{{ group.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+        {% if group.icon_url %}<img src="{{ group.icon_url }}" alt="">{% else %}<img
+            src="{% static 'images/logo.png' %}" alt="">{% endif %}
         <div class="gc-info" onclick="GroupChat.openPanel('gc-members-panel')">
             <div class="gc-name">
                 {{ group.name }}
                 {% if group.kind == 'group' and not group.is_public %}<span title="Private group">🔒</span>{% endif %}
             </div>
 
-            <div class="gc-meta" id="gc-member-count-label">{{ group.member_count }} {% if group.kind == 'broadcast' %}subscribers{% else %}members{% endif %}</div>
+            <div class="gc-meta" id="gc-member-count-label">{{ group.member_count }} {% if group.kind == 'broadcast'
+                %}subscribers{% else %}members{% endif %}</div>
         </div>
         <button class="gc-icon-btn" title="Members" onclick="GroupChat.openPanel('gc-members-panel')">👥</button>
         {% if is_admin %}
         <button class="gc-icon-btn" title="Settings" onclick="GroupChat.openPanel('gc-settings-panel')">⚙️</button>
         {% endif %}
         <button class="gc-icon-btn" id="gc-mute-btn" title="Mute notifications">🔔</button>
+
+        {% if is_admin %}
+        <button class="gc-icon-btn" id="gc-golive-btn" title="Start Live" onclick="GroupChat.openGoLive()" {% if
+            active_live_room_id %}style="display:none;" {% endif %}>🔴</button>
+        {% endif %}
+
+        <a class="gc-icon-btn" id="gc-live-badge" title="Join Live"
+            href="{% if active_live_room_id %}{% url 'only_message:live_room_view' room_id=active_live_room_id %}{% endif %}"
+            style="text-decoration:none;color:#dc2626;font-weight:800;{% if not active_live_room_id %}display:none;{% endif %}">
+            🔴 LIVE
+        </a>
+
     </div>
 
     <div id="gc-pinned-banner">
@@ -340,7 +819,8 @@
     <div id="gc-composer-wrap">
         <div id="gc-file-preview">
             <div id="gc-file-preview-content" style="display:flex;align-items:center;gap:8px;flex:1;"></div>
-            <button type="button" id="gc-remove-file-btn" style="border:none;background:#dc3545;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;">×</button>
+            <button type="button" id="gc-remove-file-btn"
+                style="border:none;background:#dc3545;color:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;">×</button>
         </div>
 
         <div id="gc-composer">
@@ -364,37 +844,56 @@
     </div>
     <div class="gc-panel-body">
 
-            <!-- Leave group/channel -->
-            <button id="gc-leave-btn" type="button" class="gc-danger-btn" style="margin-bottom:16px;">
-                🚪 Leave {{ group.kind|yesno:"Channel,Group" }}
-            </button>
+        <!-- Leave group/channel -->
+        <button id="gc-leave-btn" type="button" class="gc-danger-btn" style="margin-bottom:16px;">
+            🚪 Leave {{ group.kind|yesno:"Channel,Group" }}
+        </button>
 
         <!-- Invite link -->
         <div style="margin-bottom:16px;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;opacity:.55;margin-bottom:6px;">Invite Link</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;opacity:.55;margin-bottom:6px;">Invite
+                Link</div>
             <div style="display:flex;gap:6px;">
                 <input type="text" id="gc-invite-link-input" readonly value="{{ invite_link }}"
-                       style="flex:1;font-size:11px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#f7f7f9;">
+                    style="flex:1;font-size:11px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#f7f7f9;">
                 <button id="gc-copy-invite-btn" type="button" title="Copy link"
-                        style="border:none;background:#333;color:#fff;border-radius:8px;padding:0 12px;cursor:pointer;font-size:13px;">
+                    style="border:none;background:#333;color:#fff;border-radius:8px;padding:0 12px;cursor:pointer;font-size:13px;">
                     📋
                 </button>
             </div>
             {% if is_admin %}
-            <button id="gc-reset-invite-btn" type="button"
-                    style="margin-top:8px;width:100%;background:#eef2ff;color:#4338ca;border:none;
+            <button id="gc-reset-invite-btn" type="button" style="margin-top:8px;width:100%;background:#eef2ff;color:#4338ca;border:none;
                            border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;">
                 Reset Invite Link
             </button>
             {% endif %}
+
+            {% if is_admin %}
+            <div id="gc-golive-backdrop" class="gc-modal-backdrop">
+                <div class="gc-modal">
+                    <h3>Start a Live Stream</h3>
+                    <form method="post" action="{% url 'only_message:group_start_live_view' group_id=group_id %}">
+                        {% csrf_token %}
+                        <input type="text" name="title" maxlength="120"
+                            placeholder="What's this stream about? (optional)">
+                        <div class="gc-modal-actions">
+                            <button type="button" class="gc-cancel" onclick="GroupChat.closeGoLive()">Cancel</button>
+                            <button type="submit" class="gc-live-submit">Go Live</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
         </div>
 
         {% if can_add_members %}
         <!-- Add by username -->
         <div style="margin-bottom:16px;">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;opacity:.55;margin-bottom:6px;">Add People</div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;opacity:.55;margin-bottom:6px;">Add
+                People</div>
             <input type="text" id="gc-add-search-input" placeholder="Search by username…"
-                   style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;">
+                style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;box-sizing:border-box;">
             <div id="gc-add-search-results" style="margin-top:6px;"></div>
         </div>
         {% endif %}
@@ -423,9 +922,9 @@
                 {% if group.kind == 'broadcast' %}Public Channel{% else %}Public Group{% endif %}
                 <div style="font-size:11px;color:#888;font-weight:400;margin-top:2px;">
                     {% if group.kind == 'group' %}
-                        When off, only admins can add members — the invite link won't let people join themselves.
+                    When off, only admins can add members — the invite link won't let people join themselves.
                     {% else %}
-                        When on, this channel is discoverable by username search.
+                    When on, this channel is discoverable by username search.
                     {% endif %}
                 </div>
             </span>
@@ -434,7 +933,7 @@
                 <span class="gc-slider"></span>
             </label>
         </div>
-        
+
         <div class="gc-settings-field">
             <label>Name</label>
             <input type="text" id="gc-set-name" value="{{ group.name }}" maxlength="150">
@@ -448,8 +947,8 @@
         <div class="gc-settings-field">
             <label>Who can send messages</label>
             <select id="gc-set-send-permission">
-                <option value="all" {% if group.send_permission == 'all' %}selected{% endif %}>Everyone</option>
-                <option value="admins" {% if group.send_permission == 'admins' %}selected{% endif %}>Admins only</option>
+                <option value="all" {% if group.send_permission=='all' %}selected{% endif %}>Everyone</option>
+                <option value="admins" {% if group.send_permission=='admins' %}selected{% endif %}>Admins only</option>
             </select>
         </div>
         {% endif %}
@@ -457,16 +956,18 @@
         <div class="gc-settings-field">
             <label>Who can edit group info</label>
             <select id="gc-set-edit-permission">
-                <option value="all" {% if group.edit_info_permission == 'all' %}selected{% endif %}>Everyone</option>
-                <option value="admins" {% if group.edit_info_permission == 'admins' %}selected{% endif %}>Admins only</option>
+                <option value="all" {% if group.edit_info_permission=='all' %}selected{% endif %}>Everyone</option>
+                <option value="admins" {% if group.edit_info_permission=='admins' %}selected{% endif %}>Admins only
+                </option>
             </select>
         </div>
 
         <div class="gc-settings-field">
             <label>Who can add members</label>
             <select id="gc-set-add-permission">
-                <option value="all" {% if group.add_members_permission == 'all' %}selected{% endif %}>Everyone</option>
-                <option value="admins" {% if group.add_members_permission == 'admins' %}selected{% endif %}>Admins only</option>
+                <option value="all" {% if group.add_members_permission=='all' %}selected{% endif %}>Everyone</option>
+                <option value="admins" {% if group.add_members_permission=='admins' %}selected{% endif %}>Admins only
+                </option>
             </select>
         </div>
 
@@ -485,7 +986,7 @@
 
         {% if is_creator %}
         <form method="post" action="{% url 'only_message:delete_group_view' group_id=group.id %}"
-              onsubmit="return confirm('Permanently delete this {{ group.kind }}? This cannot be undone.');">
+            onsubmit="return confirm('Permanently delete this {{ group.kind }}? This cannot be undone.');">
             {% csrf_token %}
             <button type="submit" class="gc-danger-btn">Delete {{ group.kind|yesno:"Channel,Group" }}</button>
         </form>
@@ -496,6 +997,10 @@
 {% endif %}
 
 <div id="gc-toast"></div>
+
+{% endblock %}
+
+{% block footer %}
 
 {% endblock %}
 
@@ -518,23 +1023,26 @@
 
 
 <script>
-document.body.classList.add('gc-open');
+    document.body.classList.add('gc-open');
 
-window.GroupChat = (function () {
-    'use strict';
+    window.GroupChat = (function () {
+        'use strict';
 
-    var GID = '{{ group_id|escapejs }}';
-    var KIND = '{{ group.kind|escapejs }}';
-    var CURRENT_USER_ID = {{ request.user.id }};
+        var GID = '{{ group_id|escapejs }}';
+        var KIND = '{{ group.kind|escapejs }}';
+        var CURRENT_USER_ID = {{ request.user.id }
+    };
     var CURRENT_USERNAME = '{{ request.user.username|escapejs }}';
     var MY_ROLE = '{{ my_role|default:""|escapejs }}';
 
     // ── All server endpoints resolved via Django's url — never hardcoded,
     //    so this works regardless of where only_message's urls.py is mounted ──
-    var UPLOAD_URL       = "{% url 'only_message:group_file_upload_view' group_id=group_id %}";
+    var UPLOAD_URL = "{% url 'only_message:group_file_upload_view' group_id=group_id %}";
     var SEARCH_USERS_URL = "{% url 'only_message:group_search_users_api' group_id=group_id %}";
     var RESET_INVITE_URL = "{% url 'only_message:reset_invite_view' group_id=group_id %}";
-    var MUTE_URL         = "{% url 'only_message:mute_group_view' group_id=group_id %}";
+    var MUTE_URL = "{% url 'only_message:mute_group_view' group_id=group_id %}";
+
+    var LIVE_ROOM_URL_TEMPLATE = "{% url 'only_message:live_room_view' room_id='PLACEHOLDER' %}";
 
     var ws = null;
     var reconnectAttempts = 0;
@@ -670,6 +1178,14 @@ window.GroupChat = (function () {
                 break;
             case 'pong':
                 break;
+
+            case 'live_started':
+                onLiveStarted(data);
+                break;
+            case 'live_ended':
+                onLiveEnded();
+                break;
+
         }
     }
 
@@ -724,10 +1240,10 @@ window.GroupChat = (function () {
         if (!msg.file_url) return '';
         var url = msg.file_url;
         var ext = url.split('?')[0].split('.').pop().toLowerCase();
-        if (['jpg','jpeg','png','gif','webp'].indexOf(ext) !== -1) {
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp'].indexOf(ext) !== -1) {
             return '<img class="gc-att" src="' + url + '" alt="">';
         }
-        if (['mp4','webm','mov'].indexOf(ext) !== -1) {
+        if (['mp4', 'webm', 'mov'].indexOf(ext) !== -1) {
             return '<video class="gc-att" controls><source src="' + url + '"></video>';
         }
         return '<a href="' + url + '" target="_blank" download>📥 Download attachment</a>';
@@ -738,6 +1254,11 @@ window.GroupChat = (function () {
         displayedIds.add(msg.id);
 
         if (msg.message_type === 'system') { renderSystemMsg(msg.content); return; }
+
+        if (msg.message_type === 'live') {   // ← NEW
+            renderLiveCard(msg);
+            return;
+        }
 
         var isMe = String(msg.sender_id) === String(CURRENT_USER_ID);
         var row = document.createElement('div');
@@ -753,7 +1274,7 @@ window.GroupChat = (function () {
                 (showSenderName ? '<div class="gc-sender-name">' + esc(msg.sender_username) + '</div>' : '') +
                 (msg.content ? '<div class="gc-msg-content">' + esc(msg.content) + '</div>' : '') +
                 buildAttachmentHtml(msg)
-              );
+            );
 
         var actionsHtml = '';
         if (!msg.deleted) {
@@ -769,11 +1290,11 @@ window.GroupChat = (function () {
         row.innerHTML =
             '<img class="gc-avatar" src="' + avatar + '" alt="">' +
             '<div class="gc-bubble">' +
-                actionsHtml +
-                bodyHtml +
-                (msg.edited ? '<span class="gc-msg-edited">(edited)</span>' : '') +
-                '<div class="gc-msg-time">' + fmtTime(msg.timestamp) + '</div>' +
-                (KIND === 'broadcast' ? '<div class="gc-view-count" data-view-count>👁 –</div>' : '') +
+            actionsHtml +
+            bodyHtml +
+            (msg.edited ? '<span class="gc-msg-edited">(edited)</span>' : '') +
+            '<div class="gc-msg-time">' + fmtTime(msg.timestamp) + '</div>' +
+            (KIND === 'broadcast' ? '<div class="gc-view-count" data-view-count>👁 –</div>' : '') +
             '</div>';
 
         messagesEl.appendChild(row);
@@ -781,6 +1302,16 @@ window.GroupChat = (function () {
         scrollToBottom();
 
         if (KIND === 'broadcast') { send({ type: 'view_post', message_id: msg.id }); }
+    }
+
+    function renderLiveCard(msg) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'align-self:center;margin:6px 0;';
+        wrap.innerHTML = '<a class="gc-live-card" href="' + liveRoomUrl(msg.live_room_id) + '">' +
+            '🔴 ' + esc(msg.sender_username) + ' started a live — tap to join' +
+            '</a>';
+        messagesEl.appendChild(wrap);
+        scrollToBottom();
     }
 
     function renderSystemMsg(text) {
@@ -876,7 +1407,7 @@ window.GroupChat = (function () {
             if (iAmAdmin && m.role !== 'creator' && String(m.user_id) !== String(CURRENT_USER_ID)) {
                 html += '<select class="gc-role-select" data-uid="' + m.user_id + '" style="font-size:11px;margin-left:6px;">' +
                     '<option value="member" ' + (m.role === 'member' || m.role === 'subscriber' ? 'selected' : '') + '>' +
-                        (KIND === 'broadcast' ? 'Subscriber' : 'Member') + '</option>' +
+                    (KIND === 'broadcast' ? 'Subscriber' : 'Member') + '</option>' +
                     '<option value="admin" ' + (m.role === 'admin' ? 'selected' : '') + '>Admin</option>' +
                     '</select>' +
                     '<button class="gc-member-menu-btn" data-remove-uid="' + m.user_id + '" title="Remove">🗑️</button>';
@@ -949,28 +1480,28 @@ window.GroupChat = (function () {
             fetch(UPLOAD_URL, {
                 method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(function (r) {
-                if (!r.ok) { throw new Error('Upload request failed (' + r.status + ')'); }
-                return r.json();
-            })
-            .then(function (data) {
-                sendBtn.disabled = false;
-                if (data.success) {
-                    send({
-                        type: 'send_message', content: text,
-                        file_url: data.file_url, message_type: data.message_type
-                    });
-                    contentInput.value = '';
-                    removeFileBtn.click();
-                } else {
-                    toast(data.error || 'Upload failed');
-                }
-            })
-            .catch(function (err) {
-                sendBtn.disabled = false;
-                console.error('Group file upload error:', err);
-                toast('Upload failed');
-            });
+                .then(function (r) {
+                    if (!r.ok) { throw new Error('Upload request failed (' + r.status + ')'); }
+                    return r.json();
+                })
+                .then(function (data) {
+                    sendBtn.disabled = false;
+                    if (data.success) {
+                        send({
+                            type: 'send_message', content: text,
+                            file_url: data.file_url, message_type: data.message_type
+                        });
+                        contentInput.value = '';
+                        removeFileBtn.click();
+                    } else {
+                        toast(data.error || 'Upload failed');
+                    }
+                })
+                .catch(function (err) {
+                    sendBtn.disabled = false;
+                    console.error('Group file upload error:', err);
+                    toast('Upload failed');
+                });
         } else {
             send({ type: 'send_message', content: text, message_type: 'text' });
             contentInput.value = '';
@@ -1049,7 +1580,7 @@ window.GroupChat = (function () {
             function fallbackCopy() {
                 input.select();
                 input.setSelectionRange(0, 99999);
-                try { document.execCommand('copy'); } catch (_) {}
+                try { document.execCommand('copy'); } catch (_) { }
             }
 
             if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -1078,11 +1609,11 @@ window.GroupChat = (function () {
                 fetch('/message/group/' + GID + '/search-users/?q=' + encodeURIComponent(q), {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (!data.success) { addSearchResults.innerHTML = ''; return; }
-                    renderSearchResults(data.users);
-                });
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (!data.success) { addSearchResults.innerHTML = ''; return; }
+                        renderSearchResults(data.users);
+                    });
             }, 250);
         });
     }
@@ -1099,7 +1630,7 @@ window.GroupChat = (function () {
                 '<img src="' + avatar + '" alt="">' +
                 '<span class="gc-sr-name">' + esc(u.username) + '</span>' +
                 '<button data-add-uid="' + u.id + '" data-username="' + esc(u.username) + '" data-pic="' + esc(u.pic || '') + '">Add</button>' +
-            '</div>';
+                '</div>';
         });
         addSearchResults.innerHTML = html;
 
@@ -1180,25 +1711,25 @@ window.GroupChat = (function () {
                     'X-CSRFToken': csrfToken()
                 }
             })
-            .then(function (r) {
-                if (!r.ok) { throw new Error('Reset invite failed (' + r.status + ')'); }
-                return r.json();
-            })
-            .then(function (data) {
-                resetInviteBtn.disabled = false;
-                if (data.success) {
-                    var input = document.getElementById('gc-invite-link-input');
-                    if (input) { input.value = data.invite_link; }
-                    toast('Invite link reset');
-                } else {
-                    toast(data.error || 'Failed to reset invite link');
-                }
-            })
-            .catch(function (err) {
-                resetInviteBtn.disabled = false;
-                console.error('Reset invite error:', err);
-                toast('Failed to reset invite link');
-            });
+                .then(function (r) {
+                    if (!r.ok) { throw new Error('Reset invite failed (' + r.status + ')'); }
+                    return r.json();
+                })
+                .then(function (data) {
+                    resetInviteBtn.disabled = false;
+                    if (data.success) {
+                        var input = document.getElementById('gc-invite-link-input');
+                        if (input) { input.value = data.invite_link; }
+                        toast('Invite link reset');
+                    } else {
+                        toast(data.error || 'Failed to reset invite link');
+                    }
+                })
+                .catch(function (err) {
+                    resetInviteBtn.disabled = false;
+                    console.error('Reset invite error:', err);
+                    toast('Failed to reset invite link');
+                });
         });
     }
 
@@ -1218,7 +1749,7 @@ window.GroupChat = (function () {
                 '<img src="' + avatar + '" alt="">' +
                 '<span class="gc-sr-name">' + esc(u.username) + '</span>' +
                 '<button type="button" data-add-uid="' + u.id + '" data-username="' + esc(u.username) + '" data-pic="' + esc(u.pic || '') + '">Add</button>' +
-            '</div>';
+                '</div>';
         });
         addSearchResults.innerHTML = html;
 
@@ -1246,21 +1777,21 @@ window.GroupChat = (function () {
                 fetch(SEARCH_USERS_URL + '?q=' + encodeURIComponent(q), {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
-                .then(function (r) {
-                    if (!r.ok) { throw new Error('Search failed (' + r.status + ')'); }
-                    return r.json();
-                })
-                .then(function (data) {
-                    if (!data.success) {
-                        addSearchResults.innerHTML = '<div style="font-size:12px;color:#c62828;padding:6px;">' + esc(data.error || 'Search failed') + '</div>';
-                        return;
-                    }
-                    renderSearchResults(data.users);
-                })
-                .catch(function (err) {
-                    console.error('Add-people search error:', err);
-                    addSearchResults.innerHTML = '<div style="font-size:12px;color:#c62828;padding:6px;">Search failed — check your connection.</div>';
-                });
+                    .then(function (r) {
+                        if (!r.ok) { throw new Error('Search failed (' + r.status + ')'); }
+                        return r.json();
+                    })
+                    .then(function (data) {
+                        if (!data.success) {
+                            addSearchResults.innerHTML = '<div style="font-size:12px;color:#c62828;padding:6px;">' + esc(data.error || 'Search failed') + '</div>';
+                            return;
+                        }
+                        renderSearchResults(data.users);
+                    })
+                    .catch(function (err) {
+                        console.error('Add-people search error:', err);
+                        addSearchResults.innerHTML = '<div style="font-size:12px;color:#c62828;padding:6px;">Search failed — check your connection.</div>';
+                    });
             }, 250);
         });
     }
@@ -1270,7 +1801,41 @@ window.GroupChat = (function () {
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
     else { init(); }
 
-    return { openPanel: openPanel, closePanels: closePanels };
+
+    /* ══════════════════════ LIVE ══════════════════════ */
+    function liveRoomUrl(roomId) {
+        return LIVE_ROOM_URL_TEMPLATE.replace('PLACEHOLDER', roomId);
+    }
+
+    function onLiveStarted(data) {
+        var badge = document.getElementById('gc-live-badge');
+        if (badge) {
+            badge.href = liveRoomUrl(data.room_id);
+            badge.style.display = 'inline-flex';
+        }
+        var goLiveBtn = document.getElementById('gc-golive-btn');
+        if (goLiveBtn) { goLiveBtn.style.display = 'none'; }
+        toast((data.started_by || 'Someone') + ' started a live stream!');
+    }
+
+    function onLiveEnded() {
+        var badge = document.getElementById('gc-live-badge');
+        if (badge) { badge.style.display = 'none'; }
+        var goLiveBtn = document.getElementById('gc-golive-btn');
+        if (goLiveBtn) { goLiveBtn.style.display = ''; }
+    }
+
+    function openGoLive() {
+        var el = document.getElementById('gc-golive-backdrop');
+        if (el) { el.classList.add('show'); }
+    }
+    function closeGoLive() {
+        var el = document.getElementById('gc-golive-backdrop');
+        if (el) { el.classList.remove('show'); }
+    }
+
+
+    return { openPanel: openPanel, closePanels: closePanels, openGoLive: openGoLive, closeGoLive: closeGoLive };
 }());
 </script>
 {% endblock %}

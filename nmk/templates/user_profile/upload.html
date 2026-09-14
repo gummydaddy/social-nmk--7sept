@@ -128,7 +128,7 @@
         margin: 0;
     }
 
-    #category-form .form-group > label {
+    #category-form .form-group>label {
         display: none;
     }
 
@@ -172,7 +172,7 @@
 
     .upload-action-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,.06);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, .06);
     }
 
     .upload-action-icon {
@@ -451,13 +451,12 @@
 
                 {{ category_form.category }}
 
-                <button
-                    type="submit"
-                    class="btn btn-primary category-update-btn"
-                    name="update_category"
+                <button type="submit" class="btn btn-primary category-update-btn" name="update_category"
                     style="display:none;">
                     Update Category
                 </button>
+
+                <button type="submit" class="btn btn-primary mt-2" name="update_category">Update Category</button>
 
             </div>
 
@@ -480,9 +479,7 @@
 
             <!-- Update Category -->
 
-            <div
-                class="upload-action-card"
-                onclick="document.querySelector('#category-form select').focus();">
+            <div class="upload-action-card" onclick="document.querySelector('#category-form select').focus();">
 
                 <div class="upload-action-icon">
                     <i class="fas fa-upload"></i>
@@ -501,10 +498,7 @@
 
             <!-- Select Image / Video -->
 
-            <label
-                for="id_file"
-                class="upload-action-card"
-                style="margin:0;">
+            <label for="id_file" class="upload-action-card" style="margin:0;">
 
                 <div class="upload-action-icon">
                     <i class="fas fa-image"></i>
@@ -520,13 +514,7 @@
 
             </label>
 
-            <input
-                type="file"
-                id="id_file"
-                name="file"
-                accept="image/*,video/*"
-                onchange="previewFile(event)"
-                hidden>
+            <input type="file" id="id_file" name="file" accept="image/*,video/*" onchange="previewFile(event)" hidden>
 
         </div>
 
@@ -535,38 +523,21 @@
              VIDEO OPTIONS
         ========================== -->
 
-        <div
-            id="videoOptions"
-            class="upload-field"
-            style="display:none;">
+        <div id="videoOptions" class="upload-field" style="display:none;">
 
             <label for="id_start_time">
                 Start Time (seconds)
             </label>
 
-            <input
-                type="number"
-                class="upload-control"
-                id="id_start_time"
-                name="start_time"
-                min="0"
-                value="0">
+            <input type="number" class="upload-control" id="id_start_time" name="start_time" min="0" value="0">
 
-            <label
-                for="id_duration"
-                style="margin-top:12px;">
+            <label for="id_duration" style="margin-top:12px;">
 
                 Duration (seconds)
 
             </label>
 
-            <input
-                type="number"
-                class="upload-control"
-                id="id_duration"
-                name="duration"
-                min="1"
-                value="90">
+            <input type="number" class="upload-control" id="id_duration" name="duration" min="1" value="90">
 
         </div>
 
@@ -602,10 +573,7 @@
 
             </div>
 
-            <select
-                class="upload-control"
-                id="id_filter"
-                name="filter">
+            <select class="upload-control" id="id_filter" name="filter">
 
                 <option value="">
                     Select a filter
@@ -685,18 +653,10 @@
 
             <div class="description-wrapper">
 
-                <textarea
-                    class="upload-control"
-                    id="id_description"
-                    name="description"
-                    rows="4"
-                    maxlength="500"
-                    placeholder="Write your description here..."
-                    oninput="convertLinks(event)"></textarea>
+                <textarea class="upload-control" id="id_description" name="description" rows="4" maxlength="500"
+                    placeholder="Write your description here..." oninput="convertLinks(event)"></textarea>
 
-                <span
-                    class="description-counter"
-                    id="descriptionCounter">
+                <span class="description-counter" id="descriptionCounter">
                     0/500
                 </span>
 
@@ -704,15 +664,13 @@
 
 
             {% for error in form.description.errors %}
-                <p class="help-block text-danger">
-                    {{ error }}
-                </p>
+            <p class="help-block text-danger">
+                {{ error }}
+            </p>
             {% endfor %}
 
 
-            <div
-                id="descriptionPreview"
-                style="margin-top:10px;">
+            <div id="descriptionPreview" style="margin-top:10px;">
             </div>
 
         </div>
@@ -722,10 +680,7 @@
              SHARE
         ========================== -->
 
-        <button
-            type="submit"
-            class="share-button btn btn-primary"
-            id="submitButton">
+        <button type="submit" class="share-button btn btn-primary" id="submitButton">
 
             <i class="fas fa-paper-plane"></i>
 
@@ -734,20 +689,14 @@
         </button>
 
 
-        <div
-            id="uploadSpinner"
-            style="display:none;">
+        <div id="uploadSpinner" style="display:none;">
             Uploading...
         </div>
 
 
-        <div
-            id="uploadProgress"
-            class="progress-container">
+        <div id="uploadProgress" class="progress-container">
 
-            <div
-                class="progress-bar"
-                style="width:0%;">
+            <div class="progress-bar" style="width:0%;">
                 0%
             </div>
 
@@ -787,9 +736,10 @@
 
 <!--for uploading media directly from gallery without opening teh app-->
 <script>
-document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
 
-    const sharedFile = {{ shared_file|default:"null"|safe }};
+        const sharedFile = {{ shared_file|default: "null" | safe
+    }};
     const prefillText = "{{ prefill_text|default:''|escapejs }}";
 
     // Fill description if prefill_text is provided
@@ -849,17 +799,17 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         // Tag user field with Select2
         $('#id_tags').select2({
             ajax: {
                 url: '{% url "user_profile:tag_user_search" %}',
                 dataType: 'json',
                 delay: 250,
-                data: function(params) {
+                data: function (params) {
                     return { q: params.term };
                 },
-                processResults: function(data) {
+                processResults: function (data) {
                     return { results: data.results };
                 },
                 cache: true
@@ -908,116 +858,116 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 <script>
-$(document).ready(function() {
+    $(document).ready(function () {
 
-    const MAX_DURATION = 1500; // seconds
-    let validDuration = true;
+        const MAX_DURATION = 1500; // seconds
+        let validDuration = true;
 
-    // --- Duration check on file input ---
-    $('#id_file').on('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        // --- Duration check on file input ---
+        $('#id_file').on('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        const fileType = file.type;
-        if (fileType.startsWith('video/')) {
-            const video = document.createElement('video');
-            video.preload = 'metadata';
+            const fileType = file.type;
+            if (fileType.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
 
-            video.onloadedmetadata = function() {
-                window.URL.revokeObjectURL(video.src);
-                const duration = video.duration;
-                console.log("Video duration:", duration);
+                video.onloadedmetadata = function () {
+                    window.URL.revokeObjectURL(video.src);
+                    const duration = video.duration;
+                    console.log("Video duration:", duration);
 
-                if (duration > MAX_DURATION) {
-                    alert(`This video is too long! Maximum allowed duration is ${MAX_DURATION} seconds.`);
-                    $('#id_file').val(''); // Clear the input
-                    validDuration = false;
-                } else {
-                    validDuration = true;
-                }
-            };
-
-            video.onerror = function() {
-                alert("Could not read video duration. Please upload a valid video file.");
-                $('#id_file').val('');
-                validDuration = false;
-            };
-
-            video.src = URL.createObjectURL(file);
-        } else {
-            validDuration = true; // allow images
-        }
-    });
-
-    // --- Form submission handler ---
-    $('#uploadForm').on('submit', function(e) {
-        e.preventDefault(); // Stop normal form submission
-
-        if (!validDuration) {
-            alert("Please select a valid video (less than 25 minutes and 100 MB) before uploading.");
-            return;
-        }
-
-        $('#uploadSpinner').show();        // Show spinner
-        $('#submitButton').prop('disabled', true); // Disable button
-        $('#uploadProgress').show();       // Show progress bar
-        $('#uploadStatus').text('');       // Clear any previous status
-
-        const form = this;
-        const formData = new FormData(this);
-
-        $.ajax({
-            xhr: function() {
-                const xhr = new window.XMLHttpRequest();
-                xhr.upload.addEventListener("progress", function(evt) {
-                    if (evt.lengthComputable) {
-                        const percentComplete = Math.round((evt.loaded / evt.total) * 100);
-                        $('#uploadProgress .progress-bar').css('width', percentComplete + '%').text(percentComplete + '%');
+                    if (duration > MAX_DURATION) {
+                        alert(`This video is too long! Maximum allowed duration is ${MAX_DURATION} seconds.`);
+                        $('#id_file').val(''); // Clear the input
+                        validDuration = false;
+                    } else {
+                        validDuration = true;
                     }
-                }, false);
-                return xhr;
-            },
-            url: '{% url "user_profile:upload_media" %}', // Your media upload view
-            method: 'POST',
-            data: formData,
-            processData: false,
-            contentType: false,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': '{{ csrf_token }}'
+                };
 
-            },
-            success: function(response) {
-                console.log('Upload successful:', response);
-                alert("Upload successful!");
-                //window.location.href = "{% url 'user_profile:profile' request.user.id %}";
-                // Load profile page via AJAX and inject into #mainContent (or body)
+                video.onerror = function () {
+                    alert("Could not read video duration. Please upload a valid video file.");
+                    $('#id_file').val('');
+                    validDuration = false;
+                };
 
-                $.get("{% url 'user_profile:profile' request.user.id %}", function(profileHtml) {
-                    $('body').html(profileHtml);
-                });
-
-            },
-            error: function(xhr, status, error) {
-                $('#uploadSpinner').hide();           // Hide spinner
-                $('#uploadProgress').hide();          // Hide progress bar
-                $('#submitButton').prop('disabled', false); // Re-enable button
-                $('#uploadStatus').text("Upload failed. Please try again.");
-                console.error("Upload error:", error);
+                video.src = URL.createObjectURL(file);
+            } else {
+                validDuration = true; // allow images
             }
         });
+
+        // --- Form submission handler ---
+        $('#uploadForm').on('submit', function (e) {
+            e.preventDefault(); // Stop normal form submission
+
+            if (!validDuration) {
+                alert("Please select a valid video (less than 25 minutes and 100 MB) before uploading.");
+                return;
+            }
+
+            $('#uploadSpinner').show();        // Show spinner
+            $('#submitButton').prop('disabled', true); // Disable button
+            $('#uploadProgress').show();       // Show progress bar
+            $('#uploadStatus').text('');       // Clear any previous status
+
+            const form = this;
+            const formData = new FormData(this);
+
+            $.ajax({
+                xhr: function () {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener("progress", function (evt) {
+                        if (evt.lengthComputable) {
+                            const percentComplete = Math.round((evt.loaded / evt.total) * 100);
+                            $('#uploadProgress .progress-bar').css('width', percentComplete + '%').text(percentComplete + '%');
+                        }
+                    }, false);
+                    return xhr;
+                },
+                url: '{% url "user_profile:upload_media" %}', // Your media upload view
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': '{{ csrf_token }}'
+
+                },
+                success: function (response) {
+                    console.log('Upload successful:', response);
+                    alert("Upload successful!");
+                    //window.location.href = "{% url 'user_profile:profile' request.user.id %}";
+                    // Load profile page via AJAX and inject into #mainContent (or body)
+
+                    $.get("{% url 'user_profile:profile' request.user.id %}", function (profileHtml) {
+                        $('body').html(profileHtml);
+                    });
+
+                },
+                error: function (xhr, status, error) {
+                    $('#uploadSpinner').hide();           // Hide spinner
+                    $('#uploadProgress').hide();          // Hide progress bar
+                    $('#submitButton').prop('disabled', false); // Re-enable button
+                    $('#uploadStatus').text("Upload failed. Please try again.");
+                    console.error("Upload error:", error);
+                }
+            });
+        });
     });
-});
 </script>
 
 
 <!--catogery update script -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         // Privacy Toggle
         const privacyButton = document.getElementById('privacy-button');
         if (privacyButton) {
-            privacyButton.addEventListener('click', function() {
+            privacyButton.addEventListener('click', function () {
                 const url = "{% url 'user_profile:toggle_privacy' %}";
                 const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
@@ -1030,18 +980,18 @@ $(document).ready(function() {
                     },
                     body: JSON.stringify({})
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        privacyButton.textContent = data.is_private ? 'Private' : 'Public';
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            privacyButton.textContent = data.is_private ? 'Private' : 'Public';
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
             });
         }
 
-       // JavaScript to handle form submission with AJAX
-        document.getElementById('category-form').addEventListener('submit', function(e) {
+        // JavaScript to handle form submission with AJAX
+        document.getElementById('category-form').addEventListener('submit', function (e) {
             e.preventDefault();  // Prevent the default form submission
             var formData = new FormData(this);
 
@@ -1052,22 +1002,21 @@ $(document).ready(function() {
                     'X-Requested-With': 'XMLHttpRequest',
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // Optionally update the page with the new category text
-                    alert('Category updated: ' + data.category);
-                } else {
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Optionally update the page with the new category text
+                        alert('Category updated: ' + data.category);
+                    } else {
+                        alert('Error updating category');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                     alert('Error updating category');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error updating category');
-            });
+                });
         });
     });
 </script>
 
 {% endblock %}
-

@@ -54,7 +54,7 @@ app.conf.beat_schedule =  {
     #explore_detail function task
     "precompute-related-coview-media-every-15-min": {
         "task": "service_auth.user_profile.tasks.precompute_related_coview_media",
-        "schedule": crontab(minute="*/30"),
+        "schedule": crontab(minute="*/10"),
     },
 
     'sync-not-interested': {
