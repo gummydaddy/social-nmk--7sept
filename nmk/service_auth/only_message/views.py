@@ -48,6 +48,8 @@ from .tasks import process_message_file, optimize_image_for_upload, send_progres
 
 from .push_notifications import save_push_subscription, delete_push_subscription
 
+from . import dm_unread_store
+
 AuthUser = get_user_model()
 logger = logging.getLogger(__name__)
 
@@ -107,7 +109,7 @@ def get_online_users(request):
         'online_users': online_users
     })
 '''
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def get_online_users(request):
     online_threshold = now() - timedelta(minutes=5)
 
@@ -249,7 +251,7 @@ def send_message_view(request):
 
 
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(private=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def message_list_view(request):
     latest_messages = Message.objects.filter(
         Q(sender=request.user) | Q(recipient=request.user)
@@ -279,7 +281,15 @@ def message_list_view(request):
     sorted_users_data = sorted(users_with_latest_message_time, key=lambda x: x['latest_message_time'], reverse=True)
     users = [data['user'] for data in sorted_users_data]
 
-    return render(request, 'message_list.html', {'users': users})
+    unread_map = dm_unread_store.get_dm_unread_map(request.user.id)   # ← NEW
+    for u in users:                                                    # ← NEW
+        u.unread_count = unread_map.get(str(u.id), 0)                  # ← NEW
+
+    #return render(request, 'message_list.html', {'users': users})
+    return render(request, 'message_list.html', {
+        'users': users,
+        'message_unread_total': sum(unread_map.values()),              # ← NEW
+    })
 
 
 #----------------------------------------------------------------------------------------
@@ -290,7 +300,7 @@ def message_list_view(request):
 # FIXED user_messages_view function for views.py
 # UPDATED user_messages_view function with async file processing
 @login_required
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(private=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def user_messages_view(request, username):
     user = get_object_or_404(AuthUser, username=username)
 
@@ -432,6 +442,7 @@ def user_messages_view(request, username):
                     f"✅ Message created: {new_message.id}"
                 )
 
+                dm_unread_store.increment_dm_unread(sender_id=request.user.id, recipient_id=user.id)   # ← NEW
                 # =====================================================
                 # START ASYNC FILE PROCESSING
                 # =====================================================
@@ -650,6 +661,8 @@ def user_messages_view(request, username):
     # =====================================================
     # RENDER TEMPLATE
     # =====================================================
+    dm_unread_store.clear_dm_unread(request.user.id, user.id)   # ← NEW
+
     return render(request, 'user_messages.html', {
         'messages': decrypted_messages,
         'form': form,
@@ -847,6 +860,8 @@ def user_messages_view(request, username):
                 )
 
                 logger.info(f"✅ Message created: {new_message.id}")
+
+                dm_unread_store.increment_dm_unread(sender_id=request.user.id, recipient_id=user.id)   # ← NEW
 
                 # =====================================================
                 # RESOLVE FILE URL SAFELY (needed for both the WS event
@@ -1088,6 +1103,8 @@ def user_messages_view(request, username):
     # =====================================================
     # RENDER TEMPLATE
     # =====================================================
+    dm_unread_store.clear_dm_unread(request.user.id, user.id)   # ← NEW
+
     return render(request, 'user_messages.html', {
         'messages': decrypted_messages,
         'form': form,
@@ -1363,8 +1380,7 @@ def test_push_notification(request):
 #----------------------------------------------------------------------------------------
 
 
-
-@cache_control(public=True, max_age=3600, s_maxage=7200, must_revalidate=True)
+@cache_control(public=True, max_age=864000, s_maxage=864050, must_revalidate=True)
 def search_user_message(request):
     query = request.GET.get('q')
     if query:
@@ -1590,6 +1606,78 @@ def decline_call_api(request, call_id):
 
     return JsonResponse({'success': True})
 #user audio and video calling setup
+#____________________________________________________________________________
+#____________________________________________________________________________
+#____________________________________________________________________________
+
+
+
+
+#____________________________________________________________________________
+#____________________________________________________________________________
+#____________________________________________________________________________
+#user dm counter setup
+
+@login_required
+def dm_unread_counts_api(request):
+    """Fresh per-conversation unread counts for message_list.html's live badges."""
+    counts = dm_unread_store.get_dm_unread_map(request.user.id)
+    return JsonResponse({'counts': counts, 'total': sum(counts.values())})
+
+
+@login_required
+def unread_counts_api(request):
+    """Combined nav-level totals: messages + groups + channels, one call."""
+    from . import group_store
+
+    dm_total = dm_unread_store.get_total_dm_unread(request.user.id)
+
+    group_unread_map = group_store.get_all_unread(request.user.id)
+    groups = group_store.list_user_groups(request.user.id)
+    groups_total = sum(group_unread_map.get(g['id'], 0) for g in groups if g['kind'] == 'group')
+    channels_total = sum(group_unread_map.get(g['id'], 0) for g in groups if g['kind'] == 'broadcast')
+
+    return JsonResponse({
+        'message_unread_total': dm_total,
+        'groups_unread_total': groups_total,
+        'channels_unread_total': channels_total,
+        'grand_total': dm_total + groups_total + channels_total,
+    })
+
+
+def get_dm_conversations_for_user(user):
+    """
+    Shared helper — returns the same sorted [{'user': ..., 'latest_message_time': ...}]
+    shape message_list_view builds, so group_list.html's Messages tab can reuse it
+    without duplicating the query logic.
+    """
+    latest_messages = Message.objects.filter(
+        Q(sender=user) | Q(recipient=user)
+    ).values('sender', 'recipient').annotate(
+        latest_message=Max('timestamp')
+    ).order_by('-latest_message')
+
+    user_ids = set()
+    for message in latest_messages:
+        other_user_id = message['sender'] if message['sender'] != user.id else message['recipient']
+        if other_user_id:
+            user_ids.add(other_user_id)
+
+    users_with_latest_message_time = []
+    users_qs = AuthUser.objects.filter(id__in=list(user_ids))
+
+    for u in users_qs:
+        latest_time = None
+        for m in latest_messages:
+            if m['sender'] == u.id or m['recipient'] == u.id:
+                latest_time = m['latest_message']
+                break
+        if latest_time:
+            users_with_latest_message_time.append({'user': u, 'latest_message_time': latest_time})
+
+    sorted_data = sorted(users_with_latest_message_time, key=lambda x: x['latest_message_time'], reverse=True)
+    return [d['user'] for d in sorted_data]
+#user dm counter setup
 #____________________________________________________________________________
 #____________________________________________________________________________
 #____________________________________________________________________________

@@ -71,6 +71,26 @@ def _heartbeat_key(room_id):
     return f"live:heartbeat:{room_id}"
 
 
+# ── add near the other key helpers ──
+def _group_live_key(gid):
+    return f"group:{gid}:live_room"
+
+
+def link_group_room(group_id, room_id):
+    if group_id:
+        _redis().set(_group_live_key(group_id), room_id)
+
+
+def get_group_room_id(group_id):
+    val = _redis().get(_group_live_key(group_id))
+    return _safe_decode(val) if val else None
+
+
+def unlink_group_room(group_id):
+    if group_id:
+        _redis().delete(_group_live_key(group_id))
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Room lifecycle
 # ─────────────────────────────────────────────────────────────────────────────
@@ -78,7 +98,7 @@ def _heartbeat_key(room_id):
 def generate_room_id():
     return uuid.uuid4().hex[:16]
 
-
+'''
 def create_room(room_id, host_id, host_username, host_pic, title, is_private=False):
     r = _redis()
     now = time.time()
@@ -93,8 +113,27 @@ def create_room(room_id, host_id, host_username, host_pic, title, is_private=Fal
     r.zadd(ACTIVE_ROOMS_KEY, {room_id: now})
     refresh_heartbeat(room_id)
     return get_room(room_id)
+'''
 
+def create_room(room_id, host_id, host_username, host_pic, title, is_private=False, linked_group_id=None):
+    r = _redis()
+    now = time.time()
+    r.hset(_room_key(room_id), mapping={
+        "host_id": str(host_id),
+        "host_username": host_username or "",
+        "host_pic": host_pic or "",
+        "title": (title or "").strip()[:120] or f"{host_username}'s live stream",
+        "is_private": "1" if is_private else "0",
+        "created_at": str(now),
+        "linked_group_id": linked_group_id or "",   # ← NEW
+    })
+    r.zadd(ACTIVE_ROOMS_KEY, {room_id: now})
+    refresh_heartbeat(room_id)
+    if linked_group_id:
+        link_group_room(linked_group_id, room_id)    # ← NEW
+    return get_room(room_id)
 
+'''
 def get_room(room_id):
     r = _redis()
     raw = r.hgetall(_room_key(room_id))
@@ -105,8 +144,21 @@ def get_room(room_id):
     room["viewer_count"] = get_viewer_count(room_id)
     room["room_id"] = room_id
     return room
+'''
 
+def get_room(room_id):
+    r = _redis()
+    raw = r.hgetall(_room_key(room_id))
+    if not raw:
+        return None
+    room = {_safe_decode(k): _safe_decode(v) for k, v in raw.items()}
+    room["is_private"] = room.get("is_private") == "1"
+    room["linked_group_id"] = room.get("linked_group_id") or None   # ← NEW
+    room["viewer_count"] = get_viewer_count(room_id)
+    room["room_id"] = room_id
+    return room
 
+'''
 def delete_room(room_id):
     r = _redis()
     keys = [
@@ -121,6 +173,25 @@ def delete_room(room_id):
     ]
     r.delete(*keys)
     r.zrem(ACTIVE_ROOMS_KEY, room_id)
+'''
+
+def delete_room(room_id):
+    room = get_room(room_id)   # ← fetch first, need linked_group_id before wiping
+    r = _redis()
+    keys = [
+        _room_key(room_id),
+        _viewers_key(room_id),
+        _costreamers_key(room_id),
+        _pending_costream_key(room_id),
+        _private_allowed_key(room_id),
+        _pending_private_key(room_id),
+        _chat_key(room_id),
+        _heartbeat_key(room_id),
+    ]
+    r.delete(*keys)
+    r.zrem(ACTIVE_ROOMS_KEY, room_id)
+    if room and room.get("linked_group_id"):
+        unlink_group_room(room["linked_group_id"])   # ← NEW
 
 
 def list_active_rooms(limit=100):

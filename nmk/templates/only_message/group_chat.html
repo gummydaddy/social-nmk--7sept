@@ -4,6 +4,8 @@
 
 {% block main_content %}
 
+{% block header %}
+{% endblock %}
 
 <style>
     /* ══════════════════════════════════════════════════════════
@@ -310,6 +312,36 @@
         .gc-panel { width: 100vw; }
         .gc-role-select { max-width: 74px; }
     }
+
+    /* ══════════════════════════════════════════════════════════
+       LIVE
+       ══════════════════════════════════════════════════════════ */
+    .gc-modal-backdrop {
+        display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+        z-index: 20000; align-items: center; justify-content: center;
+    }
+    .gc-modal-backdrop.show { display: flex; }
+    .gc-modal { background: #fff; border-radius: 16px; padding: 22px; width: min(360px, 92vw); }
+    .gc-modal h3 { margin-top: 0; }
+    .gc-modal input[type="text"] {
+        width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 10px;
+        font-size: 14px; margin-bottom: 14px; box-sizing: border-box;
+    }
+    .gc-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .gc-modal-actions button {
+        border: none; border-radius: 20px; padding: 9px 18px; font-weight: 600; cursor: pointer;
+    }
+    .gc-cancel { background: #eee; }
+    .gc-live-submit { background: linear-gradient(135deg,#ff3b5c,#ff2d95); color: #fff; }
+
+    .gc-live-card {
+        display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+        background: linear-gradient(135deg,#ff3b5c,#ff2d95); color: #fff;
+        border-radius: 12px; text-decoration: none; font-size: 13px; font-weight: 700;
+        cursor: pointer;
+    }
+    .gc-live-card:hover { color: #fff; opacity: .92; }
+
 </style>
 
 <div id="gc-root">
@@ -328,6 +360,19 @@
         <button class="gc-icon-btn" title="Settings" onclick="GroupChat.openPanel('gc-settings-panel')">⚙️</button>
         {% endif %}
         <button class="gc-icon-btn" id="gc-mute-btn" title="Mute notifications">🔔</button>
+
+        {% if is_admin %}
+        <button class="gc-icon-btn" id="gc-golive-btn" title="Start Live"
+                onclick="GroupChat.openGoLive()"
+                {% if active_live_room_id %}style="display:none;"{% endif %}>🔴</button>
+        {% endif %}
+
+        <a class="gc-icon-btn" id="gc-live-badge" title="Join Live"
+           href="{% if active_live_room_id %}{% url 'only_message:live_room_view' room_id=active_live_room_id %}{% endif %}"
+           style="text-decoration:none;color:#dc2626;font-weight:800;{% if not active_live_room_id %}display:none;{% endif %}">
+           🔴 LIVE
+        </a>
+
     </div>
 
     <div id="gc-pinned-banner">
@@ -387,6 +432,23 @@
                 Reset Invite Link
             </button>
             {% endif %}
+
+            {% if is_admin %}
+            <div id="gc-golive-backdrop" class="gc-modal-backdrop">
+                <div class="gc-modal">
+                    <h3>Start a Live Stream</h3>
+                    <form method="post" action="{% url 'only_message:group_start_live_view' group_id=group_id %}">
+                        {% csrf_token %}
+                        <input type="text" name="title" maxlength="120" placeholder="What's this stream about? (optional)">
+                        <div class="gc-modal-actions">
+                            <button type="button" class="gc-cancel" onclick="GroupChat.closeGoLive()">Cancel</button>
+                            <button type="submit" class="gc-live-submit">Go Live</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
         </div>
 
         {% if can_add_members %}
@@ -499,6 +561,10 @@
 
 {% endblock %}
 
+{% block footer %}
+
+{% endblock %}
+
 {% block Message_script %}
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -535,6 +601,8 @@ window.GroupChat = (function () {
     var SEARCH_USERS_URL = "{% url 'only_message:group_search_users_api' group_id=group_id %}";
     var RESET_INVITE_URL = "{% url 'only_message:reset_invite_view' group_id=group_id %}";
     var MUTE_URL         = "{% url 'only_message:mute_group_view' group_id=group_id %}";
+
+    var LIVE_ROOM_URL_TEMPLATE = "{% url 'only_message:live_room_view' room_id='PLACEHOLDER' %}";
 
     var ws = null;
     var reconnectAttempts = 0;
@@ -670,6 +738,14 @@ window.GroupChat = (function () {
                 break;
             case 'pong':
                 break;
+
+            case 'live_started':
+                onLiveStarted(data);
+                break;
+            case 'live_ended':
+                onLiveEnded();
+                break;
+
         }
     }
 
@@ -739,6 +815,11 @@ window.GroupChat = (function () {
 
         if (msg.message_type === 'system') { renderSystemMsg(msg.content); return; }
 
+        if (msg.message_type === 'live') {   // ← NEW
+            renderLiveCard(msg);
+            return;
+        }
+
         var isMe = String(msg.sender_id) === String(CURRENT_USER_ID);
         var row = document.createElement('div');
         row.className = 'gc-msg-row' + (isMe ? ' gc-me' : '');
@@ -781,6 +862,16 @@ window.GroupChat = (function () {
         scrollToBottom();
 
         if (KIND === 'broadcast') { send({ type: 'view_post', message_id: msg.id }); }
+    }
+
+    function renderLiveCard(msg) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'align-self:center;margin:6px 0;';
+        wrap.innerHTML = '<a class="gc-live-card" href="' + liveRoomUrl(msg.live_room_id) + '">' +
+            '🔴 ' + esc(msg.sender_username) + ' started a live — tap to join' +
+        '</a>';
+        messagesEl.appendChild(wrap);
+        scrollToBottom();
     }
 
     function renderSystemMsg(text) {
@@ -1270,7 +1361,41 @@ window.GroupChat = (function () {
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); }
     else { init(); }
 
-    return { openPanel: openPanel, closePanels: closePanels };
+
+    /* ══════════════════════ LIVE ══════════════════════ */
+    function liveRoomUrl(roomId) {
+        return LIVE_ROOM_URL_TEMPLATE.replace('PLACEHOLDER', roomId);
+    }
+
+    function onLiveStarted(data) {
+        var badge = document.getElementById('gc-live-badge');
+        if (badge) {
+            badge.href = liveRoomUrl(data.room_id);
+            badge.style.display = 'inline-flex';
+        }
+        var goLiveBtn = document.getElementById('gc-golive-btn');
+        if (goLiveBtn) { goLiveBtn.style.display = 'none'; }
+        toast((data.started_by || 'Someone') + ' started a live stream!');
+    }
+
+    function onLiveEnded() {
+        var badge = document.getElementById('gc-live-badge');
+        if (badge) { badge.style.display = 'none'; }
+        var goLiveBtn = document.getElementById('gc-golive-btn');
+        if (goLiveBtn) { goLiveBtn.style.display = ''; }
+    }
+
+    function openGoLive() {
+        var el = document.getElementById('gc-golive-backdrop');
+        if (el) { el.classList.add('show'); }
+    }
+    function closeGoLive() {
+        var el = document.getElementById('gc-golive-backdrop');
+        if (el) { el.classList.remove('show'); }
+    }
+
+
+    return { openPanel: openPanel, closePanels: closePanels, openGoLive: openGoLive, closeGoLive: closeGoLive };
 }());
 </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'socyfie-v3.1.4';
+const CACHE_NAME = 'socyfie-v3.1.6';
 
 // Minimal pre-cache list — only truly static assets that never redirect
 const PRE_CACHE_URLS = [
@@ -9,17 +9,16 @@ const PRE_CACHE_URLS = [
   "/static/images/apple-touch-icon.png",
   "/static/images/favicon.ico",
   "/static/images/favicon.svg",
-  "/templates/user_profile/following_media.html",
+  //"/templates/user_profile/following_media.html",
   "/templates/user_profile/media_detail.html",
   "/templates/user_profile/profile.html",
-  "/templates/landings/landing_page.html",
-  "/static/js/install-pwa.js",
+  //"/templates/landings/landing_page.html",
   "/static/js/pull_to_refresh.js",
   "/feed/",
   "/explore_me/",
   "/upload_media/",
   "/notion_home/",
-  "/landing_page/",
+  //"/landing_page/",
 ];
 
 

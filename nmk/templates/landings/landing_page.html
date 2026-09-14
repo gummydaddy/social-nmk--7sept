@@ -6,7 +6,7 @@
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 
     <!-- Google Tag Manager -->
     <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -79,7 +79,7 @@
 
     <!--app install related-->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <script src="{% static 'js/install-pwa.js' %}" async defer></script>
+    <script src="{% static 'js/install-pwa.js' %}" ></script>
     <script src="{% static 'js/day_night.js' %}" async defer></script>
     <!--app install related-->
 
@@ -94,6 +94,33 @@
                 background-position: 100% 50%;
             }
         }
+        <!--double tap zoom and normal screen on pinch relese-->
+        html,
+        body {
+            touch-action: manipulation;
+        }
+
+        /*
+         * Media that can be pinch-zoomed.
+         */
+        .pinch-zoom-media {
+            touch-action: pan-x pan-y;
+            transform-origin: center center;
+            will-change: transform;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /*
+         * Prevent Safari's native image interaction.
+         */
+        .pinch-zoom-media img,
+        .pinch-zoom-media video {
+            -webkit-user-drag: none;
+            user-select: none;
+        }
+        <!--double tap zoom and normal screen on pinch relese-->
 
         main {
             transition: margin-right 0.5s;
@@ -1029,12 +1056,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 </a>
 
                 <a>
-                {% if request.user.is_authenticated %}
-                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>
-                {% endif %}
-                </a>
-
-                <a>
                     <button id="toggleButton" onclick="toggleBackground()"> Night Mode🌒</button>
                 </a>
 
@@ -1085,26 +1106,56 @@ document.addEventListener("DOMContentLoaded", () => {
                       <div>
                           <h1 style="font-weight:650;">SOCYFIE<h1>
                       </div>
-                      <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
-                          <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
-                          <button type="submit" class="fas fa-search"></button> 
+
+                      <form method="GET"
+                           action="{% url 'user_profile:search_uploads' %}"
+                           class="d-flex mb-0">
+
+                          <input
+                              type="text"
+                              name="q"
+                              class="form-control me-2"
+                              placeholder="SOCYFIE Search descriptions, hashtags, users..."
+                              value="{{ request.GET.q|default:'' }}"
+                          >
+
+                          <button
+                              type="submit"
+                              class="search-btn"
+                              aria-label="Search uploads">
+                              <i class="fas fa-search"></i>
+                          </button>
+
+                          <button
+                              type="submit"
+                              class="search-btn"
+                              formaction="{% url 'user_profile:search_users' %}"
+                              aria-label="Search users">
+                              <i class="fas fa-user"></i>
+                          </button>
                       </form>
+
                   </div>
                   <a>
                       <div>
                           <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'" class="fas fa-bell">
                           </button>
                       </div>
-
+{% comment %}
                       <div>
                           <a href="{% url 'only_message:message_list_view' %}">
                             <button class="messagebtn">💬</button>
                           </a>
-                          <div>
-                              <a href="{% url 'only_message:group_list_view' %}" style="display:inline-block;margin:5px 0;padding:2px 3px;background:#4338ca;color:#fff;border-radius:10px;text-decoration:none;font-weight:480;">
-                                  👥G&C
-                              </a>
-                          </div>
+{% endcomment %}
+
+<div>
+    <a href="{% url 'only_message:group_list_view' %}" id="gc-nav-link"
+       style="display:inline-flex;align-items:center;gap:4px;margin:5px 0;padding:2px 3px;background:#4338ca;color:#fff;border-radius:10px;text-decoration:none;font-weight:480;position:relative;">
+        👥G&C
+        <span id="gc-nav-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;font-weight:800;min-width:16px;height:16px;padding:0 4px;border-radius:9px;align-items:center;justify-content:center;">0</span>
+    </a>
+</div>
+
                       </div>
 
                   </a>
@@ -1271,72 +1322,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 {% endblock %}
                 
             </main>
-{%comment%}
-         {% block footer %}
-         <div class="container  d-flex align-items-center">
-            <footer style="background: rgba(255, 255, 255, 0.9); border-top: 1px solid #e5e7eb;" class="text-center py-3">
-                <div class="bottom-strip d-flex justify-content-around align-items-center">
 
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:feed_page' %}" class="fas fa-home">
-                            <!--<i class="fas fa-home"></i>-->
-                            <span>Home</span>
-                        </a>
-                    </div>
-
-                {% if request.user.is_authenticated %}
-                    <div class="footer-icon">
-                        <a href="{% url 'notion:notion_home' notion_id=request.user.id %}" class="fas fa-lightbulb">
-                            <!--<i class="fas fa-lightbulb"></i>-->
-                            <span>Notions</span>
-                        </a>
-                    </div>
-                {% else %}
-
-                <div class="footer-icon">
-                    <a href="{% url 'notion:notion_home' %}" class="fas fa-lightbulb">
-                        <!--<i class="fas fa-lightbulb"></i>-->
-                        <span>Notions</span>
-                    </a>
-                </div>
-                {% endif %}
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:upload_media' %}" class="fas fa-upload">
-                            <!--<i class="fas fa-upload"></i>-->
-                            <span>Upload</span>
-                        </a>
-                    </div>
-
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:explore_me' %}" class="fas fa-search">
-                            <!--<i class="fas fa-search"></i>-->
-                            <span>Explore</span>
-                        </a>
-                    </div>
-
-                {% if request.user.is_authenticated %}
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile' user_id=request.user.id%}" class="fas fa-user-circle">
-                            <!--<i class="fas fa-user-circle"></i>-->
-                            <span>Profile</span>
-                        </a>
-                    </div>
-
-                {% else %}
-                    <div class="footer-icon">
-                        <a href="{% url 'user_profile:profile'%}" class="fas fa-user-circle">
-                            <!--<i class="fas fa-user-circle"></i>-->
-                            <span>Profile</span>
-                        </a>
-                    </div>
-                {% endif %}
-
-                </div>
-            </footer>
-         </div> 
-         {% endblock %}
-{%endcomment%}
 
         {% block footer %}
         <div class="mobile-bottom-nav">
@@ -1549,6 +1535,258 @@ document.addEventListener('DOMContentLoaded', function () {
 {% block script-user-status %}
 {% endblock %}
 
+    <script src="{% static 'js/pinch-zoom.js' %}" async defer></script>
+{% comment %}
+<script>
+(function () {
+    'use strict';
+
+    let activeMedia = null;
+
+    let startDistance = 0;
+    let currentScale = 1;
+
+    let startCenterX = 0;
+    let startCenterY = 0;
+
+    let initialTransform = '';
+
+    function getDistance(touch1, touch2) {
+        const dx =
+            touch2.clientX - touch1.clientX;
+
+        const dy =
+            touch2.clientY - touch1.clientY;
+
+        return Math.sqrt(
+            dx * dx + dy * dy
+        );
+    }
+
+    function getCenter(touch1, touch2) {
+        return {
+            x:
+                (touch1.clientX + touch2.clientX) / 2,
+
+            y:
+                (touch1.clientY + touch2.clientY) / 2
+        };
+    }
+
+
+    /*
+     * ---------------------------------------------------------
+     * PINCH START
+     * ---------------------------------------------------------
+     */
+
+    document.addEventListener(
+        'touchstart',
+        function (event) {
+
+            /*
+             * Only activate when exactly two fingers
+             * are touching a pinch-enabled media element.
+             */
+            if (event.touches.length !== 2) {
+                return;
+            }
+
+            const target =
+                event.target.closest(
+                    '.pinch-zoom-media'
+                );
+
+            if (!target) {
+                return;
+            }
+
+            activeMedia = target;
+
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            startDistance =
+                getDistance(
+                    touch1,
+                    touch2
+                );
+
+            const center =
+                getCenter(
+                    touch1,
+                    touch2
+                );
+
+            startCenterX = center.x;
+            startCenterY = center.y;
+
+            currentScale = 1;
+
+            initialTransform =
+                activeMedia.style.transform || '';
+
+            /*
+             * Prevent Safari from interpreting this as
+             * page-level pinch zoom.
+             */
+            event.preventDefault();
+
+        },
+        { passive: false }
+    );
+
+
+    /*
+     * ---------------------------------------------------------
+     * PINCH MOVE
+     * ---------------------------------------------------------
+     */
+
+    document.addEventListener(
+        'touchmove',
+        function (event) {
+
+            if (
+                !activeMedia ||
+                event.touches.length !== 2
+            ) {
+                return;
+            }
+
+            const touch1 = event.touches[0];
+            const touch2 = event.touches[1];
+
+            const distance =
+                getDistance(
+                    touch1,
+                    touch2
+                );
+
+            if (startDistance <= 0) {
+                return;
+            }
+
+            /*
+             * Calculate pinch scale.
+             */
+            let scale =
+                distance / startDistance;
+
+            /*
+             * Limit zoom.
+             */
+            scale = Math.max(
+                1,
+                Math.min(scale, 3)
+            );
+
+            currentScale = scale;
+
+            /*
+             * Keep the media centered around the
+             * pinch point.
+             */
+            const center =
+                getCenter(
+                    touch1,
+                    touch2
+                );
+
+            const deltaX =
+                center.x - startCenterX;
+
+            const deltaY =
+                center.y - startCenterY;
+
+            activeMedia.style.transform =
+                `translate(${deltaX}px, ${deltaY}px) scale(${scale})`;
+
+            event.preventDefault();
+
+        },
+        { passive: false }
+    );
+
+
+    /*
+     * ---------------------------------------------------------
+     * PINCH END
+     * ---------------------------------------------------------
+     */
+
+    document.addEventListener(
+        'touchend',
+        function (event) {
+
+            if (!activeMedia) {
+                return;
+            }
+
+            /*
+             * When one or both fingers are released,
+             * immediately restore original size.
+             */
+            if (event.touches.length < 2) {
+
+                resetMedia();
+
+            }
+
+        },
+        { passive: true }
+    );
+
+
+    /*
+     * ---------------------------------------------------------
+     * TOUCH CANCEL
+     * ---------------------------------------------------------
+     */
+
+    document.addEventListener(
+        'touchcancel',
+        function () {
+
+            if (activeMedia) {
+                resetMedia();
+            }
+
+        },
+        { passive: true }
+    );
+
+
+    /*
+     * ---------------------------------------------------------
+     * RESET MEDIA
+     * ---------------------------------------------------------
+     */
+
+    function resetMedia() {
+
+        if (!activeMedia) {
+            return;
+        }
+
+        activeMedia.style.transform =
+            initialTransform;
+
+        activeMedia = null;
+
+        startDistance = 0;
+        currentScale = 1;
+
+        startCenterX = 0;
+        startCenterY = 0;
+
+        initialTransform = '';
+
+    }
+
+})();
+</script>
+{% endcomment %}
 <!--SERVICE_WORKER_REGISTRATION_JS = """-->
 <script>
 if ('serviceWorker' in navigator) {
@@ -1578,6 +1816,67 @@ if ('serviceWorker' in navigator) {
 
 <!--onesignal push notification setup-->
 <script src="{% static 'js/onesignal_push_notification.js' %}" async defer></script>
+
+<!--group message counter-->
+<script>
+(function () {
+    'use strict';
+
+    // Only run for logged-in users — matches the auth flag already set on <body>
+    if (document.body.dataset.authenticated !== 'true') { return; }
+
+    var UNREAD_API = "{% url 'only_message:group_unread_counts_api' %}";
+    var badge = document.getElementById('gc-nav-badge');
+    if (!badge) { return; }
+
+    function fmtCount(n) {
+        return n > 99 ? '99+' : String(n);
+    }
+
+    function applyBadge(total) {
+        if (total > 0) {
+            badge.textContent = fmtCount(total);
+            badge.style.display = 'inline-flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function refreshBadge() {
+        fetch(UNREAD_API, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { applyBadge(data.grand_total || 0); })
+            .catch(function () { /* non-fatal — leave last known state on screen */ });
+    }
+
+    // Initial load
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', refreshBadge);
+    } else {
+        refreshBadge();
+    }
+
+    // Refresh when returning via bfcache (same fix as the group-list page needed)
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) { refreshBadge(); }
+    });
+
+    // Refresh when the tab/app regains focus
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') { refreshBadge(); }
+    });
+
+    // Light polling so the badge updates live even while sitting on another page
+    setInterval(refreshBadge, 15000);
+
+    // Expose so GroupConsumer-aware pages (like group_chat.html) can force an
+    // immediate refresh right after a WS message arrives, instead of waiting
+    // for the next poll tick.
+    window.SocyfieRefreshGroupBadge = refreshBadge;
+})();
+</script>
+<!--group message counter-->
+
 
 <!-- Global Call UI -->
 {% include 'only_message/global_call_ui.html' %}

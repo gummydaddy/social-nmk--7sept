@@ -21,6 +21,8 @@ from asgiref.sync import sync_to_async
 
 from . import live_store as store
 
+from . import group_store
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,8 +70,16 @@ class LiveConsumer(AsyncWebsocketConsumer):
         # ── Private-room gate ────────────────────────────────────────────
         if room.get('is_private') and self.role == 'viewer':
             allowed = await sync_to_async(store.is_private_allowed)(self.room_id, self.user.id)
+            #if not allowed:
+
+            if not allowed and room.get('linked_group_id'):
+                # Group-linked live: group membership itself is the grant —
+                # no manual per-user approval needed for people already in the group.
+                allowed = await sync_to_async(group_store.is_member)(room['linked_group_id'], self.user.id)
             if not allowed:
+
                 self.role = 'pending_private'
+
 
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
@@ -131,11 +141,17 @@ class LiveConsumer(AsyncWebsocketConsumer):
         try:
             if getattr(self, 'is_host', False):
                 # Host leaving ends the stream for everyone — no orphaned rooms.
+                room = await sync_to_async(store.get_room)(self.room_id)
+                linked_gid = room.get('linked_group_id') if room else None
+
                 await sync_to_async(store.delete_room)(self.room_id)
                 await self.channel_layer.group_send(self.group_name, {
                     'type': 'stream_ended_event',
                     'reason': 'host_left',
                 })
+
+                await self._notify_group_live_ended(linked_gid)   # ← NEW
+
                 logger.info(f"📵 Live room {self.room_id} ended (host left)")
             else:
                 if getattr(self, 'is_costreamer', False):
@@ -468,18 +484,47 @@ class LiveConsumer(AsyncWebsocketConsumer):
         if str(event['target_id']) == str(self.user.id):
             await self.send(text_data=json.dumps({'type': 'force_mute', 'muted': event['muted']}))
 
+
     async def _end_stream(self, data):
         if not self.is_host:
             return
+
+        room = await sync_to_async(store.get_room)(self.room_id)
+        linked_gid = room.get('linked_group_id') if room else None
+
         await sync_to_async(store.delete_room)(self.room_id)
         await self.channel_layer.group_send(self.group_name, {
             'type': 'stream_ended_event',
             'reason': 'ended_by_host',
         })
 
+        await self._notify_group_live_ended(linked_gid)   # ← NEW
+
     async def stream_ended_event(self, event):
         await self.send(text_data=json.dumps({'type': 'stream_ended', 'reason': event['reason']}))
         await self.close()
+
+    #new for adding live opition in the channels
+    async def _notify_group_live_ended(self, linked_group_id):
+        """If this room was tied to a group/channel, tell the group chat
+        the live has ended so the topbar badge disappears everywhere, and
+        drop a system message into the chat history."""
+        if not linked_group_id:
+            return
+        try:
+            msg = await sync_to_async(group_store.push_message)(
+                linked_group_id, sender_id=0, sender_username='', sender_pic='',
+                content='🔴 Live stream ended', message_type='system',
+            )
+            await self.channel_layer.group_send(f'group_{linked_group_id}', {
+                'type': 'group_message_event', 'message': msg,
+            })
+            await self.channel_layer.group_send(f'group_{linked_group_id}', {
+                'type': 'live_ended_event',
+            })
+        except Exception as e:
+            logger.warning(f"Could not notify group {linked_group_id} of live end: {e}")
+
 
     # ══════════════════════════════════════════════════════════════════════
     #  PRIVACY

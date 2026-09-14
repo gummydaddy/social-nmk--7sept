@@ -4,18 +4,26 @@
 {% load media_filters %}
 
 {% block main_content %}
+
+{% block header %}
+{% endblock %}
+
 <style>
     /* ══ Core chat layout ════════════════════════════════════ */
+    .class-main{
+        padding-top: 0px
+    }
+
     .message-container {
         width: 100%;
-        height: 60vh;
-        border: 1px solid #ccc;
+        height: 65vh;
+        border: 0px solid #ccc;
         background-color: #fff0ff;
         overflow-y: scroll;
         overflow-x: hidden;
-        padding: 2px;
-        margin-bottom: 5px;
-        color: #123;
+        padding: 0px;
+        margin-bottom: 0px;
+        #color: #123;
     }
     .message-container ul { list-style: none; padding: 0; margin: 0; }
     .message-container ul li {
@@ -274,6 +282,9 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 {% endblock %}
 
+{% block footer %}
+
+{% endblock %}
 
 {# ═══════════════════════════════════════════════════════════
    MESSAGE SCRIPT — chat + file preview/progress + call signals

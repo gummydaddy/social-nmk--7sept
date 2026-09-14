@@ -22,11 +22,6 @@
                   </div>
                   <a>
                       <div>
-                          <button id="notifications-button" onclick="location.href='{% url 'notion:notifications' %}'" class="fas fa-bell">
-                          </button>
-                      </div>
-                      <br>
-                      <div>
                           <button class="openbtn" onclick="openNav()">☰</button>
                       </div>
 
@@ -136,7 +131,32 @@
 
 
 </style>
+<style><!-- edit profile button-->
+.edit-profile-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none !important;
+    color: inherit;
+    cursor: pointer;
+}
 
+.edit-profile-btn i {
+    font-size: 21px;
+    transform: rotate(-15deg);
+}
+
+.edit-profile-btn span {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.edit-profile-btn:hover i {
+    transform: rotate(-15deg) scale(1.1);
+}
+
+</style>
 
     <!-- Profile Picture Section -->
 <div class="profile-container">
@@ -216,6 +236,7 @@
             <a href="{% url 'user_profile:following_list' user_id=profile_user.id %}">Following {{ following_count }} </a> | 
             <a href="{% url 'user_profile:followers_list' user_id=profile_user.id %}">Followers {{ followers_count }} </a> |
             <span>Uploads {{ uploads_count }} </span> 
+        </p>
 
         <!-- Follow/Unfollow button -->
         {% csrf_token %}
@@ -251,12 +272,22 @@
         {% else %}  
         <p>
             <div class="uploads-section">
-                <div class="row row-cols-2 g-4">
+                <div class="row row-cols-3 g-4">
                     <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>-->
                     <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>-->
                     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
                     <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:voices' user_id=request.user.id %}'">Voices</button>
+
+                {% if request.user.is_authenticated %}
+                <a href="{% url 'user_profile:edit_profile' user_id=request.user.id %}"
+                   class="edit-profile-btn"
+                   aria-label="Edit Profile">
+                    <i class="fas fa-pencil-alt"></i>
+                    <span>Edit</span>
+                </a>
+                {% endif %}
                 </div>
+
             </div>
         </p>
         
@@ -444,8 +475,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-
-
 {% endblock %}
 
 

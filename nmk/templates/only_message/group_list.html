@@ -1,6 +1,7 @@
 {% extends 'landing_page.html' %}
 {% load static %}
 {% load media_filters %}
+{% load custom_filters_message %}
 
 {% block main_content %}
 <style>
@@ -26,7 +27,25 @@
         font-size: 12px; font-weight: 700; cursor: pointer;
     }
 
-    .gl-section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; opacity: .55; margin: 18px 0 8px; }
+    /* ── Tabs ── */
+    .gl-tabs {
+        display: flex; gap: 6px; margin: 4px 0 16px; border-bottom: 1px solid #eee;
+    }
+    .gl-tab {
+        flex: 1; text-align: center; padding: 10px 6px; cursor: pointer;
+        font-size: 14px; font-weight: 700; color: #888; position: relative;
+        border-bottom: 3px solid transparent; display: flex; align-items: center;
+        justify-content: center; gap: 6px;
+    }
+    .gl-tab.active { color: #222; border-bottom-color: #4338ca; }
+    .gl-tab-badge {
+        background: #dc2626; color: #fff; font-size: 10px; font-weight: 800;
+        min-width: 18px; height: 18px; padding: 0 5px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+
+    .gl-list-panel { display: none; }
+    .gl-list-panel.active { display: block; }
 
     .gl-item {
         display: flex; align-items: center; gap: 10px; padding: 10px;
@@ -34,17 +53,30 @@
         border: 1px solid #eee; margin-bottom: 8px; transition: background .15s;
     }
     .gl-item:hover { background: #f7f7f9; color: inherit; }
-    .gl-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #eee; }
+    .gl-item img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; background: #eee; flex-shrink: 0; }
     .gl-item-info { flex: 1; min-width: 0; }
-    .gl-item-name { font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+    .gl-item-name {
+        font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
     .gl-item-meta { font-size: 12px; opacity: .6; }
     .gl-badge {
         font-size: 9px; font-weight: 800; padding: 2px 6px; border-radius: 8px;
-        text-transform: uppercase; letter-spacing: .3px;
+        text-transform: uppercase; letter-spacing: .3px; flex-shrink: 0;
     }
     .gl-badge-channel { background: #eef2ff; color: #4338ca; }
     .gl-badge-group { background: #ecfdf5; color: #047857; }
     .gl-empty { text-align: center; padding: 30px 10px; color: #888; font-size: 13px; }
+
+    /* ── Unread indicator on each item ── */
+    .gl-unread-count {
+        background: #4338ca; color: #fff; font-size: 11px; font-weight: 800;
+        min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .gl-unread-dot {
+        width: 10px; height: 10px; border-radius: 50%; background: #2563eb; flex-shrink: 0;
+    }
 
     /* ── Create modal ── */
     .gl-modal-backdrop {
@@ -54,12 +86,6 @@
     .gl-modal-backdrop.show { display: flex; }
     .gl-modal { background: #fff; border-radius: 16px; padding: 22px; width: min(380px, 92vw); }
     .gl-modal h3 { margin-top: 0; }
-    .gl-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
-    .gl-tab {
-        flex: 1; text-align: center; padding: 8px; border-radius: 10px; cursor: pointer;
-        font-size: 13px; font-weight: 700; background: #f2f2f5; color: #666;
-    }
-    .gl-tab.active { background: #333; color: #fff; }
     .gl-modal input[type="text"], .gl-modal textarea {
         width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 10px;
         font-size: 14px; margin-bottom: 12px; box-sizing: border-box; font-family: inherit;
@@ -88,31 +114,85 @@
     <button type="submit">Join</button>
 </form>
 
-<div class="gl-section-title">Groups</div>
-{% for g in my_groups %}
-    <a class="gl-item" href="{% url 'only_message:group_chat_view' group_id=g.id %}">
-        {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
-        <div class="gl-item-info">
-            <div class="gl-item-name">{{ g.name }} <span class="gl-badge gl-badge-group">Group</span></div>
-            <div class="gl-item-meta">{{ g.member_count }} members</div>
-        </div>
-    </a>
-{% empty %}
-    <div class="gl-empty">No groups yet. Create one or join with an invite link.</div>
-{% endfor %}
+<!-- ── Tabs: Groups | Channels ── -->
+<div class="gl-tabs">
+    <div class="gl-tab active" id="gl-tab-messages" onclick="switchTab('messages')">
+        Messages
+        {% if message_unread_total > 0 %}
+            <span class="gl-tab-badge">{{ message_unread_total }}</span>
+        {% endif %}
+    </div>
 
-<div class="gl-section-title">Channels</div>
-{% for g in my_channels %}
-    <a class="gl-item" href="{% url 'only_message:group_chat_view' group_id=g.id %}">
-        {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
-        <div class="gl-item-info">
-            <div class="gl-item-name">{{ g.name }} <span class="gl-badge gl-badge-channel">Channel</span></div>
-            <div class="gl-item-meta">{{ g.member_count }} subscribers</div>
-        </div>
-    </a>
-{% empty %}
-    <div class="gl-empty">No channels yet.</div>
-{% endfor %}
+    <div class="gl-tab active" id="gl-tab-groups" onclick="switchTab('groups')">
+        Groups
+        {% if groups_unread_total > 0 %}
+            <span class="gl-tab-badge">{{ groups_unread_total }}</span>
+        {% endif %}
+    </div>
+    <div class="gl-tab" id="gl-tab-channels" onclick="switchTab('channels')">
+        Channels
+        {% if channels_unread_total > 0 %}
+            <span class="gl-tab-badge">{{ channels_unread_total }}</span>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- ── Messages panel ── -->
+<div class="gl-list-panel active" id="gl-panel-messages">
+    {% for u in dm_users %}
+        <a class="gl-item" data-uid="{{ u.id }}" href="{% url 'only_message:user_messages_view' username=u.username %}">
+            <img src="{{ u.profile|profile_picture_url }}" alt="">
+            <div class="gl-item-info">
+                <div class="gl-item-name">{{ u.username }} <span class="gl-badge gl-badge-group" style="background:#dcfce7;color:#166534;">DM</span></div>
+                <div class="gl-item-meta">Direct message</div>
+            </div>
+            {% if u.unread_count > 0 %}
+                <span class="gl-unread-count">{% if u.unread_count > 99 %}99+{% else %}{{ u.unread_count }}{% endif %}</span>
+            {% endif %}
+        </a>
+    {% empty %}
+        <div class="gl-empty">No conversations yet.</div>
+    {% endfor %}
+</div>
+
+<!-- ── Groups panel ── -->
+<div class="gl-list-panel" id="gl-panel-groups">
+    {% for g in my_groups %}
+        <a class="gl-item"  data-gid="{{ g.id }}"  href="{% url 'only_message:group_chat_view' group_id=g.id %}">
+            {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+            <div class="gl-item-info">
+                <div class="gl-item-name">{{ g.name }} <span class="gl-badge gl-badge-group">Group</span></div>
+                <div class="gl-item-meta">{{ g.member_count }} members</div>
+            </div>
+            {% if g.unread_count > 0 %}
+                <span class="gl-unread-count" style="{% if g.unread_count <= 0 %}display:none;{% endif %}">
+                    {% if g.unread_count > 99 %}99+{% else %}{{ g.unread_count }}{% endif %}
+                </span>
+            {% endif %}
+        </a>
+    {% empty %}
+        <div class="gl-empty">No groups yet. Create one or join with an invite link.</div>
+    {% endfor %}
+</div>
+
+<!-- ── Channels panel ── -->
+<div class="gl-list-panel" id="gl-panel-channels">
+    {% for g in my_channels %}
+        <a class="gl-item" href="{% url 'only_message:group_chat_view' group_id=g.id %}">
+            {% if g.icon_url %}<img src="{{ g.icon_url }}" alt="">{% else %}<img src="{% static 'images/logo.png' %}" alt="">{% endif %}
+            <div class="gl-item-info">
+                <div class="gl-item-name">{{ g.name }} <span class="gl-badge gl-badge-channel">Channel</span></div>
+                <div class="gl-item-meta">{{ g.member_count }} subscribers</div>
+            </div>
+            {% if g.unread_count > 0 %}
+                <span class="gl-unread-count">{% if g.unread_count > 99 %}99+{% else %}{{ g.unread_count }}{% endif %}</span>
+            {% endif %}
+        </a>
+    {% empty %}
+        <div class="gl-empty">No channels yet.</div>
+    {% endfor %}
+</div>
 
 <!-- ── Create modal ── -->
 <div id="gl-create-backdrop" class="gl-modal-backdrop">
@@ -125,15 +205,6 @@
 
             <input type="text" name="name" maxlength="150" placeholder="Name" required>
             <textarea name="description" maxlength="500" rows="3" placeholder="Description (optional)"></textarea>
-            {%comment%}
-            <div id="openCreateModalgl-channel-only" style="display:none;">
-                <input type="text" name="channel_username" maxlength="60" placeholder="Public username (optional, e.g. mychannel)">
-                <label>
-                    <input type="checkbox" name="is_public">
-                    Public channel (discoverable by username)
-                </label>
-            </div>
-            {%endcomment%}
 
             <div id="gl-privacy-row">
                 <label>
@@ -144,7 +215,6 @@
             <div id="gl-channel-only" style="display:none;">
                 <input type="text" name="channel_username" maxlength="60" placeholder="Public username (optional, e.g. mychannel)">
             </div>
-
 
             <div class="gl-modal-actions">
                 <button type="button" class="gl-cancel" onclick="closeCreateModal()">Cancel</button>
@@ -158,6 +228,38 @@
 <script>
 var INVITE_URL_TEMPLATE = "{% url 'only_message:invite_landing_view' code='PLACEHOLDER' %}";
 
+function switchTab(which) {
+    document.getElementById('gl-tab-messages').classList.toggle('active', which === 'messages');
+
+    document.getElementById('gl-tab-groups').classList.toggle('active', which === 'groups');
+    document.getElementById('gl-tab-channels').classList.toggle('active', which === 'channels');
+
+    document.getElementById('gl-panel-messages').classList.toggle('active', which === 'messages');
+
+    document.getElementById('gl-panel-groups').classList.toggle('active', which === 'groups');
+    document.getElementById('gl-panel-channels').classList.toggle('active', which === 'channels');
+
+    try { localStorage.setItem('gl_last_tab', which); } catch (_) {}
+}
+
+// Remember the last tab across visits (falls back silently if storage unavailable)
+(function () {
+
+    var params = new URLSearchParams(window.location.search);
+    var qTab = params.get('tab');
+    if (qTab === 'channels' || qTab === 'groups' || qTab === 'messages') {
+        switchTab(qTab);
+        return;
+    }
+
+    try {
+        var last = localStorage.getItem('gl_last_tab');
+        if (last === 'channels' || last === 'groups' || last === 'messages') { switchTab(last); }
+
+    } catch (_) {}
+})();
+
+
 function openCreateModal(kind) {
     document.getElementById('gl-kind-input').value = kind;
     document.getElementById('gl-modal-title').textContent = kind === 'group' ? 'Create Group' : 'Create Channel';
@@ -167,7 +269,7 @@ function openCreateModal(kind) {
     var checkbox = document.getElementById('gl-is-public-checkbox');
     if (kind === 'group') {
         label.textContent = 'Make this group public (anyone with the invite link can join themselves)';
-        checkbox.checked = false;   // groups default to private, matching WhatsApp
+        checkbox.checked = false;
     } else {
         label.textContent = 'Public channel (discoverable by username search)';
         checkbox.checked = false;
@@ -184,7 +286,6 @@ document.getElementById('join-invite-form').addEventListener('submit', function 
     e.preventDefault();
     var raw = document.getElementById('invite-code-input').value.trim();
     if (!raw) return;
-    // Accept either a bare code or a full pasted invite URL
     var code = raw.split('?')[0].split('/').filter(Boolean).pop();
 
     var action = INVITE_URL_TEMPLATE.replace('PLACEHOLDER', encodeURIComponent(code));
@@ -203,5 +304,81 @@ document.getElementById('join-invite-form').addEventListener('submit', function 
 });
 </script>
     <script src="{% static 'js/pull_to_refresh.js' %}"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    var UNREAD_API = "{% url 'only_message:unread_counts_api' %}";
+    var DM_COUNTS_API = "{% url 'only_message:dm_unread_counts_api' %}";
+    var GROUP_COUNTS_API = "{% url 'only_message:group_unread_counts_api' %}";
+
+    function fmtCount(n) { return n > 99 ? '99+' : String(n); }
+
+    function setTabBadge(tabId, n) {
+        var tab = document.getElementById(tabId);
+        if (!tab) return;
+        var badge = tab.querySelector('.gl-tab-badge');
+        if (n > 0) {
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'gl-tab-badge';
+                tab.appendChild(badge);
+            }
+            badge.textContent = fmtCount(n);
+        } else if (badge) {
+            badge.remove();
+        }
+    }
+
+    function applyItemBadges(panelSelector, counts, keyAttr) {
+        document.querySelectorAll(panelSelector + ' .gl-item[' + keyAttr + ']').forEach(function (item) {
+            var key = item.getAttribute(keyAttr);
+            var badge = item.querySelector('.gl-unread-count');
+            var n = counts[key] || 0;
+
+            if (n > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'gl-unread-count';
+                    item.appendChild(badge);
+                }
+                badge.textContent = fmtCount(n);
+                badge.style.display = 'inline-flex';
+            } else if (badge) {
+                badge.style.display = 'none';
+            }
+        });
+    }
+
+    function refreshAll() {
+        fetch(UNREAD_API, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                setTabBadge('gl-tab-messages', data.message_unread_total || 0);
+                setTabBadge('gl-tab-groups', data.groups_unread_total || 0);
+                setTabBadge('gl-tab-channels', data.channels_unread_total || 0);
+            })
+            .catch(function () {});
+
+        fetch(DM_COUNTS_API, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { applyItemBadges('#gl-panel-messages', data.counts || {}, 'data-uid'); })
+            .catch(function () {});
+
+        fetch(GROUP_COUNTS_API, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { applyItemBadges('#gl-panel-groups,#gl-panel-channels', data.counts || {}, 'data-gid'); })
+            .catch(function () {});
+    }
+
+    document.addEventListener('DOMContentLoaded', refreshAll);
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { refreshAll(); } });
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') { refreshAll(); }
+    });
+    setInterval(refreshAll, 15000);
+})();
+</script>
 
 {% endblock %}

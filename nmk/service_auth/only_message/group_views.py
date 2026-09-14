@@ -11,6 +11,16 @@ from django.urls import reverse
 
 from . import group_store as store
 
+from django.views.decorators.vary import vary_on_headers
+from asgiref.sync import async_to_sync
+from django.views.decorators.cache import cache_page, cache_control
+from django.views.decorators.cache import never_cache
+
+#user dm counter
+from django.db.models import Q, Max
+from service_auth.only_message.models import Message
+from service_auth.only_message.views import get_dm_conversations_for_user
+from service_auth.only_message import dm_unread_store
 logger = logging.getLogger(__name__)
 
 
@@ -25,11 +35,32 @@ def _pic(user):
 @login_required
 def group_list_view(request):
     groups = store.list_user_groups(request.user.id)
+
+    unread_map = store.get_all_unread(request.user.id)
+
+    for g in groups:
+        g['unread_count'] = unread_map.get(g['id'], 0)
+
     my_groups = [g for g in groups if g['kind'] == 'group']
     my_channels = [g for g in groups if g['kind'] == 'broadcast']
+
+    groups_unread_total = sum(g['unread_count'] for g in my_groups)
+    channels_unread_total = sum(g['unread_count'] for g in my_channels)
+
+    # ── NEW: DM conversations for the Messages tab ──
+    dm_users = get_dm_conversations_for_user(request.user)
+    dm_unread_map = dm_unread_store.get_dm_unread_map(request.user.id)
+    for u in dm_users:
+        u.unread_count = dm_unread_map.get(str(u.id), 0)
+    message_unread_total = sum(dm_unread_map.values())
+
     return render(request, 'only_message/group_list.html', {
         'my_groups': my_groups,
         'my_channels': my_channels,
+        'groups_unread_total': groups_unread_total,
+        'channels_unread_total': channels_unread_total,
+        'dm_users': dm_users,                              # ← NEW
+        'message_unread_total': message_unread_total,       # ← NEW
     })
 
 
@@ -85,6 +116,8 @@ def group_chat_view(request, group_id):
     })
 '''
 
+from . import live_store
+
 @login_required
 def group_chat_view(request, group_id):
     group = store.get_group(group_id)
@@ -102,6 +135,12 @@ def group_chat_view(request, group_id):
     invite_path = reverse('only_message:invite_landing_view', args=[group['invite_code']])
     invite_link = request.build_absolute_uri(invite_path)
 
+    #new for live option from channels
+    active_live_room_id = live_store.get_group_room_id(group_id)
+    if active_live_room_id and not live_store.get_room(active_live_room_id):
+        active_live_room_id = None   # stale mapping — self-heal
+    #new for live option from channels
+
     return render(request, 'only_message/group_chat.html', {
         'group': group,
         'group_id': group_id,
@@ -110,6 +149,59 @@ def group_chat_view(request, group_id):
         'my_role': member.get('role') if member else None,
         'can_add_members': store.can_add_members(group_id, request.user.id),
         'invite_link': invite_link,
+        'active_live_room_id': active_live_room_id,   # ← NEW
+
+    })
+
+"""
+@login_required
+def group_unread_counts_api(request):
+    '''Fresh unread counts, bypassing any page/browser caching entirely.'''
+    groups = store.list_user_groups(request.user.id)
+    unread_map = store.get_all_unread(request.user.id)
+
+    counts = {}
+    groups_total = 0
+    channels_total = 0
+
+    for g in groups:
+        c = unread_map.get(g['id'], 0)
+        counts[g['id']] = c
+        if g['kind'] == 'group':
+            groups_total += c
+        else:
+            channels_total += c
+
+    return JsonResponse({
+        'counts': counts,
+        'groups_unread_total': groups_total,
+        'channels_unread_total': channels_total,
+    })
+"""
+
+@login_required
+def group_unread_counts_api(request):
+    """Fresh unread counts, bypassing any page/browser caching entirely."""
+    groups = store.list_user_groups(request.user.id)
+    unread_map = store.get_all_unread(request.user.id)
+
+    counts = {}
+    groups_total = 0
+    channels_total = 0
+
+    for g in groups:
+        c = unread_map.get(g['id'], 0)
+        counts[g['id']] = c
+        if g['kind'] == 'group':
+            groups_total += c
+        else:
+            channels_total += c
+
+    return JsonResponse({
+        'counts': counts,
+        'groups_unread_total': groups_total,
+        'channels_unread_total': channels_total,
+        'grand_total': groups_total + channels_total,   # ← NEW
     })
 
 
@@ -189,6 +281,8 @@ def invite_landing_view(request, code):
 
 
 @login_required
+@cache_control(public=True, max_age=432000, s_maxage=432050, must_revalidate=True)
+
 def search_channels_view(request):
     query = request.GET.get('q', '').strip()
     results = store.search_public_channels(query, exclude_user_id=request.user.id)
