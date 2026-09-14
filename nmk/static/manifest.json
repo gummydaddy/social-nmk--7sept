@@ -17,7 +17,6 @@
       "type": "image/png"
     }
   ],
-
   "share_target": {
     "action": "/share-upload/",
     "method": "POST",

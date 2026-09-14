@@ -96,7 +96,7 @@ self.addEventListener('fetch', function (event) {
 
   // 6. HTML files (shouldn't exist under /static/ but guard anyway)
   if (url.pathname.slice(-5) === '.html' ||
-      url.pathname.slice(-4) === '.htm') { return; }
+    url.pathname.slice(-4) === '.htm') { return; }
 
   // ── Cache-first for verified /static/ assets ─────────────────────────────
   event.respondWith(
@@ -135,20 +135,20 @@ self.addEventListener('push', function (event) {
   } catch (_) {
     payload = {
       title: 'Socyfie',
-      body : event.data ? event.data.text() : 'New notification',
+      body: event.data ? event.data.text() : 'New notification',
     };
   }
 
   var title = payload.title || 'Socyfie';
   var options = {
-    body              : payload.body   || '',
-    icon              : payload.icon   || '/static/images/android-icon-192x192.png',
-    badge             : payload.badge  || '/static/images/android-icon-192x192.png',
-    tag               : payload.tag    || 'socyfie',
-    renotify          : true,
+    body: payload.body || '',
+    icon: payload.icon || '/static/images/android-icon-192x192.png',
+    badge: payload.badge || '/static/images/android-icon-192x192.png',
+    tag: payload.tag || 'socyfie',
+    renotify: true,
     requireInteraction: payload.requireInteraction === true,
-    data              : payload,
-    vibrate           : [200, 100, 200],
+    data: payload,
+    vibrate: [200, 100, 200],
   };
 
   if (payload.type === 'incoming_call') {
@@ -177,7 +177,7 @@ self.addEventListener('notificationclick', function (event) {
       fetch('/message/api/call/' + data.call_id + '/decline/', {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
-      }).catch(function () {})
+      }).catch(function () { })
     );
     return;
   }

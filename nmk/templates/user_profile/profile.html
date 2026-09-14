@@ -7,53 +7,54 @@
 <link rel="canonical" href="{{ request.build_absolute_uri }}" />
 {% endblock %}
 
-            {% block header %}
-            <header style="background-color: #ffffff;">
-              <nav class="navbar navbar-expand-lg navbar-dark ">
-                <div class="container  d-flex align-items-center">
-                  <div>
-                      <div>
-                          <h1 style="font-weight:650;">SOCYFIE<h1>
-                      </div>
-                      <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
-                          <input type="text" name="q" class="form-control me-2" placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
-                          <button type="submit" class="fas fa-search"></button>
-                      </form>
-                  </div>
-                  <a>
-                      <div>
-                          <button class="openbtn" onclick="openNav()">☰</button>
-                      </div>
-
-                  </a>
+{% block header %}
+<header style="background-color: #ffffff;">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+        <div class="container  d-flex align-items-center">
+            <div>
+                <div>
+                    <h1 style="font-weight:650;">SOCYFIE<h1>
                 </div>
-              </nav>
+                <form method="GET" action="{% url 'user_profile:search_uploads' %}" class="d-flex mb-0">
+                    <input type="text" name="q" class="form-control me-2"
+                        placeholder="SOCYFIE Search descriptions, hashtags..." value="{{ request.GET.q }}">
+                    <button type="submit" class="fas fa-search"></button>
+                </form>
+            </div>
+            <a>
+                <div>
+                    <button class="openbtn" onclick="openNav()">☰</button>
+                </div>
 
-              <div class="other-actions">
-                  <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
-                  <br>
-              </div>
-            </header>
-            {% endblock %}
+            </a>
+        </div>
+    </nav>
+
+    <div class="other-actions">
+        <button id="install-button" style="display: none;" class="btn btn-primary">Install Socyfie</button>
+        <br>
+    </div>
+</header>
+{% endblock %}
 
 
 {% block main_content %}
 
 <style>
-    .view-count{
-        color : #123;
-        height : 20px
+    .view-count {
+        color: #123;
+        height: 20px
     }
 
     h2 span {
         vertical-align: middle;
     }
-    
+
     .dropdown {
         position: relative;
         display: inline-block;
     }
-    
+
     .dropdown-content {
         display: none;
         position: relative;
@@ -63,11 +64,11 @@
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         z-index: 1;
     }
-    
+
     .dropdown-content form {
         margin: 0;
     }
-    
+
     .dropdown-content button {
         padding: 12px 16px;
         background: none;
@@ -76,116 +77,138 @@
         width: 100%;
         text-align: left;
     }
-    
+
     .dropdown-content button:hover {
         background-color: #ddd;
     }
-    
+
     .dropdown:hover .dropdown-content {
         display: block;
     }
-    
+
     .dropdown span {
         cursor: pointer;
         font-size: 24px;
         vertical-align: middle;
     }
 
-.media-thumb-square {
-    position: relative;
-    width: 100%;
-    padding-top: 100%; /* Makes it square */
-    overflow: hidden;
-    border-radius: 6px; /* Optional for rounded corners */
-}
+    .media-thumb-square {
+        position: relative;
+        width: 100%;
+        padding-top: 100%;
+        /* Makes it square */
+        overflow: hidden;
+        border-radius: 6px;
+        /* Optional for rounded corners */
+    }
 
-.media-thumb-square img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Prevents stretching */
-}
+    .media-thumb-square img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        /* Prevents stretching */
+    }
 
-.profile-picture-btn {
-    background: none;
-    border: none;
-    padding: 0;
-    margin: 0;
-    cursor: pointer;
-    display: inline-block;
-}
-.profile-picture {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 3px solid #ccc;
-}
+    .profile-picture-btn {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        cursor: pointer;
+        display: inline-block;
+    }
 
-.pagination { 
-    margin-bottom:35px;
+    .profile-picture {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 3px solid #ccc;
+    }
 
-}
+    .pagination {
+        margin-bottom: 35px;
 
+    }
+</style>
+<style>
+    <!-- edit profile button
+    -->
+    .edit-profile-btn
+    {
+    display:
+    inline-flex;
+    flex-direction:
+    column;
+    align-items:
+    center;
+    gap:
+    4px;
+    text-decoration:
+    none
+    !important;
+    color:
+    inherit;
+    cursor:
+    pointer;
+    }
+    .edit-profile-btn
+    i
+    {
+    font-size:
+    21px;
+    transform:
+    rotate(-15deg);
+    }
+    .edit-profile-btn
+    span
+    {
+    font-size:
+    12px;
+    font-weight:
+    500;
+    }
+    .edit-profile-btn:hover
+    i
+    {
+    transform:
+    rotate(-15deg)
+    scale(1.1);
+    }
 
 </style>
-<style><!-- edit profile button-->
-.edit-profile-btn {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    text-decoration: none !important;
-    color: inherit;
-    cursor: pointer;
-}
 
-.edit-profile-btn i {
-    font-size: 21px;
-    transform: rotate(-15deg);
-}
-
-.edit-profile-btn span {
-    font-size: 12px;
-    font-weight: 500;
-}
-
-.edit-profile-btn:hover i {
-    transform: rotate(-15deg) scale(1.1);
-}
-
-</style>
-
-    <!-- Profile Picture Section -->
+<!-- Profile Picture Section -->
 <div class="profile-container">
     {% block profile_header_content %}
     <div class="profile-section">
         <div class="profile-info">
             <p>
-                <h2 style="display: inline;">
-                    <span>{{ profile_user.username }} </span>
-                </h2>
-                {% if profile_user != request.user %}
-                <div class="dropdown" style="display: inline-block; margin-left: 2px;">
-                    <span style="cursor: pointer;">☰</span>
-                    <div class="dropdown-content">
-                        {% if not is_blocked %}
-                            <form method="post" action="{% url 'notion:block_user' profile_user.id %}">
-                                {% csrf_token %}
-                                <button type="submit" style="width: 100%; text-align: left;">Block</button>
-                            </form>
-                        {% else %}
-                            <form method="post" action="{% url 'notion:unblock_user' profile_user.id %}">
-                                {% csrf_token %}
-                                <button type="submit" style="width: 100%; text-align: left;">Unblock</button>
-                            </form>
-                        {% endif %}
-                    </div>
+            <h2 style="display: inline;">
+                <span>{{ profile_user.username }} </span>
+            </h2>
+            {% if profile_user != request.user %}
+            <div class="dropdown" style="display: inline-block; margin-left: 2px;">
+                <span style="cursor: pointer;">☰</span>
+                <div class="dropdown-content">
+                    {% if not is_blocked %}
+                    <form method="post" action="{% url 'notion:block_user' profile_user.id %}">
+                        {% csrf_token %}
+                        <button type="submit" style="width: 100%; text-align: left;">Block</button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{% url 'notion:unblock_user' profile_user.id %}">
+                        {% csrf_token %}
+                        <button type="submit" style="width: 100%; text-align: left;">Unblock</button>
+                    </form>
+                    {% endif %}
                 </div>
-                {% endif %}
-                
+            </div>
+            {% endif %}
+
             </p>
             <!-- Add any additional profile information here -->
         </div>
@@ -193,105 +216,113 @@
 
         <div class="profile-picture-container">
             {% if active_story %}
-                <button onclick="location.href='{% url 'user_profile:view_story' story_id=active_story.id %}'" class="profile-picture-btn">
+            <button onclick="location.href='{% url 'user_profile:view_story' story_id=active_story.id %}'"
+                class="profile-picture-btn">
 
                 <!--<a href="{% url 'user_profile:view_story' story_id=active_story.id %}">-->
-            {% elif profile_user.id == request.user.id %}
+                {% elif profile_user.id == request.user.id %}
                 <button onclick="location.href='{% url 'user_profile:add_story' %}'" class="profile-picture-btn">
 
-                <!--<a href="{% url 'user_profile:add_story' %}">-->
-            {% else %}
-                <div>  {# fallback to non-clickable wrapper #}
-            {% endif %}
+                    <!--<a href="{% url 'user_profile:add_story' %}">-->
+                    {% else %}
+                    <div> {# fallback to non-clickable wrapper #}
+                        {% endif %}
 
-                {% if profile_user.profile.profile_picture %}
-                    <img src="{{ profile_user.profile.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
-                {% else %}
-                    <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture" class="profile-picture">
-                {% endif %}
+                        {% if profile_user.profile.profile_picture %}
+                        <img src="{{ profile_user.profile.profile_picture.url }}" alt="Profile Picture"
+                            class="profile-picture">
+                        {% else %}
+                        <img src="/path/to/default/profile/picture.jpg" alt="Default Profile Picture"
+                            class="profile-picture">
+                        {% endif %}
 
-            {% if active_story or profile_user.id == request.user.id %}
+                        {% if active_story or profile_user.id == request.user.id %}
                 </button>
 
-            {% else %}
-                </div>
-            {% endif %}
+                {% else %}
         </div>
-
-        <div class="cover-photo-container">
-            {% if profile_user.profile.cover_photo %}
-                <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
-            {% else %}
-                <div class="cover-photo" style="background-color: #f0f0f0;"></div>
-            {% endif %}
-        </div>
-
-
-        <div class="bio">
-            {{ profile_user.profile.bio|safe }}
-        </div>
-
-        <!-- Followers and following count -->
-        <p>
-            <a href="{% url 'user_profile:following_list' user_id=profile_user.id %}">Following {{ following_count }} </a> | 
-            <a href="{% url 'user_profile:followers_list' user_id=profile_user.id %}">Followers {{ followers_count }} </a> |
-            <span>Uploads {{ uploads_count }} </span> 
-        </p>
-
-        <!-- Follow/Unfollow button -->
-        {% csrf_token %}
-        {% if profile_user != request.user %}
-        <div>
-            <div class="col">
-
-                <form id="follow-form" method="post" action="{% url 'user_profile:follow_user' profile_user.id %}">
-                    {% csrf_token %}
-                    <button type="submit" id="follow-button">
-                        {% if is_following %}
-                        <form id="unfollow-form" method="post" action="{% url 'user_profile:unfollow_user' profile_user.id %}">
-                            {% csrf_token %}
-                            <button type="submit" id="unfollow-button">
-                                Unfollow
-                            </button>
-                        </form>
-                        {% else %}
-                        Follow
-                        {% endif %}
-                    </button>
-                </form>
-
-            </div>
-        </div>
-        <div class="row row-cols-3 g-4">
-            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'only_message:user_messages_view' username=profile_user %}'">💬  </button>
-            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=profile_user.id %}'">Tags 🔖</button>
-            <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:voices' user_id=profile_user.id %}'">Voices</button>
-        </div>
-
-
-        {% else %}  
-        <p>
-            <div class="uploads-section">
-                <div class="row row-cols-3 g-4">
-                    <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>-->
-                    <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>-->
-                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
-                    <button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:voices' user_id=request.user.id %}'">Voices</button>
-
-                {% if request.user.is_authenticated %}
-                <a href="{% url 'user_profile:edit_profile' user_id=request.user.id %}"
-                   class="edit-profile-btn"
-                   aria-label="Edit Profile">
-                    <i class="fas fa-pencil-alt"></i>
-                    <span>Edit</span>
-                </a>
-                {% endif %}
-                </div>
-
-            </div>
-        </p>
-        
         {% endif %}
+    </div>
+
+    <div class="cover-photo-container">
+        {% if profile_user.profile.cover_photo %}
+        <img src="{{ profile_user.profile.cover_photo.url }}" alt="Cover Photo" class="cover-photo">
+        {% else %}
+        <div class="cover-photo" style="background-color: #f0f0f0;"></div>
+        {% endif %}
+    </div>
+
+
+    <div class="bio">
+        {{ profile_user.profile.bio|safe }}
+    </div>
+
+    <!-- Followers and following count -->
+    <p>
+        <a href="{% url 'user_profile:following_list' user_id=profile_user.id %}">Following {{ following_count }} </a> |
+        <a href="{% url 'user_profile:followers_list' user_id=profile_user.id %}">Followers {{ followers_count }} </a> |
+        <span>Uploads {{ uploads_count }} </span>
+    </p>
+
+    <!-- Follow/Unfollow button -->
+    {% csrf_token %}
+    {% if profile_user != request.user %}
+    <div>
+        <div class="col">
+
+            <form id="follow-form" method="post" action="{% url 'user_profile:follow_user' profile_user.id %}">
+                {% csrf_token %}
+                <button type="submit" id="follow-button">
+                    {% if is_following %}
+                    <form id="unfollow-form" method="post"
+                        action="{% url 'user_profile:unfollow_user' profile_user.id %}">
+                        {% csrf_token %}
+                        <button type="submit" id="unfollow-button">
+                            Unfollow
+                        </button>
+                    </form>
+                    {% else %}
+                    Follow
+                    {% endif %}
+                </button>
+            </form>
+
+        </div>
+    </div>
+    <div class="row row-cols-3 g-4">
+        <button type="button" class="btn btn-primary"
+            onclick="location.href='{% url 'only_message:user_messages_view' username=profile_user %}'">💬 </button>
+        <button type="button" class="btn btn-primary"
+            onclick="location.href='{% url 'user_profile:media_tags' user_id=profile_user.id %}'">Tags 🔖</button>
+        <button type="button" class="btn btn-primary"
+            onclick="location.href='{% url 'user_profile:voices' user_id=profile_user.id %}'">Voices</button>
+    </div>
+
+
+    {% else %}
+    <p>
+    <div class="uploads-section">
+        <div class="row row-cols-3 g-4">
+            <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:upload_media' %}'">Upload</button>-->
+            <!--<button type="button" class="btn btn-primary" onclick="location.href='{% url 'user_profile:edit_profile' user_id=request.user.id %}'"> Edit Profile</button>-->
+            <button type="button" class="btn btn-primary"
+                onclick="location.href='{% url 'user_profile:media_tags' user_id=request.user.id %}'">Tags 🔖</button>
+            <button type="button" class="btn btn-primary"
+                onclick="location.href='{% url 'user_profile:voices' user_id=request.user.id %}'">Voices</button>
+
+            {% if request.user.is_authenticated %}
+            <a href="{% url 'user_profile:edit_profile' user_id=request.user.id %}" class="edit-profile-btn"
+                aria-label="Edit Profile">
+                <i class="fas fa-pencil-alt"></i>
+                <span>Edit</span>
+            </a>
+            {% endif %}
+        </div>
+
+    </div>
+    </p>
+
+    {% endif %}
     {% endblock %}
 </div>
 
@@ -300,27 +331,25 @@
 <div class="media-wrapper">
     <div class="row row-cols-3 g-4" id="media-container">
         {% for media in page_obj %}
-            <div class="col media-item">
-                <a href="{% url 'user_profile:media_detail_view' media.id %}" class="media-content">
-                    <div class="position-relative media-thumb-square">
-                        <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}"
-                             alt="Thumbnail"
-                             class="img-fluid object-cover "
-                             loading="lazy">
+        <div class="col media-item">
+            <a href="{% url 'user_profile:media_detail_view' media.id %}" class="media-content">
+                <div class="position-relative media-thumb-square">
+                    <img src="{% if media.thumbnail %}{{ media.thumbnail.url }}{% else %}{{ media.file.url }}{% endif %}"
+                        alt="Thumbnail" class="img-fluid object-cover " loading="lazy">
 
-                        {% if media.file.url|is_video %}
-                            <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
-                                ▶
-                            </span>
-                        {% endif %}
-                    </div>
-                </a>
-
-                <!-- View Count -->
-                <div class="view-count mt-1 text-muted">
-                    👁️ : {{ media.view_count }}
+                    {% if media.file.url|is_video %}
+                    <span class="position-absolute top-50 start-50 translate-middle text-white fs-3">
+                        ▶
+                    </span>
+                    {% endif %}
                 </div>
+            </a>
+
+            <!-- View Count -->
+            <div class="view-count mt-1 text-muted">
+                👁️ : {{ media.view_count }}
             </div>
+        </div>
         {% endfor %}
     </div>
 </div>
@@ -334,7 +363,8 @@
 
 
 <!-- Media Detail Modal -->
-<div id="media-detail-modal" class="modal fade" tabindex="-1" aria-labelledby="mediaDetailModalLabel" aria-hidden="true">
+<div id="media-detail-modal" class="modal fade" tabindex="-1" aria-labelledby="mediaDetailModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
@@ -348,7 +378,7 @@
                     <!-- Related media will be appended here -->
                 </div>
                 <div id="related-loading-spinner" style="display: none;">
-                   {% comment %}  <img src="{% static 'img/loading_spinner.gif' %}" alt="Loading..."> {% endcomment %}
+                    {% comment %} <img src="{% static 'img/loading_spinner.gif' %}" alt="Loading..."> {% endcomment %}
                 </div>
             </div>
         </div>
@@ -359,16 +389,16 @@
 <div class="pagination">
     <span class="step-links">
         {% if page_obj.has_previous %}
-            <a href="?page=1">&laquo; first</a>
-            <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+        <a href="?page=1">&laquo; first</a>
+        <a href="?page={{ page_obj.previous_page_number }}">previous</a>
         {% endif %}
         <span class="current">
             <br>
             Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
         </span>
         {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}">next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        <a href="?page={{ page_obj.next_page_number }}">next</a>
+        <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
         {% endif %}
     </span>
 </div>
@@ -378,40 +408,40 @@
 
 {% block profile_script %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function () {
 
-    const privacyButton = document.getElementById('privacy-button');
+        const privacyButton = document.getElementById('privacy-button');
 
-    if (!privacyButton) return;
+        if (!privacyButton) return;
 
-    privacyButton.addEventListener('click', function () {
-        fetch("{% url 'user_profile:toggle_privacy' %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({})
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                privacyButton.textContent = data.is_private ? 'Private' : 'Public';
-            }
-        })
-        .catch(console.error);
+        privacyButton.addEventListener('click', function () {
+            fetch("{% url 'user_profile:toggle_privacy' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({})
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        privacyButton.textContent = data.is_private ? 'Private' : 'Public';
+                    }
+                })
+                .catch(console.error);
+        });
+
     });
-
-});
 </script>
 
 
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         let lazyMedia = document.querySelectorAll(".lazyload");
-    
+
         const lazyLoad = () => {
             lazyMedia.forEach(media => {
                 if (media.getBoundingClientRect().top < window.innerHeight && media.dataset.src) {
@@ -428,7 +458,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
         };
-    
+
         window.addEventListener("scroll", lazyLoad);
         window.addEventListener("resize", lazyLoad);
         lazyLoad();  // Load visible media immediately
@@ -437,45 +467,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
 <!--ajax follow hook-->
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const form = document.getElementById("follow-form");
-    if (!form) return;
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("follow-form");
+        if (!form) return;
 
-    form.addEventListener("submit", function (e) {
-        e.preventDefault(); //  stop redirect
+        form.addEventListener("submit", function (e) {
+            e.preventDefault(); //  stop redirect
 
-        const button = document.getElementById("follow-button");
-        const url = form.action;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            const button = document.getElementById("follow-button");
+            const url = form.action;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-        fetch(url, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": csrfToken,
-                "X-Requested-With": "XMLHttpRequest"
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (!data.success) {
-                alert("Something went wrong");
-                return;
-            }
+            fetch(url, {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert("Something went wrong");
+                        return;
+                    }
 
-            //  Update UI
-            button.textContent = data.following ? "Unfollow" : "Follow";
+                    //  Update UI
+                    button.textContent = data.following ? "Unfollow" : "Follow";
 
-            //  Popup
-            alert(data.following ? "Followed successfully" : "Unfollowed successfully");
-        })
-        .catch(err => {
-            console.error(err);
-            alert("Network error");
+                    //  Popup
+                    alert(data.following ? "Followed successfully" : "Unfollowed successfully");
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Network error");
+                });
         });
     });
-});
 </script>
 {% endblock %}
-
-
-
